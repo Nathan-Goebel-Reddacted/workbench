@@ -1,0 +1,52 @@
+name: workbench
+version: '0.0.1'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
+      target: dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./packages/backend/src:/app/packages/backend/src
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
+      target: dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./packages/frontend/src:/app/packages/frontend/src
+      - ./packages/frontend/index.html:/app/packages/frontend/index.html
+    environment:
+      NODE_ENV: development
+
+volumes:
+  postgres_data:

@@ -1,0 +1,12 @@
+# Secrets
+.env
+
+# Dependencies
+node_modules/
+
+# Build outputs
+packages/*/dist/
+
+# Logs
+*.log
+npm-debug.log*

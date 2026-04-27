@@ -1,0 +1,19 @@
+{
+  "name": "@atelier/backend",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types src/index.ts",
+    "start": "node --experimental-strip-types src/index.ts",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/node": "^22.19.17",
+    "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0"
+  }
+}
