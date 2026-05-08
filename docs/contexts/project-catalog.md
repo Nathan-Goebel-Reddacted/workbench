@@ -7,10 +7,18 @@ leurs features et tickets.
 
 ## Agrégats
 
-- **Project** — entité centrale : nom, logo, description, stack (Tags), statut, liens
-- **Feature** — fonctionnalité d'un projet, avec description et état
-- **Ticket** — tâche concrète rattachée à une Feature ou directement au Project
+- **Project** — entité centrale : nom, logo, description, stack (Tags), statut, liens, documents
+- **Feature** — fonctionnalité d'un projet, avec description et état, documents
+- **Ticket** — tâche concrète rattachée à une Feature ou directement au Project, documents
 - **ADR** — décision d'architecture documentée, rattachée à un Project
+
+## Documents
+
+`Project`, `Feature` et `Ticket` peuvent chacun porter une liste de **Document** (entité enfant, sans repository propre).
+
+- Types acceptés : `pdf`, `image`, `video`
+- Persisté en colonne JSONB sur la table de l'agrégat parent
+- Identifié par un `DocumentId` (UUID) — permet l'ajout et la suppression ciblée
 
 ## Statuts d'un Project
 

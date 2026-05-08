@@ -23,6 +23,14 @@ export class User {
         return this.id;
     }
 
+    getName(): Name {
+        return this.name;
+    }
+
+    getSurname(): Surname {
+        return this.surname;
+    }
+
     getEmail(): Email {
         return this.email;
     }

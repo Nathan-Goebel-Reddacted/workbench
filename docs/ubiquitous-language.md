@@ -11,10 +11,7 @@ Termes du domaine partagés entre tous les bounded contexts.
 | **Profile** | L'identité publique : bio, liens, compétences mises en avant |
 | **PublicProject** | Un Project avec `public = true` — apparaît automatiquement sur la home |
 | **CV** | Document PDF uploadé, sélectionnable et téléchargeable |
-| **ProjectPage** | Page publique d'un projet, composée de sections en grille |
-| **Section** | Bloc de contenu dans une ProjectPage (texte, image, vidéo, code…) |
-| **GridLayout** | Disposition en grille des sections d'une ProjectPage |
-| **Block** | Unité atomique de contenu dans une Section |
+| **ProjectPage** | Page publique d'un projet, rendue à partir du PageLayout défini dans ContentEditor |
 | **MediaBanner** | Bandeau de médias (screenshots, vidéos) en haut de la ProjectPage |
 
 ---
@@ -29,6 +26,8 @@ Termes du domaine partagés entre tous les bounded contexts.
 | **Ticket** | Tâche concrète rattachée à une feature ou un projet |
 | **Tag** | Technologie ou compétence associée à un projet (ex: React, PHP) |
 | **ADR** | Architecture Decision Record — décision technique documentée |
+| **Document** | Fichier attaché à un Project, Feature ou Ticket — PDF, image ou vidéo |
+| **DocumentType** | Type d'un Document : `pdf` / `image` / `video` |
 
 ---
 
@@ -69,5 +68,10 @@ Termes du domaine partagés entre tous les bounded contexts.
 
 | Terme | Définition |
 |---|---|
-| **Editor** | Interface privée d'édition du contenu public |
-| **GridBuilder** | Outil de construction de GridLayout par drag & drop |
+| **PageLayout** | Mise en page d'une page publique (portfolio ou projet), composée de sections |
+| **Section** | Élément de contenu dans un PageLayout — typé et positionné dans la grille |
+| **SectionType** | Type d'une Section : `text`, `image`, `video`, `code`, `link`, `embed` |
+| **ContentRef** | Référence à un champ d'un autre contexte (ex: `project.title`, `portfolio.bio`) |
+| **GridPosition** | Position d'une Section dans la grille : colonne et ordre |
+| **PageType** | Type de page éditée : `portfolio` ou `project` |
+| **PageRef** | UUID de la ressource ciblée (portfolio ou projet) |

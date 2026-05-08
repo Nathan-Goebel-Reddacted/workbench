@@ -12,23 +12,26 @@ Il n'y a pas d'inscription — l'accès est accordé manuellement via une whitel
 
 ## Décision
 
-**OAuth 2.0 via un provider existant (GitHub ou Google).**
+**OAuth 2.0 via GitHub et Google (multi-provider).**
 
-Les emails autorisés sont déclarés dans une whitelist côté serveur (variable d'environnement).
+Le même email connecté via GitHub ou Google aboutit au même profil User.
+Les emails autorisés sont stockés en base de données dans la table `allowed_emails`, gérée via l'API `GET/POST/DELETE /auth/allowed-emails`.
 Toute tentative de connexion avec un email absent de la whitelist est rejetée.
 
 Flux :
 1. L'utilisateur clique "Se connecter" → redirigé vers le provider OAuth
 2. Après autorisation, le backend reçoit le profil (email du provider)
-3. Si l'email est dans la whitelist → session créée (JWT httpOnly cookie)
+3. Si l'email est dans `allowed_emails` → session créée (JWT httpOnly cookie `session`)
 4. Sinon → rejet 401
+5. Si l'utilisateur n'a pas encore de profil → auto-provisioning à la première connexion
 
-Les routes privées Fastify vérifient le JWT à chaque requête.
+Les routes privées Fastify vérifient le JWT à chaque requête via un hook `onRequest` global.
 Le frontend React vérifie la session au chargement — si absente, redirige vers la page de login.
 
 ## Conséquences
 
 - Aucune gestion de mot de passe
-- Pas d'inscription — accès géré via `ALLOWED_EMAILS` en variable d'environnement
+- Pas d'inscription — accès géré via la table `allowed_emails` (API CRUD)
+- La whitelist est modifiable à chaud sans redémarrer le serveur
 - Si le provider OAuth est inaccessible, l'espace privé est inaccessible (acceptable)
-- Le provider OAuth à retenir (GitHub vs Google) est un choix de préférence, sans impact architectural
+- Les deux providers (GitHub et Google) sont supportés simultanément

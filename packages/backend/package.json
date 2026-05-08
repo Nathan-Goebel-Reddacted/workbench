@@ -4,16 +4,35 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "dev": "node --watch --experimental-strip-types src/index.ts",
-    "start": "node --experimental-strip-types src/index.ts",
+    "dev": "tsx watch --watch src src/index.ts",
+    "start": "tsx src/index.ts",
     "build": "tsc"
   },
+  "mikro-orm": {
+    "useTsNode": true,
+    "configPaths": [
+      "./src/mikro-orm.config.ts"
+    ]
+  },
   "devDependencies": {
+    "@mikro-orm/cli": "^6.6.13",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^22.19.17",
+    "concurrently": "^9.2.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "bcrypt": "^6.0.0"
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.2.0",
+    "@fastify/jwt": "^10.0.0",
+    "@fastify/oauth2": "^8.2.0",
+    "@mikro-orm/core": "^6.6.13",
+    "@mikro-orm/migrations": "^6.6.13",
+    "@mikro-orm/postgresql": "^6.6.13",
+    "@mikro-orm/reflection": "^6.6.13",
+    "bcrypt": "^6.0.0",
+    "fastify": "^5.8.5"
   }
 }

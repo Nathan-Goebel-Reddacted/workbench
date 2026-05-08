@@ -2,31 +2,33 @@
 
 ## Responsabilité
 
-Interface privée d'édition de tout le contenu public.
-Ce context ne stocke pas de données propres — il orchestre les modifications
-sur Portfolio, ProjectCatalog et IdeaWorkshop.
+Gérer la mise en page des pages publiques : portfolio (home) et une page par projet.
+Ce context ne stocke pas le contenu lui-même — il stocke la **structure visuelle** (quelles
+sections, dans quel ordre, dans quelle colonne) et une **référence** vers le champ source
+dans un autre context (Portfolio ou ProjectCatalog).
 
-## Composants
+## Agrégat
 
-- **ProfileEditor** — édition de la home (bio, liens, featured projects)
-- **CVManager** — upload, sélection, suppression de CVs
-- **GridBuilder** — construction visuelle des ProjectPages par grille de sections
-- **ProjectPageEditor** — édition des métadonnées publiques d'un projet
+- **PageLayout** — mise en page d'une page publique
+  - `id: PageLayoutId`
+  - `pageType: PageType` (`portfolio` | `project`)
+  - `pageRef: PageRef` (UUID du portfolio ou du projet concerné)
+  - `sections: Section[]`
 
-## GridBuilder — détail
+## Entité
 
-Le GridBuilder permet de :
-- Créer des sections dans une ProjectPage
-- Choisir le type de Block (texte, image, vidéo, code, lien, embed…)
-- Organiser les sections dans une grille (colonnes, ordre)
-- Prévisualiser le rendu public
+- **Section** — élément de contenu positionné dans la grille
+  - `id: SectionId`
+  - `type: SectionType` (`text` | `image` | `video` | `code` | `link` | `embed`)
+  - `contentRef: ContentRef` (ex: `project.title`, `portfolio.bio`)
+  - `position: GridPosition` (colonne + ordre)
 
 ## Règles métier
 
-- Le GridBuilder modifie uniquement la ProjectPage du Portfolio
-  (pas les données métier du ProjectCatalog)
-- Un Block doit avoir un type déclaré — pas de contenu générique non typé
-- La grille est responsive par défaut (breakpoints à définir)
+- Un PageLayout est unique par page (`pageType` + `pageRef`)
+- Une Section doit avoir un `ContentRef` valide au format `context.field`
+- La colonne d'une `GridPosition` commence à 1 — l'ordre commence à 0
+- Ajouter, supprimer ou déplacer une Section ne modifie pas les données sources
 
 ## Pages associées
 

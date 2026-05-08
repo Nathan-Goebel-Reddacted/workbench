@@ -1,0 +1,9 @@
+{
+  "--color-bg": "#1c1208",
+  "--color-surface": "#2a1c0e",
+  "--color-text": "#f0d4a0",
+  "--color-text-muted": "#b8956a",
+  "--color-primary": "#d4711a",
+  "--color-primary-hover": "#b85d12",
+  "--color-border": "#5a3d1e"
+}

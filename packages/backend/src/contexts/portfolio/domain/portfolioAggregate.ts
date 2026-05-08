@@ -1,5 +1,6 @@
 import { Description } from "./value-objects/description";
 import { Language } from "./value-objects/language";
+import { Link } from "./value-objects/link";
 import { PortfolioId } from "./value-objects/portfolioId";
 import { UserId } from "./value-objects/userId";
 
@@ -12,14 +13,18 @@ export class Portfolio {
 
     private languages: Language[] = [];
 
+    private links: Link[] = [];
+
     constructor(
         id: PortfolioId,
         userId: UserId,
-        description: Description
+        description: Description,
+        links: Link[] = []
     ) {
         this.id = id;
         this.userId = userId;
         this.description = description;
+        this.links = links;
     }
 
     getId(): PortfolioId {
@@ -48,5 +53,17 @@ export class Portfolio {
 
     removeLanguage(language: Language): void {
         this.languages = this.languages.filter(lang => lang.getValue() !== language.getValue());
+    }
+
+    getLinks(): Link[] {
+        return [...this.links];
+    }
+
+    addLink(link: Link): void {
+        this.links.push(link);
+    }
+
+    removeLink(link: Link): void {
+        this.links = this.links.filter(l => l.getUrl() !== link.getUrl());
     }
 }

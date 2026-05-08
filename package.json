@@ -4,11 +4,20 @@
   "private": true,
   "workspaces": [
     "packages/backend",
-    "packages/frontend"
+    "packages/shared-ui",
+    "packages/frontend-public",
+    "packages/frontend-private"
   ],
   "scripts": {
     "dev:backend": "npm run dev --workspace=packages/backend",
-    "dev:frontend": "npm run dev --workspace=packages/frontend",
-    "dev": "npm run dev:backend & npm run dev:frontend"
+    "dev:frontend-public": "npm run dev --workspace=packages/frontend-public",
+    "dev:frontend-private": "npm run dev --workspace=packages/frontend-private",
+    "dev": "concurrently -n backend,public,private -c blue,green,magenta \"npm run dev:backend\" \"npm run dev:frontend-public\" \"npm run dev:frontend-private\""
+  },
+  "optionalDependencies": {
+    "@esbuild/linux-x64": "^0.27.7"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
