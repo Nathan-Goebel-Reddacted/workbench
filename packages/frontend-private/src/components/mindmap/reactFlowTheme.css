@@ -1,0 +1,72 @@
+/*
+ * Remappage du thème de React Flow sur les variables CSS de l'atelier.
+ *
+ * Les conventions du projet interdisent les couleurs codées en dur et proscrivent les
+ * fichiers .css hors resets globaux. Cet override est l'exception nécessaire : les
+ * couleurs de React Flow vivent dans ses propres classes internes
+ * (.react-flow__edge-path, .react-flow__controls-button…), qu'aucun style inline ne peut
+ * atteindre. Sans ce fichier, la librairie imposerait sa palette sur l'ensemble du
+ * canevas, indépendamment du thème choisi dans le Design Lab.
+ *
+ * Aucune valeur de couleur n'est écrite ici : uniquement des renvois aux variables.
+ */
+
+.react-flow.atelier-mindmap {
+  --xy-background-color: var(--color-bg);
+  --xy-edge-stroke: var(--color-border);
+  --xy-edge-stroke-selected: var(--color-primary);
+  --xy-connectionline-stroke: var(--color-primary);
+  --xy-attribution-background-color: transparent;
+
+  --xy-controls-button-background-color: var(--color-surface);
+  --xy-controls-button-background-color-hover: var(--color-bg);
+  --xy-controls-button-color: var(--color-text);
+  --xy-controls-button-color-hover: var(--color-primary);
+  --xy-controls-button-border-color: var(--color-border);
+
+  --xy-minimap-background-color: var(--color-surface);
+  --xy-minimap-mask-background-color: var(--color-bg);
+  --xy-minimap-node-background-color: var(--color-border);
+
+  --xy-node-color: var(--color-text);
+  --xy-node-border: 1px solid var(--color-border);
+  --xy-node-background-color: var(--color-surface);
+  --xy-node-boxshadow-hover: none;
+  --xy-node-boxshadow-selected: none;
+
+  --xy-selection-background-color: var(--color-bg);
+  --xy-selection-border: 1px dashed var(--color-primary);
+
+  --xy-handle-background-color: var(--color-primary);
+  --xy-handle-border-color: var(--color-surface);
+
+  --xy-resize-background-color: var(--color-primary);
+}
+
+/* Les points de la grille de fond ne passent pas par une variable de thème. */
+.react-flow.atelier-mindmap .react-flow__background-pattern {
+  color: var(--color-border);
+}
+
+/* Nos nœuds portent entièrement leur propre style : le fond et la bordure par défaut
+   de React Flow feraient un double cadre autour de chacun. */
+.react-flow.atelier-mindmap .react-flow__node {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  color: var(--color-text);
+}
+
+.react-flow.atelier-mindmap .react-flow__attribution {
+  color: var(--color-text-muted);
+}
+
+/*
+ * Une arête porte désormais sa couleur en style inline (voir toFlowEdge) : la règle
+ * de sélection de la librairie, qui passe par une classe, ne pouvait plus l'emporter.
+ * Le surlignage de sélection est donc réaffirmé ici — seul cas où !important est requis.
+ */
+.react-flow.atelier-mindmap .react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--color-primary) !important;
+}
