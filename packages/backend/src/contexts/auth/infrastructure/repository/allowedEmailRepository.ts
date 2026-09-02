@@ -20,10 +20,15 @@ export class AllowedEmailRepository {
     }
 
     async add(email: string): Promise<void> {
+        if (await this.exists(email)) throw new EmailAlreadyAllowedException(email);
+
+        const entity = this.em.create(AllowedEmailOrmEntity, { email, createdAt: new Date() });
         try {
-            const entity = this.em.create(AllowedEmailOrmEntity, { email, createdAt: new Date() });
             await this.em.persistAndFlush(entity);
         } catch (err: unknown) {
+            // L'entité refusée reste dans l'unit of work et serait rejouée au flush suivant,
+            // hors de ce try : le contexte doit l'oublier avant que l'exception ne remonte.
+            this.em.getUnitOfWork().unsetIdentity(entity);
             const msg = err instanceof Error ? err.message : '';
             if (msg.includes('unique') || msg.includes('duplicate')) {
                 throw new EmailAlreadyAllowedException(email);
