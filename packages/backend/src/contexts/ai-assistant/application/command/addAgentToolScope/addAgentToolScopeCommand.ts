@@ -1,7 +1,7 @@
-import { Command } from "@shared/application/command/command";
+import { Command } from '@shared/application/command/command';
 
 export class AddAgentToolScopeCommand implements Command {
-    static readonly commandName = "aiAssistant.AddAgentToolScope";
+    static readonly commandName = 'aiAssistant.AddAgentToolScope';
     readonly commandName: string;
 
     constructor(

@@ -1,7 +1,7 @@
-import { Command } from "@shared/application/command/command";
+import { Command } from '@shared/application/command/command';
 
 export class RotateAgentToolTokenCommand implements Command {
-    static readonly commandName = "aiAssistant.RotateAgentToolToken";
+    static readonly commandName = 'aiAssistant.RotateAgentToolToken';
     readonly commandName: string;
 
     constructor(
