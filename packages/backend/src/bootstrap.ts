@@ -122,6 +122,25 @@ import { GetIdeaByIdHandler } from '@contexts/idea/application/query/getIdeaById
 import { ListIdeasQuery } from '@contexts/idea/application/query/listIdeas/listIdeasQuery';
 import { ListIdeasHandler } from '@contexts/idea/application/query/listIdeas/listIdeasHandler';
 
+// --- ContentEditor ---
+import { PageLayoutFactory } from '@contexts/contentEditor/domain/factory/pageLayoutFactory';
+import { CreatePageLayoutCommand } from '@contexts/contentEditor/application/command/createPageLayout/createPageLayoutCommand';
+import { CreatePageLayoutHandler } from '@contexts/contentEditor/application/command/createPageLayout/createPageLayoutHandler';
+import { AddSectionCommand } from '@contexts/contentEditor/application/command/addSection/addSectionCommand';
+import { AddSectionHandler } from '@contexts/contentEditor/application/command/addSection/addSectionHandler';
+import { RemoveSectionCommand } from '@contexts/contentEditor/application/command/removeSection/removeSectionCommand';
+import { RemoveSectionHandler } from '@contexts/contentEditor/application/command/removeSection/removeSectionHandler';
+import { MoveSectionCommand } from '@contexts/contentEditor/application/command/moveSection/moveSectionCommand';
+import { MoveSectionHandler } from '@contexts/contentEditor/application/command/moveSection/moveSectionHandler';
+import { UpdateSectionContentCommand } from '@contexts/contentEditor/application/command/updateSectionContent/updateSectionContentCommand';
+import { UpdateSectionContentHandler } from '@contexts/contentEditor/application/command/updateSectionContent/updateSectionContentHandler';
+import { GetPageLayoutByIdQuery } from '@contexts/contentEditor/application/query/getPageLayoutById/getPageLayoutByIdQuery';
+import { GetPageLayoutByIdHandler } from '@contexts/contentEditor/application/query/getPageLayoutById/getPageLayoutByIdHandler';
+import { GetPageLayoutByRefQuery } from '@contexts/contentEditor/application/query/getPageLayoutByRef/getPageLayoutByRefQuery';
+import { GetPageLayoutByRefHandler } from '@contexts/contentEditor/application/query/getPageLayoutByRef/getPageLayoutByRefHandler';
+import { ListMediaImagesQuery } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesQuery';
+import { ListMediaImagesHandler } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesHandler';
+
 import { EntityManager } from '@mikro-orm/postgresql';
 import { PostgresOwnerNumberSequence } from '@shared/infrastructure/sequence/postgresOwnerNumberSequence';
 import { UserRepository } from '@contexts/user/infrastructure/repository/userRepository';
@@ -130,6 +149,7 @@ import { ProjectRepository } from '@contexts/project/infrastructure/repository/p
 import { FeatureRepository } from '@contexts/feature/infrastructure/repository/featureRepository';
 import { TicketRepository } from '@contexts/ticket/infrastructure/repository/ticketRepository';
 import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRepository';
+import { PageLayoutRepository } from '@contexts/contentEditor/infrastructure/repository/pageLayoutRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
 import { ILogger } from '@shared/application/port/iLogger';
 
@@ -147,6 +167,7 @@ export function bootstrap(
         feature: new FeatureRepository(em),
         ticket: new TicketRepository(em),
         idea: new IdeaRepository(em),
+        pageLayout: new PageLayoutRepository(em),
     };
     const commandBus = new CommandBus();
     const queryBus = new QueryBus();
@@ -182,6 +203,7 @@ export function bootstrap(
     const featureFactory = new FeatureFactory();
     const ticketFactory = new TicketFactory();
     const ideaFactory = new IdeaFactory();
+    const pageLayoutFactory = new PageLayoutFactory();
 
     // User
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
@@ -276,6 +298,22 @@ export function bootstrap(
     commandBus.register(
         ConvertIdeaToProjectCommand.commandName,
         new ConvertIdeaToProjectHandler(repos.idea, ideaFeaturesGateway, projectCreationGateway, transactions),
+    );
+
+    // ContentEditor
+    commandBus.register(
+        CreatePageLayoutCommand.commandName,
+        new CreatePageLayoutHandler(repos.pageLayout, pageLayoutFactory),
+    );
+    commandBus.register(AddSectionCommand.commandName, new AddSectionHandler(repos.pageLayout));
+    commandBus.register(RemoveSectionCommand.commandName, new RemoveSectionHandler(repos.pageLayout, uploads));
+    commandBus.register(MoveSectionCommand.commandName, new MoveSectionHandler(repos.pageLayout));
+    commandBus.register(UpdateSectionContentCommand.commandName, new UpdateSectionContentHandler(repos.pageLayout));
+    queryBus.register(GetPageLayoutByIdQuery.queryName, new GetPageLayoutByIdHandler(repos.pageLayout));
+    queryBus.register(GetPageLayoutByRefQuery.queryName, new GetPageLayoutByRefHandler(repos.pageLayout));
+    queryBus.register(
+        ListMediaImagesQuery.queryName,
+        new ListMediaImagesHandler(repos.project, repos.feature, repos.ticket),
     );
 
     return { commandBus, queryBus };

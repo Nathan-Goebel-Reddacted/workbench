@@ -1,6 +1,15 @@
 import { Entity, PrimaryKey, Property, Unique } from '@mikro-orm/core';
 
-type SectionRow = { id: string; type: string; contentRef: string; column: number; order: number };
+type SectionRow = {
+    id: string;
+    type: string;
+    contentRef?: string | null;
+    content?: Record<string, unknown>;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+};
 
 @Entity({ tableName: 'page_layouts' })
 @Unique({ properties: ['pageType', 'pageRef'] })

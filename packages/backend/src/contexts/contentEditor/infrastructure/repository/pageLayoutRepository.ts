@@ -25,24 +25,23 @@ export class PageLayoutRepository implements IPageLayoutRepository {
     }
 
     async save(pageLayout: PageLayout): Promise<void> {
-        await this.em.transactional(async (em) => {
+        await this.em.transactional(async em => {
             await em.upsert(PageLayoutOrmEntity, this.toOrm(pageLayout));
         });
     }
 
     private toDomain(e: PageLayoutOrmEntity): PageLayout {
-        const sections = e.sections.map(s => new Section(
-            new SectionId(s.id),
-            s.type as SectionType,
-            new ContentRef(s.contentRef),
-            new GridPosition(s.column, s.order),
-        ));
-        return new PageLayout(
-            new PageLayoutId(e.id),
-            e.pageType as PageType,
-            new PageRef(e.pageRef),
-            sections,
+        const sections = e.sections.map(
+            s =>
+                new Section(
+                    new SectionId(s.id),
+                    s.type as SectionType,
+                    s.contentRef ? new ContentRef(s.contentRef) : null,
+                    s.content ?? {},
+                    new GridPosition(s.x, s.y, s.w, s.h),
+                ),
         );
+        return new PageLayout(new PageLayoutId(e.id), e.pageType as PageType, new PageRef(e.pageRef), sections);
     }
 
     private toOrm(pageLayout: PageLayout): PageLayoutOrmEntity {
@@ -53,9 +52,12 @@ export class PageLayoutRepository implements IPageLayoutRepository {
         e.sections = pageLayout.getSections().map(s => ({
             id: s.getId().getValue(),
             type: s.getType(),
-            contentRef: s.getContentRef().getValue(),
-            column: s.getPosition().getColumn(),
-            order: s.getPosition().getOrder(),
+            contentRef: s.getContentRef()?.getValue() ?? null,
+            content: s.getContent(),
+            x: s.getPosition().getX(),
+            y: s.getPosition().getY(),
+            w: s.getPosition().getW(),
+            h: s.getPosition().getH(),
         }));
         return e;
     }
