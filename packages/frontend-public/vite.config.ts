@@ -11,6 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@atelier/shared-ui': path.resolve(__dirname, '../shared-ui/src'),
+      '@atelier/content-renderer': path.resolve(__dirname, '../content-renderer/src'),
     },
   },
 })
