@@ -1,8 +1,9 @@
-import { IQueryHandler } from "@shared/application/query/iQueryHandler";
-import { GetIdeaByIdQuery } from "./getIdeaByIdQuery";
-import { IdeaDto } from "./ideaDto";
-import { IIdeaRepository } from "../../../domain/repository/iIdeaRepository";
-import { Idea } from "../../../domain/ideaAggregate";
+import { IQueryHandler } from '@shared/application/query/iQueryHandler';
+import { GetIdeaByIdQuery } from './getIdeaByIdQuery';
+import { IdeaDto } from './ideaDto';
+import { IIdeaRepository } from '../../../domain/repository/iIdeaRepository';
+import { Idea } from '../../../domain/ideaAggregate';
+import { formatSegment } from '@shared/domain/valueObject/referenceSegment';
 
 export class GetIdeaByIdHandler implements IQueryHandler<GetIdeaByIdQuery, IdeaDto | null> {
     constructor(private readonly repository: IIdeaRepository) {}
@@ -16,7 +17,12 @@ export class GetIdeaByIdHandler implements IQueryHandler<GetIdeaByIdQuery, IdeaD
     private toDto(idea: Idea): IdeaDto {
         return {
             id: idea.getId().getValue(),
+            number: idea.getNumber(),
+            reference: formatSegment(idea.getNumber()),
+            name: idea.getName().getValue(),
             description: idea.getDescription().getValue(),
+            createdAt: idea.getCreatedAt().toISOString(),
+            category: idea.getCategory(),
             links: idea.getLinks().map(l => ({
                 url: l.getUrl(),
                 displayText: l.getDisplayText(),

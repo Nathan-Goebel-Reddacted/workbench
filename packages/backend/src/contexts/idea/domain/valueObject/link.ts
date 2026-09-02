@@ -1,5 +1,5 @@
-import { InvalidLogoException } from "../exception/invalidLogo";
-import { InvalidLinkUrlException } from "../exception/invalidLinkUrl";
+import { InvalidLogoException } from '../exception/invalidLogo';
+import { InvalidLinkUrlException } from '../exception/invalidLinkUrl';
 
 const VALID_LOGO_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.svg', '.webp'];
 

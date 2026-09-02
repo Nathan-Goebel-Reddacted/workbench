@@ -72,6 +72,10 @@ import { GetFeaturesByOwnerHandler } from '@contexts/feature/application/query/g
 import { OwnerGateway } from '@contexts/feature/infrastructure/gateway/ownerGateway';
 import { FeatureGateway } from '@contexts/ticket/infrastructure/gateway/featureGateway';
 import { FeatureTicketsGateway } from '@contexts/feature/infrastructure/gateway/featureTicketsGateway';
+import { IdeaFeaturesGateway } from '@contexts/idea/infrastructure/gateway/ideaFeaturesGateway';
+import { ProjectCreationGateway } from '@contexts/idea/infrastructure/gateway/projectCreationGateway';
+import { ConvertIdeaToProjectCommand } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectCommand';
+import { ConvertIdeaToProjectHandler } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectHandler';
 import { MikroOrmTransactionRunner } from '@shared/infrastructure/persistence/mikroOrmTransactionRunner';
 
 // --- Ticket ---
@@ -97,6 +101,27 @@ import { GetTicketByIdHandler } from '@contexts/ticket/application/query/getTick
 import { GetTicketsByFeatureIdQuery } from '@contexts/ticket/application/query/getTicketsByFeatureId/getTicketsByFeatureIdQuery';
 import { GetTicketsByFeatureIdHandler } from '@contexts/ticket/application/query/getTicketsByFeatureId/getTicketsByFeatureIdHandler';
 
+// --- Idea ---
+import { IdeaFactory } from '@contexts/idea/domain/factory/ideaFactory';
+import { CreateIdeaCommand } from '@contexts/idea/application/command/createIdea/createIdeaCommand';
+import { CreateIdeaHandler } from '@contexts/idea/application/command/createIdea/createIdeaHandler';
+import { UpdateIdeaCommand } from '@contexts/idea/application/command/updateIdea/updateIdeaCommand';
+import { UpdateIdeaHandler } from '@contexts/idea/application/command/updateIdea/updateIdeaHandler';
+import { DeleteIdeaCommand } from '@contexts/idea/application/command/deleteIdea/deleteIdeaCommand';
+import { DeleteIdeaHandler } from '@contexts/idea/application/command/deleteIdea/deleteIdeaHandler';
+import { AddIdeaDocumentCommand } from '@contexts/idea/application/command/addIdeaDocument/addIdeaDocumentCommand';
+import { AddIdeaDocumentHandler } from '@contexts/idea/application/command/addIdeaDocument/addIdeaDocumentHandler';
+import { RemoveIdeaDocumentCommand } from '@contexts/idea/application/command/removeIdeaDocument/removeIdeaDocumentCommand';
+import { RemoveIdeaDocumentHandler } from '@contexts/idea/application/command/removeIdeaDocument/removeIdeaDocumentHandler';
+import { AddIdeaLinkCommand } from '@contexts/idea/application/command/addIdeaLink/addIdeaLinkCommand';
+import { AddIdeaLinkHandler } from '@contexts/idea/application/command/addIdeaLink/addIdeaLinkHandler';
+import { RemoveIdeaLinkCommand } from '@contexts/idea/application/command/removeIdeaLink/removeIdeaLinkCommand';
+import { RemoveIdeaLinkHandler } from '@contexts/idea/application/command/removeIdeaLink/removeIdeaLinkHandler';
+import { GetIdeaByIdQuery } from '@contexts/idea/application/query/getIdeaById/getIdeaByIdQuery';
+import { GetIdeaByIdHandler } from '@contexts/idea/application/query/getIdeaById/getIdeaByIdHandler';
+import { ListIdeasQuery } from '@contexts/idea/application/query/listIdeas/listIdeasQuery';
+import { ListIdeasHandler } from '@contexts/idea/application/query/listIdeas/listIdeasHandler';
+
 import { EntityManager } from '@mikro-orm/postgresql';
 import { PostgresOwnerNumberSequence } from '@shared/infrastructure/sequence/postgresOwnerNumberSequence';
 import { UserRepository } from '@contexts/user/infrastructure/repository/userRepository';
@@ -104,6 +129,7 @@ import { PortfolioRepository } from '@contexts/portfolio/infrastructure/reposito
 import { ProjectRepository } from '@contexts/project/infrastructure/repository/projectRepository';
 import { FeatureRepository } from '@contexts/feature/infrastructure/repository/featureRepository';
 import { TicketRepository } from '@contexts/ticket/infrastructure/repository/ticketRepository';
+import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
 import { ILogger } from '@shared/application/port/iLogger';
 
@@ -120,6 +146,7 @@ export function bootstrap(
         project: new ProjectRepository(em),
         feature: new FeatureRepository(em),
         ticket: new TicketRepository(em),
+        idea: new IdeaRepository(em),
     };
     const commandBus = new CommandBus();
     const queryBus = new QueryBus();
@@ -128,9 +155,16 @@ export function bootstrap(
     // Le stockage compte les références restantes avant de supprimer quoi que ce soit.
     const uploads = new UploadStorage(em);
 
+    // Un seul exécutant de transaction pour tous les cas d'usage multi-dépôts.
+    const transactions = new MikroOrmTransactionRunner(em);
+
     // Séquence partagée par les projets et les idées : c'est elle qui rend la conversion
     // transparente pour les références de tickets.
     const ownerNumbers = new PostgresOwnerNumberSequence(em);
+
+    // Seul point de contact entre le contexte Feature et ses porteurs : il pose les questions,
+    // Project et Idea répondent chacun pour eux-mêmes.
+    const ownerGateway = new OwnerGateway(repos.project, repos.idea);
 
     // Le contexte Ticket interroge le contexte Feature par son contrat public — la query — et
     // c'est Feature qui remonte jusqu'au porteur. Ticket ne connaît ni Project ni Idea.
@@ -139,12 +173,15 @@ export function bootstrap(
     // Cascades : chaque contexte annonce sa disparition au suivant, personne ne supprime chez
     // le voisin. Feature -> Ticket, puis Idea -> Feature.
     const featureTicketsGateway = new FeatureTicketsGateway(repos.ticket);
+    const ideaFeaturesGateway = new IdeaFeaturesGateway(repos.feature, featureTicketsGateway);
+    const projectCreationGateway = new ProjectCreationGateway(commandBus);
 
     const userFactory = new UserFactory();
     const portfolioFactory = new PortfolioFactory();
     const projectFactory = new ProjectFactory();
     const featureFactory = new FeatureFactory();
     const ticketFactory = new TicketFactory();
+    const ideaFactory = new IdeaFactory();
 
     // User
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
@@ -224,6 +261,21 @@ export function bootstrap(
     queryBus.register(
         GetTicketsByFeatureIdQuery.queryName,
         new GetTicketsByFeatureIdHandler(repos.ticket, featureGateway),
+    );
+
+    // Idea
+    commandBus.register(CreateIdeaCommand.commandName, new CreateIdeaHandler(repos.idea, ideaFactory, ownerNumbers));
+    commandBus.register(UpdateIdeaCommand.commandName, new UpdateIdeaHandler(repos.idea));
+    commandBus.register(DeleteIdeaCommand.commandName, new DeleteIdeaHandler(repos.idea, ideaFeaturesGateway, uploads));
+    commandBus.register(AddIdeaDocumentCommand.commandName, new AddIdeaDocumentHandler(repos.idea));
+    commandBus.register(RemoveIdeaDocumentCommand.commandName, new RemoveIdeaDocumentHandler(repos.idea, uploads));
+    commandBus.register(AddIdeaLinkCommand.commandName, new AddIdeaLinkHandler(repos.idea));
+    commandBus.register(RemoveIdeaLinkCommand.commandName, new RemoveIdeaLinkHandler(repos.idea));
+    queryBus.register(GetIdeaByIdQuery.queryName, new GetIdeaByIdHandler(repos.idea));
+    queryBus.register(ListIdeasQuery.queryName, new ListIdeasHandler(repos.idea));
+    commandBus.register(
+        ConvertIdeaToProjectCommand.commandName,
+        new ConvertIdeaToProjectHandler(repos.idea, ideaFeaturesGateway, projectCreationGateway, transactions),
     );
 
     return { commandBus, queryBus };

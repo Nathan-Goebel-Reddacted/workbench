@@ -1,5 +1,4 @@
 export class Description {
-
     private readonly value: string;
 
     constructor(value: string = '') {

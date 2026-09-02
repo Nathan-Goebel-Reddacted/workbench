@@ -1,7 +1,7 @@
-import { Query } from "@shared/application/query/query";
+import { Query } from '@shared/application/query/query';
 
 export class GetIdeaByIdQuery implements Query {
-    static readonly queryName = "idea.GetIdeaById";
+    static readonly queryName = 'idea.GetIdeaById';
     readonly queryName: string;
 
     constructor(readonly id: string) {
