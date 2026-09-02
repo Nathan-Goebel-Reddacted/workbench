@@ -1,16 +1,23 @@
-import { ICommandHandler } from "@shared/application/command/iCommandHandler";
-import { RemoveSectionCommand } from "./removeSectionCommand";
-import { IPageLayoutRepository } from "../../../domain/repository/iPageLayoutRepository";
-import { SectionId } from "../../../domain/valueObject/sectionId";
-import { NotFoundError } from "@shared/application/errors/notFoundError";
+import { ICommandHandler } from '@shared/application/command/iCommandHandler';
+import { RemoveSectionCommand } from './removeSectionCommand';
+import { IPageLayoutRepository } from '../../../domain/repository/iPageLayoutRepository';
+import { SectionId } from '../../../domain/valueObject/sectionId';
+import { NotFoundError } from '@shared/application/errors/notFoundError';
+import { IUploadStorage } from '@shared/application/port/iUploadStorage';
 
 export class RemoveSectionHandler implements ICommandHandler<RemoveSectionCommand> {
-    constructor(private readonly repository: IPageLayoutRepository) {}
+    constructor(
+        private readonly repository: IPageLayoutRepository,
+        private readonly uploads: IUploadStorage,
+    ) {}
 
     async handle(command: RemoveSectionCommand): Promise<void> {
         const pageLayout = await this.repository.findById(command.pageLayoutId);
-        if (!pageLayout) throw new NotFoundError("PageLayout", command.pageLayoutId);
+        if (!pageLayout) throw new NotFoundError('PageLayout', command.pageLayoutId);
+        const removed = pageLayout.getSections().find(s => s.getId().getValue() === command.sectionId);
         pageLayout.removeSection(new SectionId(command.sectionId));
         await this.repository.save(pageLayout);
+        // Le contenu est du JSON libre : le stockage y cherche lui-même les URLs.
+        if (removed) await this.uploads.releaseFrom(removed.getContent());
     }
 }

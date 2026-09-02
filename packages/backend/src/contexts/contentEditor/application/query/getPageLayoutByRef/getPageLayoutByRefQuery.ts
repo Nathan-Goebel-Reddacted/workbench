@@ -1,7 +1,7 @@
-import { Query } from "@shared/application/query/query";
+import { Query } from '@shared/application/query/query';
 
 export class GetPageLayoutByRefQuery implements Query {
-    static readonly queryName = "contentEditor.GetPageLayoutByRef";
+    static readonly queryName = 'contentEditor.GetPageLayoutByRef';
     readonly queryName: string;
 
     constructor(

@@ -1,7 +1,7 @@
-import { Command } from "@shared/application/command/command";
+import { Command } from '@shared/application/command/command';
 
 export class CreatePageLayoutCommand implements Command {
-    static readonly commandName = "contentEditor.CreatePageLayout";
+    static readonly commandName = 'contentEditor.CreatePageLayout';
     readonly commandName: string;
 
     constructor(

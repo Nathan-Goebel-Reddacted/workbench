@@ -1,7 +1,7 @@
-import { Command } from "@shared/application/command/command";
+import { Command } from '@shared/application/command/command';
 
 export class RemoveSectionCommand implements Command {
-    static readonly commandName = "contentEditor.RemoveSection";
+    static readonly commandName = 'contentEditor.RemoveSection';
     readonly commandName: string;
 
     constructor(

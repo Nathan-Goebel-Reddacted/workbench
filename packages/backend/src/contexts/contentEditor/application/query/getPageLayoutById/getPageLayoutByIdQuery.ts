@@ -1,7 +1,7 @@
-import { Query } from "@shared/application/query/query";
+import { Query } from '@shared/application/query/query';
 
 export class GetPageLayoutByIdQuery implements Query {
-    static readonly queryName = "contentEditor.GetPageLayoutById";
+    static readonly queryName = 'contentEditor.GetPageLayoutById';
     readonly queryName: string;
 
     constructor(readonly id: string) {

@@ -5,8 +5,11 @@ export type PageLayoutDto = Readonly<{
     sections: Array<{
         id: string;
         type: string;
-        contentRef: string;
-        column: number;
-        order: number;
+        contentRef: string | null;
+        content: Record<string, unknown>;
+        x: number;
+        y: number;
+        w: number;
+        h: number;
     }>;
 }>;

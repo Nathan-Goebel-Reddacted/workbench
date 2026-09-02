@@ -1,7 +1,7 @@
-import { ICommandHandler } from "@shared/application/command/iCommandHandler";
-import { CreatePageLayoutCommand } from "./createPageLayoutCommand";
-import { IPageLayoutRepository } from "../../../domain/repository/iPageLayoutRepository";
-import { PageLayoutFactory } from "../../../domain/factory/pageLayoutFactory";
+import { ICommandHandler } from '@shared/application/command/iCommandHandler';
+import { CreatePageLayoutCommand } from './createPageLayoutCommand';
+import { IPageLayoutRepository } from '../../../domain/repository/iPageLayoutRepository';
+import { PageLayoutFactory } from '../../../domain/factory/pageLayoutFactory';
 
 export class CreatePageLayoutHandler implements ICommandHandler<CreatePageLayoutCommand> {
     constructor(

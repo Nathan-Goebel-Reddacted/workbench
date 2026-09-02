@@ -1,8 +1,8 @@
-import { IQueryHandler } from "@shared/application/query/iQueryHandler";
-import { GetPageLayoutByIdQuery } from "./getPageLayoutByIdQuery";
-import { PageLayoutDto } from "./pageLayoutDto";
-import { IPageLayoutRepository } from "../../../domain/repository/iPageLayoutRepository";
-import { PageLayout } from "../../../domain/pageLayoutAggregate";
+import { IQueryHandler } from '@shared/application/query/iQueryHandler';
+import { GetPageLayoutByIdQuery } from './getPageLayoutByIdQuery';
+import { PageLayoutDto } from './pageLayoutDto';
+import { IPageLayoutRepository } from '../../../domain/repository/iPageLayoutRepository';
+import { PageLayout } from '../../../domain/pageLayoutAggregate';
 
 export class GetPageLayoutByIdHandler implements IQueryHandler<GetPageLayoutByIdQuery, PageLayoutDto | null> {
     constructor(private readonly repository: IPageLayoutRepository) {}
@@ -21,9 +21,12 @@ export class GetPageLayoutByIdHandler implements IQueryHandler<GetPageLayoutById
             sections: pageLayout.getSections().map(s => ({
                 id: s.getId().getValue(),
                 type: s.getType(),
-                contentRef: s.getContentRef().getValue(),
-                column: s.getPosition().getColumn(),
-                order: s.getPosition().getOrder(),
+                contentRef: s.getContentRef()?.getValue() ?? null,
+                content: s.getContent(),
+                x: s.getPosition().getX(),
+                y: s.getPosition().getY(),
+                w: s.getPosition().getW(),
+                h: s.getPosition().getH(),
             })),
         };
     }
