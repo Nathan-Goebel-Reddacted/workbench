@@ -18,9 +18,7 @@ type ThemeProviderProps = {
 }
 
 export function ThemeProvider({ children, apiUrl }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(
-    () => (localStorage.getItem('theme') as Theme) ?? 'light'
-  )
+  const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) ?? 'light')
 
   const [customColors, setCustomColors] = useState<Record<string, string>>(() => {
     try {
@@ -43,7 +41,7 @@ export function ThemeProvider({ children, apiUrl }: ThemeProviderProps) {
   useEffect(() => {
     if (!apiUrl) return
     fetch(`${apiUrl}/theme`)
-      .then(res => res.ok ? res.json() as Promise<{ customColors: Record<string, string> }> : null)
+      .then(res => (res.ok ? (res.json() as Promise<{ customColors: Record<string, string> }>) : null))
       .then(data => {
         if (!data) return
         setCustomColors(data.customColors)

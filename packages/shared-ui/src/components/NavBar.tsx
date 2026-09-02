@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 export type NavLink = { label: string; to: string }
@@ -6,18 +6,23 @@ export type NavLink = { label: string; to: string }
 type NavBarProps = {
   brand: string
   links?: NavLink[]
+  /** Rendu à droite des liens : déconnexion, bascule de thème, ce que la page ajoute. */
+  actions?: ReactNode
 }
 
-export function NavBar({ brand, links = [] }: NavBarProps) {
+export function NavBar({ brand, links = [], actions }: NavBarProps) {
   return (
     <nav style={navStyle}>
-      <Link to="/" style={brandStyle}>{brand}</Link>
+      <Link to="/" style={brandStyle}>
+        {brand}
+      </Link>
       <div style={rightStyle}>
-        {links.map((link) => (
+        {links.map(link => (
           <Link key={link.to} to={link.to} style={linkStyle}>
             {link.label}
           </Link>
         ))}
+        {actions}
       </div>
     </nav>
   )
@@ -51,4 +56,3 @@ const linkStyle: CSSProperties = {
   textDecoration: 'none',
   fontSize: '0.875rem',
 }
-

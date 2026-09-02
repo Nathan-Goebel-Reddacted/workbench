@@ -8,6 +8,8 @@ type AuthContextValue = {
   user: AuthUser | null
   loading: boolean
   fetchError: boolean
+  logout: () => Promise<void>
+  logoutEverywhere: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -19,7 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetch(`${API_URL}/auth/me`, { credentials: 'include' })
-      .then((res) => {
+      .then(res => {
         if (res.status === 401) {
           setUser(null)
         } else if (!res.ok) {
@@ -32,8 +34,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false))
   }, [])
 
+  // Le cookie de session est httpOnly : seul le serveur peut l'effacer, le navigateur
+  // n'y a pas accès. La déconnexion est donc un aller-retour, pas un nettoyage local.
+  async function endSession(route: string) {
+    try {
+      await fetch(`${API_URL}${route}`, { method: 'POST', credentials: 'include' })
+    } finally {
+      setUser(null)
+    }
+  }
+
+  const logout = () => endSession('/auth/logout')
+  // Fait tomber aussi les sessions ouvertes sur les autres appareils.
+  const logoutEverywhere = () => endSession('/auth/logout-everywhere')
+
   return (
-    <AuthContext.Provider value={{ user, loading, fetchError }}>
+    <AuthContext.Provider value={{ user, loading, fetchError, logout, logoutEverywhere }}>
       {children}
     </AuthContext.Provider>
   )

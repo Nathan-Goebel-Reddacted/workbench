@@ -47,7 +47,7 @@ const disabledStyle: CSSProperties = {
 const variantStyles: Record<ButtonVariant, CSSProperties> = {
   primary: {
     backgroundColor: 'var(--color-primary)',
-    color: '#ffffff',
+    color: 'var(--color-on-primary)',
     borderColor: 'var(--color-primary)',
   },
   secondary: {

@@ -8,7 +8,12 @@ type ColorPickerProps = {
 }
 
 function randomHex(): string {
-  return '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0')
+  return (
+    '#' +
+    Math.floor(Math.random() * 0xffffff)
+      .toString(16)
+      .padStart(6, '0')
+  )
 }
 
 export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
@@ -24,7 +29,7 @@ export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
         <input
           type="color"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={e => onChange(e.target.value)}
           style={colorSwatchStyle}
           title={`Choisir ${label}`}
         />
@@ -32,7 +37,7 @@ export function ColorPicker({ label, value, onChange }: ColorPickerProps) {
           type="text"
           defaultValue={value}
           key={value}
-          onChange={(e) => handleTextChange(e.target.value)}
+          onChange={e => handleTextChange(e.target.value)}
           maxLength={7}
           style={hexInputStyle}
           placeholder="#000000"
