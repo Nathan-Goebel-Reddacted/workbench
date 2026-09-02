@@ -1611,22 +1611,6 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "json"
-        },
-        "token_version": {
-          "name": "token_version",
-          "type": "int4",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": false,
-          "unique": false,
-          "length": null,
-          "precision": 32,
-          "scale": 0,
-          "default": "0",
-          "comment": null,
-          "enumItems": [],
-          "mappedType": "integer"
         }
       },
       "name": "users",
