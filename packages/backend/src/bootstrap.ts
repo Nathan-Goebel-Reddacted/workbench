@@ -31,12 +31,34 @@ import { GetPortfolioByIdQuery } from '@contexts/portfolio/application/query/get
 import { GetPortfolioByIdHandler } from '@contexts/portfolio/application/query/getPortfolioById/getPortfolioByIdHandler';
 import { GetPortfolioQuery } from '@contexts/portfolio/application/query/getPortfolio/getPortfolioQuery';
 import { GetPortfolioHandler } from '@contexts/portfolio/application/query/getPortfolio/getPortfolioHandler';
+
+// --- Project ---
+import { ProjectFactory } from '@contexts/project/domain/factory/projectFactory';
+import { CreateProjectCommand } from '@contexts/project/application/command/createProject/createProjectCommand';
+import { CreateProjectHandler } from '@contexts/project/application/command/createProject/createProjectHandler';
+import { AddProjectDocumentCommand } from '@contexts/project/application/command/addProjectDocument/addProjectDocumentCommand';
+import { AddProjectDocumentHandler } from '@contexts/project/application/command/addProjectDocument/addProjectDocumentHandler';
+import { RemoveProjectDocumentCommand } from '@contexts/project/application/command/removeProjectDocument/removeProjectDocumentCommand';
+import { RemoveProjectDocumentHandler } from '@contexts/project/application/command/removeProjectDocument/removeProjectDocumentHandler';
+import { AddProjectLinkCommand } from '@contexts/project/application/command/addProjectLink/addProjectLinkCommand';
+import { AddProjectLinkHandler } from '@contexts/project/application/command/addProjectLink/addProjectLinkHandler';
+import { RemoveProjectLinkCommand } from '@contexts/project/application/command/removeProjectLink/removeProjectLinkCommand';
+import { RemoveProjectLinkHandler } from '@contexts/project/application/command/removeProjectLink/removeProjectLinkHandler';
+import { GetProjectByIdQuery } from '@contexts/project/application/query/getProjectById/getProjectByIdQuery';
+import { GetProjectByIdHandler } from '@contexts/project/application/query/getProjectById/getProjectByIdHandler';
+import { ListProjectsQuery } from '@contexts/project/application/query/listProjects/listProjectsQuery';
+import { ListProjectsHandler } from '@contexts/project/application/query/listProjects/listProjectsHandler';
+import { UpdateProjectCommand } from '@contexts/project/application/command/updateProject/updateProjectCommand';
+import { UpdateProjectHandler } from '@contexts/project/application/command/updateProject/updateProjectHandler';
+import { UpdateProjectVisibilityCommand } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityCommand';
+import { UpdateProjectVisibilityHandler } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityHandler';
 import { MikroOrmTransactionRunner } from '@shared/infrastructure/persistence/mikroOrmTransactionRunner';
 
 import { EntityManager } from '@mikro-orm/postgresql';
 import { PostgresOwnerNumberSequence } from '@shared/infrastructure/sequence/postgresOwnerNumberSequence';
 import { UserRepository } from '@contexts/user/infrastructure/repository/userRepository';
 import { PortfolioRepository } from '@contexts/portfolio/infrastructure/repository/portfolioRepository';
+import { ProjectRepository } from '@contexts/project/infrastructure/repository/projectRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
 import { ILogger } from '@shared/application/port/iLogger';
 
@@ -50,12 +72,22 @@ export function bootstrap(
     const repos = {
         user: new UserRepository(em),
         portfolio: new PortfolioRepository(em),
+        project: new ProjectRepository(em),
     };
     const commandBus = new CommandBus();
     const queryBus = new QueryBus();
 
+    // Les fichiers uploadés n'appartiennent à aucun agrégat : plusieurs peuvent citer le même.
+    // Le stockage compte les références restantes avant de supprimer quoi que ce soit.
+    const uploads = new UploadStorage(em);
+
+    // Séquence partagée par les projets et les idées : c'est elle qui rend la conversion
+    // transparente pour les références de tickets.
+    const ownerNumbers = new PostgresOwnerNumberSequence(em);
+
     const userFactory = new UserFactory();
     const portfolioFactory = new PortfolioFactory();
+    const projectFactory = new ProjectFactory();
 
     // User
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
@@ -77,6 +109,23 @@ export function bootstrap(
     );
     queryBus.register(GetPortfolioByIdQuery.queryName, new GetPortfolioByIdHandler(repos.portfolio));
     queryBus.register(GetPortfolioQuery.queryName, new GetPortfolioHandler(repos.portfolio));
+
+    // Project
+    commandBus.register(
+        CreateProjectCommand.commandName,
+        new CreateProjectHandler(repos.project, projectFactory, ownerNumbers),
+    );
+    commandBus.register(AddProjectDocumentCommand.commandName, new AddProjectDocumentHandler(repos.project));
+    commandBus.register(
+        RemoveProjectDocumentCommand.commandName,
+        new RemoveProjectDocumentHandler(repos.project, uploads),
+    );
+    commandBus.register(AddProjectLinkCommand.commandName, new AddProjectLinkHandler(repos.project));
+    commandBus.register(RemoveProjectLinkCommand.commandName, new RemoveProjectLinkHandler(repos.project));
+    queryBus.register(GetProjectByIdQuery.queryName, new GetProjectByIdHandler(repos.project));
+    queryBus.register(ListProjectsQuery.queryName, new ListProjectsHandler(repos.project));
+    commandBus.register(UpdateProjectCommand.commandName, new UpdateProjectHandler(repos.project));
+    commandBus.register(UpdateProjectVisibilityCommand.commandName, new UpdateProjectVisibilityHandler(repos.project));
 
     return { commandBus, queryBus };
 }

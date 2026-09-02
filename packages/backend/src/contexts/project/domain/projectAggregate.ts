@@ -1,18 +1,39 @@
-import { Description } from "./valueObject/description";
-import { Link } from "./valueObject/link";
-import { ProjectId } from "./valueObject/projectId";
-import { Document } from "@shared/domain/entity/document";
-import { DocumentId } from "@shared/domain/valueObject/documentId";
+import { Description } from './valueObject/description';
+import { Link } from './valueObject/link';
+import { Name } from './valueObject/name';
+import { ProjectId } from './valueObject/projectId';
+import { Category } from './valueObject/category';
+import { Document } from '@shared/domain/entity/document';
+import { DocumentId } from '@shared/domain/valueObject/documentId';
 
 export class Project {
     private readonly id: ProjectId;
-    private readonly description: Description;
+    /** Numéro de porteur, premier segment des références de tickets. Immuable une fois attribué. */
+    private readonly number: number;
+    private name: Name;
+    private description: Description;
+    private visible: boolean;
+    private category: Category;
     private documents: Document[];
     private links: Link[];
 
-    constructor(id: ProjectId, description: Description, documents: Document[] = [], links: Link[] = []) {
+    constructor(
+        id: ProjectId,
+        number: number,
+        name: Name,
+        description: Description,
+        documents: Document[] = [],
+        links: Link[] = [],
+        // Un projet naît privé : le publier est un geste volontaire, pas un défaut subi.
+        visible: boolean = false,
+        category: Category = Category.Personal,
+    ) {
         this.id = id;
+        this.number = number;
+        this.name = name;
         this.description = description;
+        this.visible = visible;
+        this.category = category;
         this.documents = documents.filter(d => d != null);
         this.links = links;
     }
@@ -21,8 +42,40 @@ export class Project {
         return this.id;
     }
 
+    getNumber(): number {
+        return this.number;
+    }
+
+    getName(): Name {
+        return this.name;
+    }
+
     getDescription(): Description {
         return this.description;
+    }
+
+    getVisible(): boolean {
+        return this.visible;
+    }
+
+    getCategory(): Category {
+        return this.category;
+    }
+
+    setName(name: Name): void {
+        this.name = name;
+    }
+
+    setDescription(description: Description): void {
+        this.description = description;
+    }
+
+    setVisible(visible: boolean): void {
+        this.visible = visible;
+    }
+
+    setCategory(category: Category): void {
+        this.category = category;
     }
 
     getDocuments(): Document[] {

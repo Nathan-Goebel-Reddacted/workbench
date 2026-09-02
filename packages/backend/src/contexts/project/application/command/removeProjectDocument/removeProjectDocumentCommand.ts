@@ -1,7 +1,7 @@
-import { Command } from "@shared/application/command/command";
+import { Command } from '@shared/application/command/command';
 
 export class RemoveProjectDocumentCommand implements Command {
-    static readonly commandName = "project.RemoveProjectDocument";
+    static readonly commandName = 'project.RemoveProjectDocument';
     readonly commandName: string;
 
     constructor(

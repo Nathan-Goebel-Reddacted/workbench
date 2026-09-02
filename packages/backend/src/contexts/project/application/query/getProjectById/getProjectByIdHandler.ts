@@ -1,8 +1,9 @@
-import { IQueryHandler } from "@shared/application/query/iQueryHandler";
-import { GetProjectByIdQuery } from "./getProjectByIdQuery";
-import { ProjectDto } from "./projectDto";
-import { IProjectRepository } from "../../../domain/repository/iProjectRepository";
-import { Project } from "../../../domain/projectAggregate";
+import { IQueryHandler } from '@shared/application/query/iQueryHandler';
+import { GetProjectByIdQuery } from './getProjectByIdQuery';
+import { ProjectDto } from './projectDto';
+import { IProjectRepository } from '../../../domain/repository/iProjectRepository';
+import { Project } from '../../../domain/projectAggregate';
+import { formatSegment } from '@shared/domain/valueObject/referenceSegment';
 
 export class GetProjectByIdHandler implements IQueryHandler<GetProjectByIdQuery, ProjectDto | null> {
     constructor(private readonly repository: IProjectRepository) {}
@@ -10,13 +11,20 @@ export class GetProjectByIdHandler implements IQueryHandler<GetProjectByIdQuery,
     async handle(query: GetProjectByIdQuery): Promise<ProjectDto | null> {
         const project = await this.repository.findById(query.id);
         if (!project) return null;
+        // Un projet caché est indiscernable d'un projet inexistant pour l'appelant anonyme.
+        if (!query.includeHidden && !project.getVisible()) return null;
         return this.toDto(project);
     }
 
     private toDto(project: Project): ProjectDto {
         return {
             id: project.getId().getValue(),
+            number: project.getNumber(),
+            reference: formatSegment(project.getNumber()),
+            name: project.getName().getValue(),
             description: project.getDescription().getValue(),
+            visible: project.getVisible(),
+            category: project.getCategory(),
             links: project.getLinks().map(l => ({
                 url: l.getUrl(),
                 displayText: l.getDisplayText(),

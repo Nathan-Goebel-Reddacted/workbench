@@ -1,7 +1,7 @@
-import { Command } from "@shared/application/command/command";
+import { Command } from '@shared/application/command/command';
 
 export class AddProjectDocumentCommand implements Command {
-    static readonly commandName = "project.AddProjectDocument";
+    static readonly commandName = 'project.AddProjectDocument';
     readonly commandName: string;
 
     constructor(
