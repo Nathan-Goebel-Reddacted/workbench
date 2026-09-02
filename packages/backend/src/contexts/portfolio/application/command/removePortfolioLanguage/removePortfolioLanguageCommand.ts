@@ -1,7 +1,7 @@
-import { Command } from "@shared/application/command/command";
+import { Command } from '@shared/application/command/command';
 
 export class RemovePortfolioLanguageCommand implements Command {
-    static readonly commandName = "portfolio.RemovePortfolioLanguage";
+    static readonly commandName = 'portfolio.RemovePortfolioLanguage';
     readonly commandName: string;
 
     constructor(

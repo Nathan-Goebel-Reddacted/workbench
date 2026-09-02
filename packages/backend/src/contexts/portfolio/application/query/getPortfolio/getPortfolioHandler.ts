@@ -1,14 +1,14 @@
 import { IQueryHandler } from '@shared/application/query/iQueryHandler';
-import { GetPortfolioByIdQuery } from './getPortfolioByIdQuery';
-import { PortfolioDto } from './portfolioDto';
+import { GetPortfolioQuery } from './getPortfolioQuery';
+import { PortfolioDto } from '../getPortfolioById/portfolioDto';
 import { IPortfolioRepository } from '../../../domain/repository/iPortfolioRepository';
 import { Portfolio } from '../../../domain/portfolioAggregate';
 
-export class GetPortfolioByIdHandler implements IQueryHandler<GetPortfolioByIdQuery, PortfolioDto | null> {
+export class GetPortfolioHandler implements IQueryHandler<GetPortfolioQuery, PortfolioDto | null> {
     constructor(private readonly repository: IPortfolioRepository) {}
 
-    async handle(query: GetPortfolioByIdQuery): Promise<PortfolioDto | null> {
-        const portfolio = await this.repository.findById(query.id);
+    async handle(): Promise<PortfolioDto | null> {
+        const portfolio = await this.repository.find();
         if (!portfolio) return null;
         return this.toDto(portfolio);
     }

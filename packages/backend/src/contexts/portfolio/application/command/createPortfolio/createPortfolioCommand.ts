@@ -1,17 +1,10 @@
-import { Command } from "@shared/application/command/command";
-
-type LinkInput = { url: string; displayText: string; logo: string };
+import { Command } from '@shared/application/command/command';
 
 export class CreatePortfolioCommand implements Command {
-    static readonly commandName = "portfolio.CreatePortfolio";
+    static readonly commandName = 'portfolio.CreatePortfolio';
     readonly commandName: string;
 
-    constructor(
-        readonly id: string,
-        readonly userId: string,
-        readonly description: string,
-        readonly links: LinkInput[],
-    ) {
+    constructor(readonly id: string) {
         this.commandName = CreatePortfolioCommand.commandName;
     }
 }

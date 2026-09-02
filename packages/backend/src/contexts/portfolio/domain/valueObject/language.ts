@@ -25,9 +25,8 @@ export enum LanguageEnum {
     SQL = 'sql',
     HTML = 'html',
     CSS = 'css',
-    OTHER = 'other'
+    OTHER = 'other',
 }
-
 
 export class Language {
     private readonly value: LanguageEnum;
