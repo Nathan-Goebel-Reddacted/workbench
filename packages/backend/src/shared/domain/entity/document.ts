@@ -1,7 +1,7 @@
-import { DocumentId } from "../valueObject/documentId";
-import { DocumentType } from "../valueObject/documentType";
-import { InvalidDocumentNameException } from "../exception/invalidDocumentName";
-import { InvalidDocumentUrlException } from "../exception/invalidDocumentUrl";
+import { DocumentId } from '../valueObject/documentId';
+import { DocumentType } from '../valueObject/documentType';
+import { InvalidDocumentNameException } from '../exception/invalidDocumentName';
+import { InvalidDocumentUrlException } from '../exception/invalidDocumentUrl';
 
 export class Document {
     private readonly id: DocumentId;

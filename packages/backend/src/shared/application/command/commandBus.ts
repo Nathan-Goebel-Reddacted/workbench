@@ -1,5 +1,5 @@
-import { Command } from "./command";
-import { ICommandHandler } from "./iCommandHandler";
+import { Command } from './command';
+import { ICommandHandler } from './iCommandHandler';
 
 export class CommandBus {
     private readonly handlers = new Map<string, ICommandHandler<Command>>();

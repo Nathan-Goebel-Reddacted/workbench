@@ -1,5 +1,5 @@
-import { Query } from "./query";
-import { IQueryHandler } from "./iQueryHandler";
+import { Query } from './query';
+import { IQueryHandler } from './iQueryHandler';
 
 export class QueryBus {
     private readonly handlers = new Map<string, IQueryHandler<Query, unknown>>();

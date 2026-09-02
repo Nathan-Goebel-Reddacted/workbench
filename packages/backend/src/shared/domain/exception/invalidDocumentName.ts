@@ -1,4 +1,4 @@
-import { DomainException } from "../domainException";
+import { DomainException } from '../domainException';
 
 export class InvalidDocumentNameException extends DomainException {
     constructor() {
