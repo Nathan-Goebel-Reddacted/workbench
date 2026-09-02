@@ -164,12 +164,16 @@ import { TicketRepository } from '@contexts/ticket/infrastructure/repository/tic
 import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRepository';
 import { PageLayoutRepository } from '@contexts/contentEditor/infrastructure/repository/pageLayoutRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
+import { ContactMessageRepository } from '@contexts/contact/infrastructure/repository/contactMessageRepository';
 import { CvRepository } from '@contexts/cv/infrastructure/repository/cvRepository';
+import { createMailer } from '@contexts/contact/infrastructure/mailer/createMailer';
 import { ILogger } from '@shared/application/port/iLogger';
+import { SubmitContactMessageCommand } from '@contexts/contact/application/command/submitContactMessage/submitContactMessageCommand';
+import { SubmitContactMessageHandler } from '@contexts/contact/application/command/submitContactMessage/submitContactMessageHandler';
 
 export function bootstrap(
     em: EntityManager,
-    _logger: ILogger,
+    logger: ILogger,
 ): {
     commandBus: CommandBus;
     queryBus: QueryBus;
@@ -182,6 +186,7 @@ export function bootstrap(
         ticket: new TicketRepository(em),
         idea: new IdeaRepository(em),
         pageLayout: new PageLayoutRepository(em),
+        contactMessage: new ContactMessageRepository(em),
         cv: new CvRepository(em),
     };
     const commandBus = new CommandBus();
@@ -330,6 +335,18 @@ export function bootstrap(
     queryBus.register(
         ListMediaImagesQuery.queryName,
         new ListMediaImagesHandler(repos.project, repos.feature, repos.ticket),
+    );
+
+    // Contact
+    // The owner's inbox lives in the environment only: it must never reach the public API.
+    commandBus.register(
+        SubmitContactMessageCommand.commandName,
+        new SubmitContactMessageHandler(
+            repos.contactMessage,
+            createMailer(logger),
+            env.CONTACT_MAIL_TO || null,
+            logger,
+        ),
     );
 
     // CV
