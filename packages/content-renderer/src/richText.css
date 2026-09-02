@@ -1,0 +1,82 @@
+/* Rendu du HTML produit par l'éditeur riche (TipTap), dans l'aperçu de l'éditeur comme
+   dans les pages publiques. Doit être importé par toute application qui monte
+   RichTextRenderer, sinon le texte sort sans mise en forme. */
+.rich-text-content h1 {
+  font-size: 1.4rem;
+  margin: 0.5rem 0;
+}
+.rich-text-content h2 {
+  font-size: 1.15rem;
+  margin: 0.5rem 0;
+}
+.rich-text-content h3 {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+}
+.rich-text-content h4 {
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+.rich-text-content p {
+  margin: 0 0 0.5rem;
+}
+.rich-text-content ul,
+.rich-text-content ol {
+  padding-left: 1.25rem;
+  margin: 0 0 0.5rem;
+}
+.rich-text-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+.rich-text-content blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.5rem;
+}
+.rich-text-content pre {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
+  overflow-x: auto;
+}
+.rich-text-content code {
+  font-family: monospace;
+}
+.rich-text-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 0.75rem 0;
+}
+.rich-text-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.rich-text-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0 0 0.5rem;
+}
+.rich-text-content th,
+.rich-text-content td {
+  border: 1px solid var(--color-border);
+  padding: 0.35rem 0.5rem;
+  vertical-align: top;
+}
+.rich-text-content th {
+  background: var(--color-surface);
+  font-weight: 600;
+}
+.rich-text-content ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0.5rem;
+}
+.rich-text-content ul[data-type='taskList'] li {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+}
