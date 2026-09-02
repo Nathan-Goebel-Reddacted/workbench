@@ -70,8 +70,32 @@ import { GetFeatureByIdHandler } from '@contexts/feature/application/query/getFe
 import { GetFeaturesByOwnerQuery } from '@contexts/feature/application/query/getFeaturesByOwner/getFeaturesByOwnerQuery';
 import { GetFeaturesByOwnerHandler } from '@contexts/feature/application/query/getFeaturesByOwner/getFeaturesByOwnerHandler';
 import { OwnerGateway } from '@contexts/feature/infrastructure/gateway/ownerGateway';
+import { FeatureGateway } from '@contexts/ticket/infrastructure/gateway/featureGateway';
 import { FeatureTicketsGateway } from '@contexts/feature/infrastructure/gateway/featureTicketsGateway';
 import { MikroOrmTransactionRunner } from '@shared/infrastructure/persistence/mikroOrmTransactionRunner';
+
+// --- Ticket ---
+import { TicketFactory } from '@contexts/ticket/domain/factory/ticketFactory';
+import { CreateTicketCommand } from '@contexts/ticket/application/command/createTicket/createTicketCommand';
+import { CreateTicketHandler } from '@contexts/ticket/application/command/createTicket/createTicketHandler';
+import { ChangeTicketStatusCommand } from '@contexts/ticket/application/command/changeTicketStatus/changeTicketStatusCommand';
+import { ChangeTicketStatusHandler } from '@contexts/ticket/application/command/changeTicketStatus/changeTicketStatusHandler';
+import { UpdateTicketCommand } from '@contexts/ticket/application/command/updateTicket/updateTicketCommand';
+import { UpdateTicketHandler } from '@contexts/ticket/application/command/updateTicket/updateTicketHandler';
+import { UpdateTicketNoteCommand } from '@contexts/ticket/application/command/updateTicketNote/updateTicketNoteCommand';
+import { UpdateTicketNoteHandler } from '@contexts/ticket/application/command/updateTicketNote/updateTicketNoteHandler';
+import { DeleteTicketCommand } from '@contexts/ticket/application/command/deleteTicket/deleteTicketCommand';
+import { DeleteTicketHandler } from '@contexts/ticket/application/command/deleteTicket/deleteTicketHandler';
+import { AddTicketNoteCommand } from '@contexts/ticket/application/command/addTicketNote/addTicketNoteCommand';
+import { AddTicketNoteHandler } from '@contexts/ticket/application/command/addTicketNote/addTicketNoteHandler';
+import { AddTicketDocumentCommand } from '@contexts/ticket/application/command/addTicketDocument/addTicketDocumentCommand';
+import { AddTicketDocumentHandler } from '@contexts/ticket/application/command/addTicketDocument/addTicketDocumentHandler';
+import { RemoveTicketDocumentCommand } from '@contexts/ticket/application/command/removeTicketDocument/removeTicketDocumentCommand';
+import { RemoveTicketDocumentHandler } from '@contexts/ticket/application/command/removeTicketDocument/removeTicketDocumentHandler';
+import { GetTicketByIdQuery } from '@contexts/ticket/application/query/getTicketById/getTicketByIdQuery';
+import { GetTicketByIdHandler } from '@contexts/ticket/application/query/getTicketById/getTicketByIdHandler';
+import { GetTicketsByFeatureIdQuery } from '@contexts/ticket/application/query/getTicketsByFeatureId/getTicketsByFeatureIdQuery';
+import { GetTicketsByFeatureIdHandler } from '@contexts/ticket/application/query/getTicketsByFeatureId/getTicketsByFeatureIdHandler';
 
 import { EntityManager } from '@mikro-orm/postgresql';
 import { PostgresOwnerNumberSequence } from '@shared/infrastructure/sequence/postgresOwnerNumberSequence';
@@ -79,6 +103,7 @@ import { UserRepository } from '@contexts/user/infrastructure/repository/userRep
 import { PortfolioRepository } from '@contexts/portfolio/infrastructure/repository/portfolioRepository';
 import { ProjectRepository } from '@contexts/project/infrastructure/repository/projectRepository';
 import { FeatureRepository } from '@contexts/feature/infrastructure/repository/featureRepository';
+import { TicketRepository } from '@contexts/ticket/infrastructure/repository/ticketRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
 import { ILogger } from '@shared/application/port/iLogger';
 
@@ -94,6 +119,7 @@ export function bootstrap(
         portfolio: new PortfolioRepository(em),
         project: new ProjectRepository(em),
         feature: new FeatureRepository(em),
+        ticket: new TicketRepository(em),
     };
     const commandBus = new CommandBus();
     const queryBus = new QueryBus();
@@ -106,10 +132,19 @@ export function bootstrap(
     // transparente pour les références de tickets.
     const ownerNumbers = new PostgresOwnerNumberSequence(em);
 
+    // Le contexte Ticket interroge le contexte Feature par son contrat public — la query — et
+    // c'est Feature qui remonte jusqu'au porteur. Ticket ne connaît ni Project ni Idea.
+    const featureGateway = new FeatureGateway(queryBus);
+
+    // Cascades : chaque contexte annonce sa disparition au suivant, personne ne supprime chez
+    // le voisin. Feature -> Ticket, puis Idea -> Feature.
+    const featureTicketsGateway = new FeatureTicketsGateway(repos.ticket);
+
     const userFactory = new UserFactory();
     const portfolioFactory = new PortfolioFactory();
     const projectFactory = new ProjectFactory();
     const featureFactory = new FeatureFactory();
+    const ticketFactory = new TicketFactory();
 
     // User
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
@@ -165,6 +200,30 @@ export function bootstrap(
     commandBus.register(
         DeleteFeatureCommand.commandName,
         new DeleteFeatureHandler(repos.feature, featureTicketsGateway, uploads),
+    );
+
+    // Ticket
+    commandBus.register(
+        CreateTicketCommand.commandName,
+        new CreateTicketHandler(repos.ticket, ticketFactory, featureGateway),
+    );
+    commandBus.register(
+        ChangeTicketStatusCommand.commandName,
+        new ChangeTicketStatusHandler(repos.ticket, featureGateway),
+    );
+    commandBus.register(UpdateTicketCommand.commandName, new UpdateTicketHandler(repos.ticket));
+    commandBus.register(UpdateTicketNoteCommand.commandName, new UpdateTicketNoteHandler(repos.ticket));
+    commandBus.register(DeleteTicketCommand.commandName, new DeleteTicketHandler(repos.ticket, uploads));
+    commandBus.register(AddTicketNoteCommand.commandName, new AddTicketNoteHandler(repos.ticket));
+    commandBus.register(AddTicketDocumentCommand.commandName, new AddTicketDocumentHandler(repos.ticket));
+    commandBus.register(
+        RemoveTicketDocumentCommand.commandName,
+        new RemoveTicketDocumentHandler(repos.ticket, uploads),
+    );
+    queryBus.register(GetTicketByIdQuery.queryName, new GetTicketByIdHandler(repos.ticket, featureGateway));
+    queryBus.register(
+        GetTicketsByFeatureIdQuery.queryName,
+        new GetTicketsByFeatureIdHandler(repos.ticket, featureGateway),
     );
 
     return { commandBus, queryBus };

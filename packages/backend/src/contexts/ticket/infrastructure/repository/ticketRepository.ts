@@ -24,7 +24,7 @@ export class TicketRepository implements ITicketRepository {
     }
 
     async findByFeatureId(featureId: string): Promise<Ticket[]> {
-        const entities = await this.em.find(TicketOrmEntity, { featureId });
+        const entities = await this.em.find(TicketOrmEntity, { featureId }, { orderBy: { number: 'asc' } });
         return entities.map(e => this.toDomain(e));
     }
 
@@ -32,14 +32,39 @@ export class TicketRepository implements ITicketRepository {
         return this.em.count(TicketOrmEntity, { featureId });
     }
 
+    async lastNumberOf(featureId: string): Promise<number> {
+        // Le plus grand numéro, pas le nombre de tickets : une suppression ne doit pas réattribuer
+        // un numéro déjà porté par un ticket cité ailleurs.
+        const [row] = await this.em
+            .getConnection()
+            .execute<
+                Array<{ max: number | null }>
+            >('select max("number") as max from tickets where feature_id = ?', [featureId]);
+        return row?.max ?? 0;
+    }
+
     async existsByReference(reference: string): Promise<boolean> {
         return (await this.em.count(TicketOrmEntity, { reference })) > 0;
     }
 
+    async deleteByFeatureId(featureId: string): Promise<void> {
+        await this.em.transactional(async em => {
+            await em.nativeDelete(TicketOrmEntity, { featureId });
+        });
+    }
+
+    async delete(id: string): Promise<void> {
+        await this.em.transactional(async em => {
+            await em.nativeDelete(TicketOrmEntity, { id });
+        });
+    }
+
     async save(ticket: Ticket): Promise<void> {
         try {
-            await this.em.transactional(async (em) => {
-                await em.upsert(TicketOrmEntity, this.toOrm(ticket));
+            await this.em.transactional(async em => {
+                // Trois cibles de conflit possibles (id, reference, feature+number) : on désigne
+                // celle qui identifie réellement la ligne.
+                await em.upsert(TicketOrmEntity, this.toOrm(ticket), { onConflictFields: ['id'] });
             });
         } catch (e) {
             if (e instanceof UniqueConstraintViolationException) {
@@ -67,6 +92,7 @@ export class TicketRepository implements ITicketRepository {
         e.id = ticket.getId().getValue();
         e.reference = ticket.getReference().getValue();
         e.featureId = ticket.getFeatureId().getValue();
+        e.number = ticket.getReference().getPosition();
         e.title = ticket.getTitle().getValue();
         e.description = ticket.getDescription().getValue();
         e.status = ticket.getStatus();
