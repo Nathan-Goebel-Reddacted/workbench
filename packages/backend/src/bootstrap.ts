@@ -77,6 +77,11 @@ import { ProjectCreationGateway } from '@contexts/idea/infrastructure/gateway/pr
 import { ConvertIdeaToProjectCommand } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectCommand';
 import { ConvertIdeaToProjectHandler } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectHandler';
 import { MikroOrmTransactionRunner } from '@shared/infrastructure/persistence/mikroOrmTransactionRunner';
+import { ReferenceDirectory } from '@contexts/reference/infrastructure/referenceDirectory';
+import { ResolveReferenceQuery } from '@contexts/reference/application/query/resolveReference/resolveReferenceQuery';
+import { ResolveReferenceHandler } from '@contexts/reference/application/query/resolveReference/resolveReferenceHandler';
+import { GetReferenceTreeQuery } from '@contexts/reference/application/query/getReferenceTree/getReferenceTreeQuery';
+import { GetReferenceTreeHandler } from '@contexts/reference/application/query/getReferenceTree/getReferenceTreeHandler';
 
 // --- Ticket ---
 import { TicketFactory } from '@contexts/ticket/domain/factory/ticketFactory';
@@ -217,6 +222,9 @@ export function bootstrap(
     const ideaFeaturesGateway = new IdeaFeaturesGateway(repos.feature, featureTicketsGateway);
     const projectCreationGateway = new ProjectCreationGateway(commandBus);
 
+    // Lecture transverse : traduit une référence lisible en entités.
+    const referenceDirectory = new ReferenceDirectory(repos.project, repos.idea, repos.feature, repos.ticket);
+
     const userFactory = new UserFactory();
     const portfolioFactory = new PortfolioFactory();
     const projectFactory = new ProjectFactory();
@@ -320,6 +328,10 @@ export function bootstrap(
         ConvertIdeaToProjectCommand.commandName,
         new ConvertIdeaToProjectHandler(repos.idea, ideaFeaturesGateway, projectCreationGateway, transactions),
     );
+
+    // Reference (lecture transverse)
+    queryBus.register(ResolveReferenceQuery.queryName, new ResolveReferenceHandler(referenceDirectory));
+    queryBus.register(GetReferenceTreeQuery.queryName, new GetReferenceTreeHandler(referenceDirectory));
 
     // ContentEditor
     commandBus.register(
