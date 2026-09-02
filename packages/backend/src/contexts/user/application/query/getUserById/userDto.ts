@@ -4,4 +4,6 @@ export type UserDto = Readonly<{
     surname: string;
     email: string;
     roles: string[];
+    /** Version de session courante : un jeton signé sous une version antérieure est refusé. */
+    tokenVersion: number;
 }>;

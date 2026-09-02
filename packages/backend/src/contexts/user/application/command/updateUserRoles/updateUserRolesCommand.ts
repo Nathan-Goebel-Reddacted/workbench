@@ -1,7 +1,7 @@
-import { Command } from "@shared/application/command/command";
+import { Command } from '@shared/application/command/command';
 
 export class UpdateUserRolesCommand implements Command {
-    static readonly commandName = "user.UpdateUserRoles";
+    static readonly commandName = 'user.UpdateUserRoles';
     readonly commandName: string;
 
     constructor(

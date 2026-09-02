@@ -1,7 +1,7 @@
-import { Command } from "@shared/application/command/command";
+import { Command } from '@shared/application/command/command';
 
 export class CreateUserCommand implements Command {
-    static readonly commandName = "user.CreateUser";
+    static readonly commandName = 'user.CreateUser';
     readonly commandName: string;
 
     constructor(

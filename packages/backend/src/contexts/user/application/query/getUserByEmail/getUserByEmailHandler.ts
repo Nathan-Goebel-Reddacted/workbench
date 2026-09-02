@@ -1,8 +1,8 @@
-import { IQueryHandler } from "@shared/application/query/iQueryHandler";
-import { GetUserByEmailQuery } from "./getUserByEmailQuery";
-import { UserDto } from "../getUserById/userDto";
-import { IUserRepository } from "../../../domain/repository/iUserRepository";
-import { User } from "../../../domain/userAggregate";
+import { IQueryHandler } from '@shared/application/query/iQueryHandler';
+import { GetUserByEmailQuery } from './getUserByEmailQuery';
+import { UserDto } from '../getUserById/userDto';
+import { IUserRepository } from '../../../domain/repository/iUserRepository';
+import { User } from '../../../domain/userAggregate';
 
 export class GetUserByEmailHandler implements IQueryHandler<GetUserByEmailQuery, UserDto | null> {
     constructor(private readonly repository: IUserRepository) {}
@@ -20,6 +20,7 @@ export class GetUserByEmailHandler implements IQueryHandler<GetUserByEmailQuery,
             surname: user.getSurname().getValue(),
             email: user.getEmail().getValue(),
             roles: user.getRoles(),
+            tokenVersion: user.getTokenVersion(),
         };
     }
 }

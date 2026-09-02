@@ -31,7 +31,7 @@ export class UserRepository implements IUserRepository {
     }
 
     async save(user: User): Promise<void> {
-        await this.em.transactional(async (em) => {
+        await this.em.transactional(async em => {
             await em.upsert(UserOrmEntity, this.toOrm(user));
         });
     }
@@ -47,6 +47,7 @@ export class UserRepository implements IUserRepository {
             new Surname(e.surname),
             new Email(e.email),
             e.roles.map(r => r as UserRole),
+            e.tokenVersion,
         );
     }
 
@@ -57,6 +58,7 @@ export class UserRepository implements IUserRepository {
         e.surname = user.getSurname().getValue();
         e.email = user.getEmail().getValue();
         e.roles = user.getRoles();
+        e.tokenVersion = user.getTokenVersion();
         return e;
     }
 }
