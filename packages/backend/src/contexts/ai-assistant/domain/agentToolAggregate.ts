@@ -1,9 +1,10 @@
-import { AgentToolId } from "./valueObject/agentToolId";
-import { UserId } from "./valueObject/userId";
-import { Name } from "./valueObject/name";
-import { Permission } from "./valueObject/permission";
-import { Scope } from "./valueObject/scope";
-import { Token } from "./valueObject/token";
+import { AgentToolId } from './valueObject/agentToolId';
+import { UserId } from './valueObject/userId';
+import { Name } from './valueObject/name';
+import { Permission } from './valueObject/permission';
+import { Scope } from './valueObject/scope';
+import { Token } from './valueObject/token';
+import { AgentToolMustKeepScopeException } from './exception/agentToolMustKeepScope';
 
 export class AgentTool {
     private readonly id: AgentToolId;
@@ -12,6 +13,8 @@ export class AgentTool {
     private permission: Permission;
     private scopes: Scope[];
     private token: Token;
+    private readonly createdAt: Date;
+    private revokedAt: Date | null;
 
     constructor(
         id: AgentToolId,
@@ -19,10 +22,12 @@ export class AgentTool {
         name: Name,
         permission: Permission,
         scopes: Scope[],
-        token: Token
+        token: Token,
+        createdAt: Date = new Date(),
+        revokedAt: Date | null = null,
     ) {
         if (scopes.length === 0) {
-            throw new Error('AgentTool must have at least one scope');
+            throw new AgentToolMustKeepScopeException();
         }
         this.id = id;
         this.userId = userId;
@@ -30,6 +35,8 @@ export class AgentTool {
         this.permission = permission;
         this.scopes = [...scopes];
         this.token = token;
+        this.createdAt = createdAt;
+        this.revokedAt = revokedAt;
     }
 
     getId(): AgentToolId {
@@ -68,7 +75,7 @@ export class AgentTool {
 
     removeScope(scope: Scope): void {
         if (this.scopes.length === 1 && this.scopes[0].equals(scope)) {
-            throw new Error('AgentTool must have at least one scope');
+            throw new AgentToolMustKeepScopeException();
         }
         this.scopes = this.scopes.filter(s => !s.equals(scope));
     }
@@ -83,5 +90,27 @@ export class AgentTool {
 
     rotateToken(newToken: Token): void {
         this.token = newToken;
+    }
+
+    getCreatedAt(): Date {
+        return this.createdAt;
+    }
+
+    getRevokedAt(): Date | null {
+        return this.revokedAt;
+    }
+
+    isRevoked(): boolean {
+        return this.revokedAt !== null;
+    }
+
+    /** Denies the agent access without destroying it: the decision stays reversible. */
+    revoke(): void {
+        if (this.revokedAt !== null) return;
+        this.revokedAt = new Date();
+    }
+
+    restore(): void {
+        this.revokedAt = null;
     }
 }

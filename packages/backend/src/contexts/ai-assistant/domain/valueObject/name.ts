@@ -1,4 +1,4 @@
-import { InvalidAgentToolNameException } from "../exception/invalidAgentToolName";
+import { InvalidAgentToolNameException } from '../exception/invalidAgentToolName';
 
 export class Name {
     private readonly value: string;

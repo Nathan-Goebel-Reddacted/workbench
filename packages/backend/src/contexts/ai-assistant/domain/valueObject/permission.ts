@@ -1,9 +1,9 @@
-import { InvalidPermissionException } from "../exception/invalidPermission";
+import { InvalidPermissionException } from '../exception/invalidPermission';
 
 export enum PermissionValue {
-    READ = "read",
-    WRITE = "write",
-    READ_WRITE = "read_write",
+    READ = 'read',
+    WRITE = 'write',
+    READ_WRITE = 'read_write',
 }
 
 const VALID_PERMISSIONS = Object.values(PermissionValue);

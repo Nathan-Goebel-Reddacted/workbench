@@ -1,11 +1,11 @@
-import { InvalidScopeException } from "../exception/invalidScope";
+import { InvalidScopeException } from '../exception/invalidScope';
 
 export enum ScopeValue {
-    PROJECT = "project",
-    FEATURE = "feature",
-    TICKET = "ticket",
-    IDEA = "idea",
-    PORTFOLIO = "portfolio",
+    PROJECT = 'project',
+    FEATURE = 'feature',
+    TICKET = 'ticket',
+    IDEA = 'idea',
+    PORTFOLIO = 'portfolio',
 }
 
 const VALID_SCOPES = Object.values(ScopeValue);

@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { InvalidAgentToolTokenException } from "../exception/invalidAgentToolToken";
+import { InvalidAgentToolTokenException } from '../exception/invalidAgentToolToken';
 
 export class Token {
     private readonly value: string;
