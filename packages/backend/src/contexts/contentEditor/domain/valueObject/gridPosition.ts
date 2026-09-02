@@ -1,26 +1,38 @@
-import { InvalidGridPositionException } from "../exception/invalidGridPosition";
+import { InvalidGridPositionException } from '../exception/invalidGridPosition';
 
 export class GridPosition {
-    private readonly column: number;
-    private readonly order: number;
+    private readonly x: number;
+    private readonly y: number;
+    private readonly w: number;
+    private readonly h: number;
 
-    constructor(column: number, order: number) {
-        if (column < 1 || order < 0) {
+    constructor(x: number, y: number, w: number, h: number) {
+        if (x < 0 || y < 0 || w < 1 || h < 1) {
             throw new InvalidGridPositionException();
         }
-        this.column = column;
-        this.order = order;
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
     }
 
-    getColumn(): number {
-        return this.column;
+    getX(): number {
+        return this.x;
     }
 
-    getOrder(): number {
-        return this.order;
+    getY(): number {
+        return this.y;
+    }
+
+    getW(): number {
+        return this.w;
+    }
+
+    getH(): number {
+        return this.h;
     }
 
     equals(other: GridPosition): boolean {
-        return this.column === other.column && this.order === other.order;
+        return this.x === other.x && this.y === other.y && this.w === other.w && this.h === other.h;
     }
 }

@@ -1,4 +1,4 @@
-import { PageLayout } from "../pageLayoutAggregate";
+import { PageLayout } from '../pageLayoutAggregate';
 
 export interface IPageLayoutRepository {
     findById(id: string): Promise<PageLayout | null>;

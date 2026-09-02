@@ -1,4 +1,4 @@
-import { DomainException } from "@shared/domain/domainException";
+import { DomainException } from '@shared/domain/domainException';
 
 export class InvalidContentRefException extends DomainException {
     constructor() {

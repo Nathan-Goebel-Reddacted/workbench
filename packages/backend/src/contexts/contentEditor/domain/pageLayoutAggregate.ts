@@ -1,9 +1,10 @@
-import { PageLayoutId } from "./valueObject/pageLayoutId";
-import { PageType } from "./valueObject/pageType";
-import { PageRef } from "./valueObject/pageRef";
-import { SectionId } from "./valueObject/sectionId";
-import { GridPosition } from "./valueObject/gridPosition";
-import { Section } from "./entity/section";
+import { PageLayoutId } from './valueObject/pageLayoutId';
+import { PageType } from './valueObject/pageType';
+import { PageRef } from './valueObject/pageRef';
+import { SectionId } from './valueObject/sectionId';
+import { GridPosition } from './valueObject/gridPosition';
+import { ContentRef } from './valueObject/contentRef';
+import { Section, SectionContent } from './entity/section';
 
 export class PageLayout {
     private readonly id: PageLayoutId;
@@ -11,12 +12,7 @@ export class PageLayout {
     private readonly pageRef: PageRef;
     private sections: Section[];
 
-    constructor(
-        id: PageLayoutId,
-        pageType: PageType,
-        pageRef: PageRef,
-        sections: Section[] = []
-    ) {
+    constructor(id: PageLayoutId, pageType: PageType, pageRef: PageRef, sections: Section[] = []) {
         this.id = id;
         this.pageType = pageType;
         this.pageRef = pageRef;
@@ -51,6 +47,13 @@ export class PageLayout {
         const section = this.sections.find(s => s.getId().equals(sectionId));
         if (section) {
             section.moveTo(newPosition);
+        }
+    }
+
+    updateSectionContent(sectionId: SectionId, content: SectionContent, contentRef: ContentRef | null): void {
+        const section = this.sections.find(s => s.getId().equals(sectionId));
+        if (section) {
+            section.updateContent(content, contentRef);
         }
     }
 }

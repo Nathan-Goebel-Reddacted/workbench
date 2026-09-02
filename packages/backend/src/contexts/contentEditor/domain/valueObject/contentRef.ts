@@ -1,4 +1,4 @@
-import { InvalidContentRefException } from "../exception/invalidContentRef";
+import { InvalidContentRefException } from '../exception/invalidContentRef';
 
 export class ContentRef {
     private readonly value: string;
