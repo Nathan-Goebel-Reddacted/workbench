@@ -1,12 +1,14 @@
-import { Description } from "./valueObject/description";
-import { FeatureId } from "./valueObject/featureId";
-import { Note } from "./valueObject/note";
-import { TicketReference } from "./valueObject/reference";
-import { TicketStatus } from "./valueObject/status";
-import { TicketId } from "./valueObject/ticketId";
-import { Title } from "./valueObject/title";
-import { Document } from "@shared/domain/entity/document";
-import { DocumentId } from "@shared/domain/valueObject/documentId";
+import { Description } from './valueObject/description';
+import { FeatureId } from './valueObject/featureId';
+import { Note } from './valueObject/note';
+import { TicketReference } from './valueObject/reference';
+import { TicketStatus } from './valueObject/status';
+import { StatusForbiddenOnIdeaException } from './exception/statusForbiddenOnIdea';
+import { NoteNotFoundException } from './exception/noteNotFound';
+import { TicketId } from './valueObject/ticketId';
+import { Title } from './valueObject/title';
+import { Document } from '@shared/domain/entity/document';
+import { DocumentId } from '@shared/domain/valueObject/documentId';
 
 export class Ticket {
     private readonly id: TicketId;
@@ -74,12 +76,25 @@ export class Ticket {
         this.description = description;
     }
 
-    setStatus(status: TicketStatus): void {
+    /**
+     * Fait avancer le ticket. `ownedByIdea` est un fait que le ticket ne peut pas connaître seul :
+     * il lui est fourni par l'appelant, qui l'a demandé au contexte Feature. La règle, elle, vit
+     * bien ici — un travail qui n'a pas démarré n'a rien à avancer ni à terminer.
+     */
+    changeStatus(status: TicketStatus, ownedByIdea: boolean): void {
+        if (ownedByIdea && status !== TicketStatus.Pending) {
+            throw new StatusForbiddenOnIdeaException();
+        }
         this.status = status;
     }
 
     addNote(note: Note): void {
         this.notes.push(note);
+    }
+
+    replaceNote(index: number, note: Note): void {
+        if (index < 0 || index >= this.notes.length) throw new NoteNotFoundException(index);
+        this.notes[index] = note;
     }
 
     getDocuments(): Document[] {

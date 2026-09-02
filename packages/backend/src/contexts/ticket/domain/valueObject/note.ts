@@ -1,7 +1,6 @@
-import { NotNullOrEmptyException } from "../exception/notNullOrEmpty";
+import { NotNullOrEmptyException } from '../exception/notNullOrEmpty';
 
 export class Note {
-
     private readonly value: string;
 
     constructor(value: string) {
