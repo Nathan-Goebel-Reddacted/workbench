@@ -5,6 +5,7 @@
   "workspaces": [
     "packages/backend",
     "packages/shared-ui",
+    "packages/content-renderer",
     "packages/frontend-public",
     "packages/frontend-private"
   ],
@@ -12,12 +13,30 @@
     "dev:backend": "npm run dev --workspace=packages/backend",
     "dev:frontend-public": "npm run dev --workspace=packages/frontend-public",
     "dev:frontend-private": "npm run dev --workspace=packages/frontend-private",
-    "dev": "concurrently -n backend,public,private -c blue,green,magenta \"npm run dev:backend\" \"npm run dev:frontend-public\" \"npm run dev:frontend-private\""
+    "dev": "concurrently -n backend,public,private -c blue,green,magenta \"npm run dev:backend\" \"npm run dev:frontend-public\" \"npm run dev:frontend-private\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "npm run build --workspaces --if-present",
+    "prepare": "lefthook install"
   },
   "optionalDependencies": {
     "@esbuild/linux-x64": "^0.27.7"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "@eslint/js": "9.17.0",
+    "concurrently": "^9.2.1",
+    "eslint": "9.17.0",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-react-hooks": "5.1.0",
+    "globals": "15.14.0",
+    "lefthook": "1.10.1",
+    "prettier": "3.4.2",
+    "typescript-eslint": "8.19.0",
+    "vitest": "2.1.8"
   }
 }

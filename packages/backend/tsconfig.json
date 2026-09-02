@@ -5,6 +5,9 @@
     "moduleResolution": "bundler",
     "rootDir": "src",
     "outDir": "dist",
+    // Le TsMorphMetadataProvider lit les types au démarrage ; en production il n'y a plus
+    // de .ts, il lui faut les déclarations émises à côté du .js.
+    "declaration": true,
     "strict": true,
     "experimentalDecorators": true,
     "noUnusedLocals": true,

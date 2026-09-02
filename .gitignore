@@ -1,5 +1,7 @@
 # Secrets
 .env
+# Carries the agent bearer token in clear
+.mcp.json
 
 # Dependencies
 node_modules/
@@ -7,7 +9,25 @@ node_modules/
 # Build outputs
 packages/*/dist/
 packages/*/temp/
+# Cache de métadonnées MikroORM, régénéré au démarrage
+/temp/
+
+# Médias déposés par l'éditeur : données d'exécution, servies depuis un volume
+# en production (cf. docker-compose.prod.yml). Jamais du source.
+packages/backend/uploads/
 
 # Logs
 *.log
 npm-debug.log*
+
+# Claude plans
+.claude/plans/
+
+# Outillage de decoupage de l'historique — jetable, propre a une session
+.claude/split/
+
+# Import/export de base de données — le contenu est du dump, pas du source
+ioPort/*
+!ioPort/.gitkeep
+backup/*
+!backup/.gitkeep

@@ -1,0 +1,55 @@
+# Pile de production : `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`
+#
+# Le fichier de base sert le développement (backend en tsx, fronts lancés par Vite hors
+# Docker). Celui-ci bascule le backend sur son image compilée et ajoute le nginx qui sert
+# les deux fronts sous une origine unique.
+
+services:
+  backend:
+    build:
+      target: prod
+    # Le port n'est plus publié : seul nginx atteint le backend, via le réseau compose.
+    ports: !reset []
+    # !override, pas une fusion : le bind du fichier de base monte les sources de l'hôte
+    # par-dessus l'image compilée, ce qui n'a aucun sens ici.
+    volumes: !override
+      - uploads_data:/app/packages/backend/uploads
+    environment:
+      NODE_ENV: production
+      # Le .env porte la valeur de développement (localhost) ; dans le réseau compose la
+      # base répond sur le nom du service.
+      POSTGRES_HOST: postgres
+    restart: unless-stopped
+    healthcheck:
+      # /health vérifie aussi la base : un backend qui ne la joint plus n'est pas sain.
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+      target: prod
+      args:
+        # Vite fige ces valeurs dans le bundle : elles doivent porter l'origine publique
+        # réelle, pas un nom de service compose.
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_PUBLIC_URL: ${VITE_PUBLIC_URL}
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  uploads_data:
