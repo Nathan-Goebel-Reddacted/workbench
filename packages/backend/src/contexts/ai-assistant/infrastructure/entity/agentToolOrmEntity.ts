@@ -20,4 +20,11 @@ export class AgentToolOrmEntity {
 
     @Property()
     token!: string;
+
+    @Property({ type: 'timestamptz', defaultRaw: 'NOW()' })
+    createdAt!: Date;
+
+    /** Set while the agent is denied access. Null means active. */
+    @Property({ type: 'timestamptz', nullable: true })
+    revokedAt?: Date | null;
 }

@@ -8,6 +8,7 @@ import { CreateUserCommand } from '@contexts/user/application/command/createUser
 import { CreateUserHandler } from '@contexts/user/application/command/createUser/createUserHandler';
 import { DeleteUserCommand } from '@contexts/user/application/command/deleteUser/deleteUserCommand';
 import { DeleteUserHandler } from '@contexts/user/application/command/deleteUser/deleteUserHandler';
+import { RevokeAgentToolsOnUserDeleted } from '@contexts/ai-assistant/application/listener/revokeAgentToolsOnUserDeleted';
 import { UpdateUserRolesCommand } from '@contexts/user/application/command/updateUserRoles/updateUserRolesCommand';
 import { UpdateUserRolesHandler } from '@contexts/user/application/command/updateUserRoles/updateUserRolesHandler';
 import { InvalidateUserSessionsCommand } from '@contexts/user/application/command/invalidateUserSessions/invalidateUserSessionsCommand';
@@ -146,6 +147,35 @@ import { GetPageLayoutByRefHandler } from '@contexts/contentEditor/application/q
 import { ListMediaImagesQuery } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesQuery';
 import { ListMediaImagesHandler } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesHandler';
 
+// --- AI Assistant ---
+import { AgentToolFactory } from '@contexts/ai-assistant/domain/factory/agentToolFactory';
+import { CreateAgentToolCommand } from '@contexts/ai-assistant/application/command/createAgentTool/createAgentToolCommand';
+import { CreateAgentToolHandler } from '@contexts/ai-assistant/application/command/createAgentTool/createAgentToolHandler';
+import { UpdateAgentToolNameCommand } from '@contexts/ai-assistant/application/command/updateAgentToolName/updateAgentToolNameCommand';
+import { UpdateAgentToolNameHandler } from '@contexts/ai-assistant/application/command/updateAgentToolName/updateAgentToolNameHandler';
+import { UpdateAgentToolPermissionCommand } from '@contexts/ai-assistant/application/command/updateAgentToolPermission/updateAgentToolPermissionCommand';
+import { UpdateAgentToolPermissionHandler } from '@contexts/ai-assistant/application/command/updateAgentToolPermission/updateAgentToolPermissionHandler';
+import { AddAgentToolScopeCommand } from '@contexts/ai-assistant/application/command/addAgentToolScope/addAgentToolScopeCommand';
+import { AddAgentToolScopeHandler } from '@contexts/ai-assistant/application/command/addAgentToolScope/addAgentToolScopeHandler';
+import { RemoveAgentToolScopeCommand } from '@contexts/ai-assistant/application/command/removeAgentToolScope/removeAgentToolScopeCommand';
+import { RemoveAgentToolScopeHandler } from '@contexts/ai-assistant/application/command/removeAgentToolScope/removeAgentToolScopeHandler';
+import { RotateAgentToolTokenCommand } from '@contexts/ai-assistant/application/command/rotateAgentToolToken/rotateAgentToolTokenCommand';
+import { RotateAgentToolTokenHandler } from '@contexts/ai-assistant/application/command/rotateAgentToolToken/rotateAgentToolTokenHandler';
+import { GetAgentToolByIdQuery } from '@contexts/ai-assistant/application/query/getAgentToolById/getAgentToolByIdQuery';
+import { GetAgentToolByIdHandler } from '@contexts/ai-assistant/application/query/getAgentToolById/getAgentToolByIdHandler';
+import { GetAgentToolsByUserIdQuery } from '@contexts/ai-assistant/application/query/getAgentToolsByUserId/getAgentToolsByUserIdQuery';
+import { GetAgentToolsByUserIdHandler } from '@contexts/ai-assistant/application/query/getAgentToolsByUserId/getAgentToolsByUserIdHandler';
+import { GetAllAgentToolsQuery } from '@contexts/ai-assistant/application/query/getAllAgentTools/getAllAgentToolsQuery';
+import { GetAllAgentToolsHandler } from '@contexts/ai-assistant/application/query/getAllAgentTools/getAllAgentToolsHandler';
+import { RevokeAgentToolCommand } from '@contexts/ai-assistant/application/command/revokeAgentTool/revokeAgentToolCommand';
+import { RevokeAgentToolHandler } from '@contexts/ai-assistant/application/command/revokeAgentTool/revokeAgentToolHandler';
+import { RestoreAgentToolCommand } from '@contexts/ai-assistant/application/command/restoreAgentTool/restoreAgentToolCommand';
+import { RestoreAgentToolHandler } from '@contexts/ai-assistant/application/command/restoreAgentTool/restoreAgentToolHandler';
+
+import { ToolRegistry } from '@contexts/ai-assistant/application/tool/toolRegistry';
+import { createToolRegistry } from '@contexts/ai-assistant/application/tool/catalog';
+import { AgentAuthenticator } from '@contexts/ai-assistant/application/auth/agentAuthenticator';
+
 // --- CV ---
 import { CvFactory } from '@contexts/cv/domain/factory/cvFactory';
 import { CreateCvCommand } from '@contexts/cv/application/command/createCv/createCvCommand';
@@ -168,6 +198,7 @@ import { FeatureRepository } from '@contexts/feature/infrastructure/repository/f
 import { TicketRepository } from '@contexts/ticket/infrastructure/repository/ticketRepository';
 import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRepository';
 import { PageLayoutRepository } from '@contexts/contentEditor/infrastructure/repository/pageLayoutRepository';
+import { AgentToolRepository } from '@contexts/ai-assistant/infrastructure/repository/agentToolRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
 import { ContactMessageRepository } from '@contexts/contact/infrastructure/repository/contactMessageRepository';
 import { CvRepository } from '@contexts/cv/infrastructure/repository/cvRepository';
@@ -182,6 +213,8 @@ export function bootstrap(
 ): {
     commandBus: CommandBus;
     queryBus: QueryBus;
+    toolRegistry: ToolRegistry;
+    agentAuthenticator: AgentAuthenticator;
 } {
     const repos = {
         user: new UserRepository(em),
@@ -191,6 +224,7 @@ export function bootstrap(
         ticket: new TicketRepository(em),
         idea: new IdeaRepository(em),
         pageLayout: new PageLayoutRepository(em),
+        agentTool: new AgentToolRepository(em),
         contactMessage: new ContactMessageRepository(em),
         cv: new CvRepository(em),
     };
@@ -232,10 +266,15 @@ export function bootstrap(
     const ticketFactory = new TicketFactory();
     const ideaFactory = new IdeaFactory();
     const pageLayoutFactory = new PageLayoutFactory();
+    const agentToolFactory = new AgentToolFactory();
     const cvFactory = new CvFactory();
 
     // User
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
+    commandBus.register(
+        DeleteUserCommand.commandName,
+        new DeleteUserHandler(repos.user, [new RevokeAgentToolsOnUserDeleted(repos.agentTool)]),
+    );
     commandBus.register(UpdateUserRolesCommand.commandName, new UpdateUserRolesHandler(repos.user, userFactory));
     commandBus.register(InvalidateUserSessionsCommand.commandName, new InvalidateUserSessionsHandler(repos.user));
     queryBus.register(GetUserByIdQuery.queryName, new GetUserByIdHandler(repos.user));
@@ -349,6 +388,25 @@ export function bootstrap(
         new ListMediaImagesHandler(repos.project, repos.feature, repos.ticket),
     );
 
+    // AI Assistant
+    commandBus.register(
+        CreateAgentToolCommand.commandName,
+        new CreateAgentToolHandler(repos.agentTool, agentToolFactory),
+    );
+    commandBus.register(UpdateAgentToolNameCommand.commandName, new UpdateAgentToolNameHandler(repos.agentTool));
+    commandBus.register(
+        UpdateAgentToolPermissionCommand.commandName,
+        new UpdateAgentToolPermissionHandler(repos.agentTool),
+    );
+    commandBus.register(AddAgentToolScopeCommand.commandName, new AddAgentToolScopeHandler(repos.agentTool));
+    commandBus.register(RemoveAgentToolScopeCommand.commandName, new RemoveAgentToolScopeHandler(repos.agentTool));
+    commandBus.register(RotateAgentToolTokenCommand.commandName, new RotateAgentToolTokenHandler(repos.agentTool));
+    queryBus.register(GetAgentToolByIdQuery.queryName, new GetAgentToolByIdHandler(repos.agentTool));
+    queryBus.register(GetAgentToolsByUserIdQuery.queryName, new GetAgentToolsByUserIdHandler(repos.agentTool));
+    queryBus.register(GetAllAgentToolsQuery.queryName, new GetAllAgentToolsHandler(repos.agentTool));
+    commandBus.register(RevokeAgentToolCommand.commandName, new RevokeAgentToolHandler(repos.agentTool));
+    commandBus.register(RestoreAgentToolCommand.commandName, new RestoreAgentToolHandler(repos.agentTool));
+
     // Contact
     // The owner's inbox lives in the environment only: it must never reach the public API.
     commandBus.register(
@@ -368,5 +426,9 @@ export function bootstrap(
     commandBus.register(ReorderCvsCommand.commandName, new ReorderCvsHandler(repos.cv));
     queryBus.register(ListCvsQuery.queryName, new ListCvsHandler(repos.cv));
 
-    return { commandBus, queryBus };
+    // Tools reuse the very same buses as the REST API: one implementation, two audiences.
+    const toolRegistry = createToolRegistry(commandBus, queryBus, logger);
+    const agentAuthenticator = new AgentAuthenticator(repos.agentTool);
+
+    return { commandBus, queryBus, toolRegistry, agentAuthenticator };
 }

@@ -1,18 +1,34 @@
 import { FastifyPluginAsync } from 'fastify';
 import { CommandBus } from '@shared/application/command/commandBus';
 import { QueryBus } from '@shared/application/query/queryBus';
+import { requireRole } from '@shared/infrastructure/http/roleGuard';
 import { CreateAgentToolCommand } from '@contexts/ai-assistant/application/command/createAgentTool/createAgentToolCommand';
 import { UpdateAgentToolNameCommand } from '@contexts/ai-assistant/application/command/updateAgentToolName/updateAgentToolNameCommand';
 import { UpdateAgentToolPermissionCommand } from '@contexts/ai-assistant/application/command/updateAgentToolPermission/updateAgentToolPermissionCommand';
 import { AddAgentToolScopeCommand } from '@contexts/ai-assistant/application/command/addAgentToolScope/addAgentToolScopeCommand';
 import { RemoveAgentToolScopeCommand } from '@contexts/ai-assistant/application/command/removeAgentToolScope/removeAgentToolScopeCommand';
 import { RotateAgentToolTokenCommand } from '@contexts/ai-assistant/application/command/rotateAgentToolToken/rotateAgentToolTokenCommand';
+import { RevokeAgentToolCommand } from '@contexts/ai-assistant/application/command/revokeAgentTool/revokeAgentToolCommand';
+import { RestoreAgentToolCommand } from '@contexts/ai-assistant/application/command/restoreAgentTool/restoreAgentToolCommand';
 import { GetAgentToolByIdQuery } from '@contexts/ai-assistant/application/query/getAgentToolById/getAgentToolByIdQuery';
 import { GetAgentToolsByUserIdQuery } from '@contexts/ai-assistant/application/query/getAgentToolsByUserId/getAgentToolsByUserIdQuery';
+import { GetAllAgentToolsQuery } from '@contexts/ai-assistant/application/query/getAllAgentTools/getAllAgentToolsQuery';
+import { issueAgentToken } from '@contexts/ai-assistant/application/auth/agentToken';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
+/**
+ * Every route here grants or alters an agent's access to the API, so all of them are
+ * administration: the session guard alone would let any signed-in account mint an agent.
+ */
 export const agentToolRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
+    app.addHook('preHandler', requireRole('edit'));
+
+    app.get('/agent-tools', async (_req, reply) => {
+        const result = await queryBus.dispatch(new GetAllAgentToolsQuery());
+        return reply.send(result);
+    });
+
     app.get<{ Params: { userId: string } }>('/agent-tools/by-user/:userId', async (req, reply) => {
         const result = await queryBus.dispatch(new GetAgentToolsByUserIdQuery(req.params.userId));
         return reply.send(result);
@@ -23,28 +39,29 @@ export const agentToolRoutes: FastifyPluginAsync<Opts> = async (app, { commandBu
         return reply.send(result);
     });
 
-    app.post<{ Body: { userId: string; name: string; permission: string; scopes: string[]; token: string } }>(
+    app.post<{ Body: { userId: string; name: string; permission: string; scopes: string[] } }>(
         '/agent-tools',
         {
             schema: {
                 body: {
                     type: 'object',
-                    required: ['userId', 'name', 'permission', 'scopes', 'token'],
+                    required: ['userId', 'name', 'permission', 'scopes'],
                     properties: {
                         userId: { type: 'string' },
                         name: { type: 'string' },
                         permission: { type: 'string' },
                         scopes: { type: 'array', items: { type: 'string' } },
-                        token: { type: 'string' },
                     },
                 },
             },
         },
         async (req, reply) => {
-            const { userId, name, permission, scopes, token } = req.body;
+            const { userId, name, permission, scopes } = req.body;
             const id = crypto.randomUUID();
-            await commandBus.dispatch(new CreateAgentToolCommand(id, userId, name, permission, scopes, token));
-            return reply.status(201).send({ id });
+            // The secret is generated server-side and only ever leaves the API here: it is stored hashed.
+            const { secret, token } = issueAgentToken(id);
+            await commandBus.dispatch(new CreateAgentToolCommand(id, userId, name, permission, scopes, secret));
+            return reply.status(201).send({ id, token });
         },
     );
 
@@ -116,20 +133,20 @@ export const agentToolRoutes: FastifyPluginAsync<Opts> = async (app, { commandBu
         },
     );
 
-    app.post<{ Params: { id: string }; Body: { token: string } }>(
-        '/agent-tools/:id/rotate-token',
-        {
-            schema: {
-                body: {
-                    type: 'object',
-                    required: ['token'],
-                    properties: { token: { type: 'string' } },
-                },
-            },
-        },
-        async (req, reply) => {
-            await commandBus.dispatch(new RotateAgentToolTokenCommand(req.params.id, req.body.token));
-            return reply.status(204).send();
-        },
-    );
+    app.post<{ Params: { id: string } }>('/agent-tools/:id/revoke', async (req, reply) => {
+        await commandBus.dispatch(new RevokeAgentToolCommand(req.params.id));
+        return reply.status(204).send();
+    });
+
+    app.post<{ Params: { id: string } }>('/agent-tools/:id/restore', async (req, reply) => {
+        await commandBus.dispatch(new RestoreAgentToolCommand(req.params.id));
+        return reply.status(204).send();
+    });
+
+    app.post<{ Params: { id: string } }>('/agent-tools/:id/rotate-token', async (req, reply) => {
+        // Same as creation: the new secret is generated here and returned once, never stored in clear.
+        const { secret, token } = issueAgentToken(req.params.id);
+        await commandBus.dispatch(new RotateAgentToolTokenCommand(req.params.id, secret));
+        return reply.status(200).send({ id: req.params.id, token });
+    });
 };

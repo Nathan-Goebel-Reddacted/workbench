@@ -22,8 +22,13 @@ export class AgentToolRepository implements IAgentToolRepository {
         return entities.map(e => this.toDomain(e));
     }
 
+    async findAll(): Promise<AgentTool[]> {
+        const entities = await this.em.find(AgentToolOrmEntity, {}, { orderBy: { createdAt: 'desc' } });
+        return entities.map(e => this.toDomain(e));
+    }
+
     async save(agentTool: AgentTool): Promise<void> {
-        await this.em.transactional(async (em) => {
+        await this.em.transactional(async em => {
             await em.upsert(AgentToolOrmEntity, this.toOrm(agentTool));
         });
     }
@@ -36,6 +41,8 @@ export class AgentToolRepository implements IAgentToolRepository {
             new Permission(e.permission),
             e.scopes.map(s => new Scope(s)),
             new Token(e.token),
+            e.createdAt,
+            e.revokedAt ?? null,
         );
     }
 
@@ -47,6 +54,8 @@ export class AgentToolRepository implements IAgentToolRepository {
         e.permission = agentTool.getPermission().getValue();
         e.scopes = agentTool.getScopes().map(s => s.getValue());
         e.token = agentTool.getToken().getValue();
+        e.createdAt = agentTool.getCreatedAt();
+        e.revokedAt = agentTool.getRevokedAt();
         return e;
     }
 }
