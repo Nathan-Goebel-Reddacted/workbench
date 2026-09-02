@@ -1,7 +1,7 @@
-import { Command } from "@shared/application/command/command";
+import { Command } from '@shared/application/command/command';
 
 export class RemoveFeatureDocumentCommand implements Command {
-    static readonly commandName = "feature.RemoveFeatureDocument";
+    static readonly commandName = 'feature.RemoveFeatureDocument';
     readonly commandName: string;
 
     constructor(

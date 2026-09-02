@@ -52,6 +52,25 @@ import { UpdateProjectCommand } from '@contexts/project/application/command/upda
 import { UpdateProjectHandler } from '@contexts/project/application/command/updateProject/updateProjectHandler';
 import { UpdateProjectVisibilityCommand } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityCommand';
 import { UpdateProjectVisibilityHandler } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityHandler';
+import { UpdateFeatureCommand } from '@contexts/feature/application/command/updateFeature/updateFeatureCommand';
+import { UpdateFeatureHandler } from '@contexts/feature/application/command/updateFeature/updateFeatureHandler';
+import { DeleteFeatureCommand } from '@contexts/feature/application/command/deleteFeature/deleteFeatureCommand';
+import { DeleteFeatureHandler } from '@contexts/feature/application/command/deleteFeature/deleteFeatureHandler';
+
+// --- Feature ---
+import { FeatureFactory } from '@contexts/feature/domain/factory/featureFactory';
+import { CreateFeatureCommand } from '@contexts/feature/application/command/createFeature/createFeatureCommand';
+import { CreateFeatureHandler } from '@contexts/feature/application/command/createFeature/createFeatureHandler';
+import { AddFeatureDocumentCommand } from '@contexts/feature/application/command/addFeatureDocument/addFeatureDocumentCommand';
+import { AddFeatureDocumentHandler } from '@contexts/feature/application/command/addFeatureDocument/addFeatureDocumentHandler';
+import { RemoveFeatureDocumentCommand } from '@contexts/feature/application/command/removeFeatureDocument/removeFeatureDocumentCommand';
+import { RemoveFeatureDocumentHandler } from '@contexts/feature/application/command/removeFeatureDocument/removeFeatureDocumentHandler';
+import { GetFeatureByIdQuery } from '@contexts/feature/application/query/getFeatureById/getFeatureByIdQuery';
+import { GetFeatureByIdHandler } from '@contexts/feature/application/query/getFeatureById/getFeatureByIdHandler';
+import { GetFeaturesByOwnerQuery } from '@contexts/feature/application/query/getFeaturesByOwner/getFeaturesByOwnerQuery';
+import { GetFeaturesByOwnerHandler } from '@contexts/feature/application/query/getFeaturesByOwner/getFeaturesByOwnerHandler';
+import { OwnerGateway } from '@contexts/feature/infrastructure/gateway/ownerGateway';
+import { FeatureTicketsGateway } from '@contexts/feature/infrastructure/gateway/featureTicketsGateway';
 import { MikroOrmTransactionRunner } from '@shared/infrastructure/persistence/mikroOrmTransactionRunner';
 
 import { EntityManager } from '@mikro-orm/postgresql';
@@ -59,6 +78,7 @@ import { PostgresOwnerNumberSequence } from '@shared/infrastructure/sequence/pos
 import { UserRepository } from '@contexts/user/infrastructure/repository/userRepository';
 import { PortfolioRepository } from '@contexts/portfolio/infrastructure/repository/portfolioRepository';
 import { ProjectRepository } from '@contexts/project/infrastructure/repository/projectRepository';
+import { FeatureRepository } from '@contexts/feature/infrastructure/repository/featureRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
 import { ILogger } from '@shared/application/port/iLogger';
 
@@ -73,6 +93,7 @@ export function bootstrap(
         user: new UserRepository(em),
         portfolio: new PortfolioRepository(em),
         project: new ProjectRepository(em),
+        feature: new FeatureRepository(em),
     };
     const commandBus = new CommandBus();
     const queryBus = new QueryBus();
@@ -88,6 +109,7 @@ export function bootstrap(
     const userFactory = new UserFactory();
     const portfolioFactory = new PortfolioFactory();
     const projectFactory = new ProjectFactory();
+    const featureFactory = new FeatureFactory();
 
     // User
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
@@ -126,6 +148,24 @@ export function bootstrap(
     queryBus.register(ListProjectsQuery.queryName, new ListProjectsHandler(repos.project));
     commandBus.register(UpdateProjectCommand.commandName, new UpdateProjectHandler(repos.project));
     commandBus.register(UpdateProjectVisibilityCommand.commandName, new UpdateProjectVisibilityHandler(repos.project));
+
+    // Feature
+    commandBus.register(
+        CreateFeatureCommand.commandName,
+        new CreateFeatureHandler(repos.feature, featureFactory, ownerGateway),
+    );
+    commandBus.register(AddFeatureDocumentCommand.commandName, new AddFeatureDocumentHandler(repos.feature));
+    commandBus.register(
+        RemoveFeatureDocumentCommand.commandName,
+        new RemoveFeatureDocumentHandler(repos.feature, uploads),
+    );
+    queryBus.register(GetFeatureByIdQuery.queryName, new GetFeatureByIdHandler(repos.feature, ownerGateway));
+    queryBus.register(GetFeaturesByOwnerQuery.queryName, new GetFeaturesByOwnerHandler(repos.feature, ownerGateway));
+    commandBus.register(UpdateFeatureCommand.commandName, new UpdateFeatureHandler(repos.feature));
+    commandBus.register(
+        DeleteFeatureCommand.commandName,
+        new DeleteFeatureHandler(repos.feature, featureTicketsGateway, uploads),
+    );
 
     return { commandBus, queryBus };
 }

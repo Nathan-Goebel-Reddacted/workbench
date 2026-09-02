@@ -1,8 +1,13 @@
-import { Feature } from "../featureAggregate";
+import { Feature } from '../featureAggregate';
+import { OwnerType } from '../valueObject/featureOwner';
 
 export interface IFeatureRepository {
     findById(id: string): Promise<Feature | null>;
-    findByProjectId(projectId: string): Promise<Feature[]>;
+    /** Les features d'un porteur — un projet ou une idée — dans l'ordre de leur numéro. */
+    findByOwner(ownerType: OwnerType, ownerId: string): Promise<Feature[]>;
     existsById(id: string): Promise<boolean>;
+    /** Plus grand numéro déjà attribué chez ce porteur ; 0 s'il n'en a aucun. */
+    lastNumberOf(ownerType: OwnerType, ownerId: string): Promise<number>;
     save(feature: Feature): Promise<void>;
+    delete(id: string): Promise<void>;
 }

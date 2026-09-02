@@ -1,5 +1,3 @@
-
-
 export class Description {
     private readonly value: string;
 

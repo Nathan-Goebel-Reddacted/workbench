@@ -1,7 +1,7 @@
-import { Query } from "@shared/application/query/query";
+import { Query } from '@shared/application/query/query';
 
 export class GetFeatureByIdQuery implements Query {
-    static readonly queryName = "feature.GetFeatureById";
+    static readonly queryName = 'feature.GetFeatureById';
     readonly queryName: string;
 
     constructor(readonly id: string) {
