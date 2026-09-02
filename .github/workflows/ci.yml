@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+# Une exécution par branche : un push qui suit de près annule le précédent au lieu de faire
+# la queue.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` et non `npm install` : le lock fait foi, et une dérive de dépendance échoue
+      # ici plutôt que de s'installer en silence.
+      - run: npm ci
+
+      - name: Formatage
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Types
+        run: npm run typecheck
+
+      # Aucun service Postgres : cette suite ne couvre que du domaine et des fonctions pures.
+      # Le jour où un test aura besoin d'une base, il faudra ajouter un service ici — pas le
+      # rendre optionnel.
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

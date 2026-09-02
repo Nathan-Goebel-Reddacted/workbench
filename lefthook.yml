@@ -1,0 +1,14 @@
+# Le hook ne voit que les fichiers indexés : un commit partiel ne déclenche pas un passage sur
+# tout le dépôt. `typecheck`, `test` et `build` restent à la CI — cinq `tsc --noEmit` à chaque
+# commit, c'est le meilleur moyen de finir par commiter avec --no-verify.
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      glob: '*.{js,mjs,ts,tsx}'
+      run: npx eslint --fix {staged_files}
+      stage_fixed: true
+    format:
+      glob: '*.{js,mjs,ts,tsx,json,css,html,yml,yaml}'
+      run: npx prettier --write {staged_files}
+      stage_fixed: true

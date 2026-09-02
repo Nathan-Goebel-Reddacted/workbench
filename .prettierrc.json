@@ -1,0 +1,23 @@
+{
+  "printWidth": 120,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "arrowParens": "avoid",
+  "endOfLine": "auto",
+  "overrides": [
+    {
+      "files": "packages/backend/**/*.{ts,js}",
+      "options": {
+        "tabWidth": 4,
+        "semi": true
+      }
+    },
+    {
+      "files": ["packages/{frontend-public,frontend-private,shared-ui,content-renderer}/**/*.{ts,tsx,js,jsx}"],
+      "options": {
+        "tabWidth": 2,
+        "semi": false
+      }
+    }
+  ]
+}
