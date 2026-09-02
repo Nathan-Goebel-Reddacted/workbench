@@ -141,6 +141,19 @@ import { GetPageLayoutByRefHandler } from '@contexts/contentEditor/application/q
 import { ListMediaImagesQuery } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesQuery';
 import { ListMediaImagesHandler } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesHandler';
 
+// --- CV ---
+import { CvFactory } from '@contexts/cv/domain/factory/cvFactory';
+import { CreateCvCommand } from '@contexts/cv/application/command/createCv/createCvCommand';
+import { CreateCvHandler } from '@contexts/cv/application/command/createCv/createCvHandler';
+import { DeleteCvCommand } from '@contexts/cv/application/command/deleteCv/deleteCvCommand';
+import { DeleteCvHandler } from '@contexts/cv/application/command/deleteCv/deleteCvHandler';
+import { SetCvVisibilityCommand } from '@contexts/cv/application/command/setCvVisibility/setCvVisibilityCommand';
+import { SetCvVisibilityHandler } from '@contexts/cv/application/command/setCvVisibility/setCvVisibilityHandler';
+import { ReorderCvsCommand } from '@contexts/cv/application/command/reorderCvs/reorderCvsCommand';
+import { ReorderCvsHandler } from '@contexts/cv/application/command/reorderCvs/reorderCvsHandler';
+import { ListCvsQuery } from '@contexts/cv/application/query/listCvs/listCvsQuery';
+import { ListCvsHandler } from '@contexts/cv/application/query/listCvs/listCvsHandler';
+
 import { EntityManager } from '@mikro-orm/postgresql';
 import { PostgresOwnerNumberSequence } from '@shared/infrastructure/sequence/postgresOwnerNumberSequence';
 import { UserRepository } from '@contexts/user/infrastructure/repository/userRepository';
@@ -151,6 +164,7 @@ import { TicketRepository } from '@contexts/ticket/infrastructure/repository/tic
 import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRepository';
 import { PageLayoutRepository } from '@contexts/contentEditor/infrastructure/repository/pageLayoutRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
+import { CvRepository } from '@contexts/cv/infrastructure/repository/cvRepository';
 import { ILogger } from '@shared/application/port/iLogger';
 
 export function bootstrap(
@@ -168,6 +182,7 @@ export function bootstrap(
         ticket: new TicketRepository(em),
         idea: new IdeaRepository(em),
         pageLayout: new PageLayoutRepository(em),
+        cv: new CvRepository(em),
     };
     const commandBus = new CommandBus();
     const queryBus = new QueryBus();
@@ -204,6 +219,7 @@ export function bootstrap(
     const ticketFactory = new TicketFactory();
     const ideaFactory = new IdeaFactory();
     const pageLayoutFactory = new PageLayoutFactory();
+    const cvFactory = new CvFactory();
 
     // User
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
@@ -315,6 +331,13 @@ export function bootstrap(
         ListMediaImagesQuery.queryName,
         new ListMediaImagesHandler(repos.project, repos.feature, repos.ticket),
     );
+
+    // CV
+    commandBus.register(CreateCvCommand.commandName, new CreateCvHandler(repos.cv, cvFactory));
+    commandBus.register(DeleteCvCommand.commandName, new DeleteCvHandler(repos.cv, uploads));
+    commandBus.register(SetCvVisibilityCommand.commandName, new SetCvVisibilityHandler(repos.cv));
+    commandBus.register(ReorderCvsCommand.commandName, new ReorderCvsHandler(repos.cv));
+    queryBus.register(ListCvsQuery.queryName, new ListCvsHandler(repos.cv));
 
     return { commandBus, queryBus };
 }
