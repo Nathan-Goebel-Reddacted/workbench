@@ -27,7 +27,8 @@
     "@tiptap/extension-underline": "^2.27.2",
     "@tiptap/pm": "^2.27.2",
     "@tiptap/react": "^2.27.2",
-    "@tiptap/starter-kit": "^2.27.2"
+    "@tiptap/starter-kit": "^2.27.2",
+    "@-reddacted-/react-hooks": "^0.2.0"
   },
   "peerDependencies": {
     "react": "^18.3.1",

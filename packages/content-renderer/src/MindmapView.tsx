@@ -5,7 +5,7 @@
 // `.mindmap.json` qu'il va chercher lui-même (`url`) — c'est cette seconde forme qu'utilise
 // le widget document, qui ne connaît qu'une URL.
 import type { CSSProperties } from 'react'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   MINDMAP_COLORS,
   MINDMAP_FONT_SIZE,
@@ -21,6 +21,7 @@ import {
 } from './mindmap'
 import { mindmapFill, mindmapStroke, mindmapText } from './mindmapTheme'
 import { resolveUploadUrl } from './documentKind'
+import { useElementSize } from '@-reddacted-/react-hooks'
 
 type Props = {
   url?: string
@@ -253,25 +254,6 @@ function clientToUser(element: SVGSVGElement, clientX: number, clientY: number):
 
 // Taille du conteneur : le facteur d'échelle du rendu en dépend, et il change avec la
 // mise en page (redimensionnement d'une cellule de grille, de la fenêtre…).
-function useElementSize(ref: { current: HTMLElement | null }) {
-  const [size, setSize] = useState<{ width: number; height: number } | null>(null)
-
-  useLayoutEffect(() => {
-    const element = ref.current
-    if (!element) return
-
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect
-      setSize({ width, height })
-    })
-    observer.observe(element)
-
-    return () => observer.disconnect()
-  }, [ref])
-
-  return size
-}
-
 function Edge({ edge, source, target }: { edge: MindmapEdge; source: MindmapNode; target: MindmapNode }) {
   const from = centerOf(source)
   const to = centerOf(target)
