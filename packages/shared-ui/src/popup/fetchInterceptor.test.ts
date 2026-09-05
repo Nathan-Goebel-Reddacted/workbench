@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createInterceptedFetch } from './fetchInterceptor'
+import { createErrorRules, createInterceptedFetch } from '@-reddacted-/react-ui'
+import { popupMessages } from './messages'
 
 function responseAt(url: string, status: number, body?: unknown): Response {
   const res = new Response(body === undefined ? null : JSON.stringify(body), {
@@ -13,7 +14,8 @@ function responseAt(url: string, status: number, body?: unknown): Response {
 function interceptorOver(outcome: () => Promise<Response>) {
   const onRequestStart = vi.fn()
   const onError = vi.fn()
-  const fetchFn = createInterceptedFetch(() => outcome(), { onRequestStart, onError })
+  const rules = createErrorRules({ messages: popupMessages })
+  const fetchFn = createInterceptedFetch(() => outcome(), { onRequestStart, onError }, rules)
   return { fetchFn, onRequestStart, onError }
 }
 
