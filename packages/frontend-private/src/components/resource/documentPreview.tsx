@@ -131,8 +131,8 @@ const tooltipStyle: CSSProperties = {
   border: '1px solid var(--color-border)',
   borderRadius: '8px',
   padding: '0.5rem',
-  // Seule ombre portée du dépôt. Un noir fixe est invisible sur le fond du thème sombre :
-  // dérivée de la couleur de texte, elle s'inverse avec le thème. Même motif qu'en dataBinding.
+  // Seule ombre portée du dépôt. Un noir fixe disparaît sur une palette foncée :
+  // dérivée de la couleur de texte, elle suit le thème. Même motif que dataBinding.
   boxShadow: '0 8px 24px color-mix(in srgb, var(--color-text) 25%, transparent)',
   maxWidth: '320px',
 }

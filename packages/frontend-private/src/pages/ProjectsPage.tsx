@@ -301,7 +301,7 @@ const switchThumbStyle: CSSProperties = {
   width: '14px',
   height: '14px',
   // Le rail passe de --color-primary à --color-border : le fond de page contraste avec les deux,
-  // dans les deux thèmes, là où un blanc fixe disparaissait sur la piste claire du thème sombre.
+  // quelle que soit la palette, là où un blanc fixe disparaissait sur une piste trop pâle.
   borderRadius: '50%',
   backgroundColor: 'var(--color-bg)',
   transition: 'transform 0.2s',
