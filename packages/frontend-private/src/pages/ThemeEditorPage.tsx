@@ -48,10 +48,23 @@ export function ThemeEditorPage() {
     setThemes(catalog.themes)
     setDefaultId(catalog.defaultId)
     await reload()
+    return catalog
   }, [store, reload])
 
+  // L'éditeur s'ouvre sur le thème par défaut, pas sur une palette neutre : sinon
+  // « Enregistrer » sur une ligne l'écrase avec des couleurs que personne n'a composées.
   useEffect(() => {
-    void refresh()
+    let active = true
+    void refresh().then(catalog => {
+      if (!active) return
+      const current = catalog.themes.find(theme => theme.id === catalog.defaultId)
+      if (!current) return
+      setDraft(pickEditable(current.colors))
+      setTargetId(current.id)
+    })
+    return () => {
+      active = false
+    }
   }, [refresh])
 
   const handleChange = (key: string, value: string) => setDraft(prev => ({ ...prev, [key]: value }))

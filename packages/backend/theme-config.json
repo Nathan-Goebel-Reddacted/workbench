@@ -2,7 +2,7 @@
   "themes": [
     {
       "id": "b519ef3a-3fb3-4695-8265-20d76af2e555",
-      "name": "Mon thème",
+      "name": "sable",
       "visible": true,
       "colors": {
         "--color-bg": "#e8d5b5",
