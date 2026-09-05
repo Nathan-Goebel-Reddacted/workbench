@@ -23,6 +23,12 @@ export function HomePage() {
 
   const lockedTitle = canEdit ? undefined : 'Rôle edit requis'
 
+  // Les deux entrées ne dépendent pas du même rôle : la section suit ce qui reste à afficher.
+  const managementEntries: Entry[] = [
+    ...(canViewAdmin ? [{ label: 'User Management', to: '/admin' }] : []),
+    ...(canEdit ? [{ label: 'Error Log', to: '/error-log' }] : []),
+  ]
+
   const sections: Section[] = [
     {
       title: 'Portfolio',
@@ -51,7 +57,7 @@ export function HomePage() {
         },
       ],
     },
-    ...(canViewAdmin ? [{ title: 'Management', entries: [{ label: 'User Management', to: '/admin' }] }] : []),
+    ...(managementEntries.length > 0 ? [{ title: 'Management', entries: managementEntries }] : []),
   ]
 
   return (
