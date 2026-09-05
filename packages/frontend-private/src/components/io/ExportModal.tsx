@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Button } from '@atelier/shared-ui'
-import { ModalShell } from './ModalShell'
+import { Button, Modal } from '@atelier/shared-ui'
 import {
   API_URL,
   choiceLabelStyle,
@@ -83,7 +82,10 @@ export function ExportModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <ModalShell
+    <Modal
+      id="export-data"
+      open
+      closeLabel="Fermer"
       title="Exporter les données"
       onClose={onClose}
       footer={
@@ -125,6 +127,6 @@ export function ExportModal({ onClose }: { onClose: () => void }) {
             : `Écrit : ${result.filename} — ${result.uploads} fichier(s) média`}
         </p>
       )}
-    </ModalShell>
+    </Modal>
   )
 }

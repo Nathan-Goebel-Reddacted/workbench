@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button } from '@atelier/shared-ui'
-import { ModalShell } from './ModalShell'
+import { Button, Modal } from '@atelier/shared-ui'
 import {
   API_URL,
   choiceLabelStyle,
@@ -90,7 +89,10 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
   )
 
   return (
-    <ModalShell
+    <Modal
+      id="import-data"
+      open
+      closeLabel="Fermer"
       title="Importer des données"
       onClose={onClose}
       footer={
@@ -190,6 +192,6 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
       )}
 
       {error && <p style={errorStyle}>{error}</p>}
-    </ModalShell>
+    </Modal>
   )
 }
