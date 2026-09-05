@@ -12,11 +12,12 @@ import { fileURLToPath } from 'url';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
 import { DomainException } from '@shared/domain/domainException';
 import { UserOrmEntity } from '@contexts/user/infrastructure/entity/userOrmEntity';
+import { ErrorLogRecorder } from '@contexts/errorLog/application/errorLogRecorder';
 import { env } from '../config/env.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export function createServer(orm: MikroORM): FastifyInstance {
+export function createServer(orm: MikroORM, errorRecorder: ErrorLogRecorder): FastifyInstance {
     // Le JSON sur stdout est le bon format en conteneur : c'est le collecteur qui décide
     // de la destination, pas l'application.
     const app = Fastify({ logger: { level: env.LOG_LEVEL } });
@@ -67,6 +68,9 @@ export function createServer(orm: MikroORM): FastifyInstance {
         // mutation publique de l'API. Elle se défend par honeypot + délai + rate-limit,
         // pas par une session.
         if (req.url === '/contact' && req.method === 'POST') return;
+        // Le journal doit recevoir les erreurs du site public, où personne n'a de session.
+        // Comme /contact : rate-limit, corps borné et champs plafonnés tiennent lieu de garde.
+        if (req.url === '/error-log' && req.method === 'POST') return;
         try {
             await req.jwtVerify();
             // Le jeton dit vrai au moment où il a été signé. La version de session dit s'il
@@ -107,7 +111,23 @@ export function createServer(orm: MikroORM): FastifyInstance {
         // Fastify, qui journalisait l'erreur. On la journalise donc ici, et on rend au client
         // l'identifiant de requête — le seul lien entre ce qu'il a vu et la trace serveur.
         req.log.error({ err: error, requestId: req.id }, 'Unhandled error');
+
+        // Le journal ne doit jamais changer ce que voit l'appelant : la réponse part d'abord,
+        // et un échec d'écriture reste un échec d'écriture — pas un second 500.
         reply.status(500).send({ error: 'Internal server error', requestId: req.id });
+
+        const failure = error as Error & { statusCode?: number };
+        void errorRecorder
+            .record({
+                origin: 'back',
+                message: failure.message,
+                stack: failure.stack,
+                url: req.url,
+                userId: req.user?.sub ?? null,
+                correlationId: String(req.id),
+                context: { method: req.method, statusCode: failure.statusCode ?? 500 },
+            })
+            .catch(recordError => req.log.error({ err: recordError }, 'Failed to record error log entry'));
     });
 
     return app;

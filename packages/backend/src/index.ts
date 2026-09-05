@@ -25,11 +25,17 @@ import { AgentPairingRequestRepository } from './contexts/ai-assistant/infrastru
 import { themeRoutes } from './shared/infrastructure/http/themeRoutes.js';
 import { uploadRoutes } from './shared/infrastructure/http/uploadRoutes.js';
 import { ioRoutes } from './shared/infrastructure/http/ioRoutes.js';
+import { errorLogRoutes } from './contexts/errorLog/infrastructure/http/errorLogRoutes.js';
+import { ErrorLogRepository } from './contexts/errorLog/infrastructure/repository/errorLogRepository.js';
+import { ErrorLogRecorder } from './contexts/errorLog/application/errorLogRecorder.js';
 
 try {
     const orm = await MikroORM.init(config);
-    // Le serveur en premier : c'est lui qui porte le logger que reçoit tout le reste.
-    const app = createServer(orm);
+    // Le journal avant le serveur : le gestionnaire d'erreurs de Fastify écrit dedans.
+    const errorLogRepo = new ErrorLogRepository(orm.em);
+    const errorRecorder = new ErrorLogRecorder(errorLogRepo);
+    // Le serveur ensuite : c'est lui qui porte le logger que reçoit tout le reste.
+    const app = createServer(orm, errorRecorder);
     const buses = bootstrap(orm.em, new PinoLogger(app.log));
 
     const allowedEmailRepo = new AllowedEmailRepository(orm.em);
@@ -67,6 +73,8 @@ try {
     await app.register(themeRoutes);
     await app.register(uploadRoutes);
     await app.register(ioRoutes, { orm });
+    // Public en écriture : le site public n'a pas de session et ses erreurs comptent autant.
+    await app.register(errorLogRoutes, { repository: errorLogRepo, recorder: errorRecorder });
 
     for (const warning of envWarnings) app.log.warn(warning);
 

@@ -3,8 +3,9 @@ import { defineConfig } from 'vitest/config';
 
 const backendSrc = fileURLToPath(new URL('./packages/backend/src', import.meta.url));
 
-// Un seul runner pour le monorepo. Cette passe ne couvre que du domaine et des fonctions pures :
-// pas de base, pas de Fastify simulé, donc pas d'environnement navigateur à monter non plus.
+// Un seul runner pour le monorepo. Cette passe ne touche pas de base : du domaine, des fonctions
+// pures, et un Fastify monté en mémoire (server.test.ts) dont l'ORM est simulé. Pas d'environnement
+// navigateur à monter non plus.
 export default defineConfig({
   resolve: {
     // Mêmes alias que le tsconfig du backend : sans eux, tout module qui traverse @shared
