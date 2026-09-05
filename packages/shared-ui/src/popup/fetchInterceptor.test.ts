@@ -14,9 +14,10 @@ function responseAt(url: string, status: number, body?: unknown): Response {
 function interceptorOver(outcome: () => Promise<Response>) {
   const onRequestStart = vi.fn()
   const onError = vi.fn()
+  const onReport = vi.fn()
   const rules = createErrorRules({ messages: popupMessages })
-  const fetchFn = createInterceptedFetch(() => outcome(), { onRequestStart, onError }, rules)
-  return { fetchFn, onRequestStart, onError }
+  const fetchFn = createInterceptedFetch(() => outcome(), { onRequestStart, onError, onReport }, rules)
+  return { fetchFn, onRequestStart, onError, onReport }
 }
 
 describe('createInterceptedFetch', () => {
@@ -101,5 +102,52 @@ describe('createInterceptedFetch', () => {
 
     await expect(fetchFn('http://api/projects')).rejects.toBe(failure)
     expect(onError).toHaveBeenCalledWith('Le serveur est injoignable.')
+  })
+
+  it('rapporte au journal ce que la popup montre, avec la requête derrière', async () => {
+    const { fetchFn, onReport } = interceptorOver(async () => responseAt('http://api/projects', 503))
+
+    await fetchFn('http://api/projects', { method: 'DELETE' })
+
+    expect(onReport).toHaveBeenCalledWith({
+      message: 'Le serveur a rencontré une erreur.',
+      method: 'DELETE',
+      url: 'http://api/projects',
+      status: 503,
+    })
+  })
+
+  it('rapporte un échec réseau avec sa cause et sans statut', async () => {
+    const cause = new TypeError('Failed to fetch')
+    const { fetchFn, onReport } = interceptorOver(async () => {
+      throw cause
+    })
+
+    await expect(fetchFn('http://api/projects')).rejects.toThrow(cause)
+
+    expect(onReport).toHaveBeenCalledWith({
+      message: 'Le serveur est injoignable.',
+      method: 'GET',
+      url: 'http://api/projects',
+      cause,
+    })
+  })
+
+  it('lit la méthode portée par un objet Request', async () => {
+    const { fetchFn, onReport } = interceptorOver(async () => responseAt('http://api/projects', 500))
+
+    await fetchFn(new Request('http://api/projects', { method: 'PUT' }))
+
+    expect(onReport).toHaveBeenCalledWith(expect.objectContaining({ method: 'PUT' }))
+  })
+
+  it('ne rapporte rien au journal quand la popup se tait', async () => {
+    const ignored = interceptorOver(async () => responseAt('http://api/projects', 422))
+    await ignored.fetchFn('http://api/projects')
+    expect(ignored.onReport).not.toHaveBeenCalled()
+
+    const probe = interceptorOver(async () => responseAt('http://api/auth/me', 401))
+    await probe.fetchFn('http://api/auth/me')
+    expect(probe.onReport).not.toHaveBeenCalled()
   })
 })
