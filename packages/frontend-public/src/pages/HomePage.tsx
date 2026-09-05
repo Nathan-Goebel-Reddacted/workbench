@@ -1,8 +1,7 @@
 import type { CSSProperties } from 'react'
-import { useEffect, useState } from 'react'
 import { LayoutPreview, type PageLayoutDto } from '@atelier/content-renderer'
-import { ErrorMessage, LoadingMessage, type LoadStatus } from '../components/PageStatus'
-import { fetchJson } from '../lib/fetchJson'
+import { ErrorMessage, LoadingMessage } from '../components/PageStatus'
+import { fetchJson, useAsync } from '@atelier/shared-ui'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
@@ -13,36 +12,20 @@ type PortfolioDto = { id: string }
 // rendu des widgets que la colonne d'aperçu, en mode « public » (voir RenderMode).
 export function HomePage() {
   useDocumentTitle()
-  const [layout, setLayout] = useState<PageLayoutDto | null>(null)
-  const [status, setStatus] = useState<LoadStatus>('loading')
-  const [attempt, setAttempt] = useState(0)
+  const {
+    data: layout,
+    status,
+    retry,
+  } = useAsync(async signal => {
+    const portfolio = await fetchJson<PortfolioDto>(`${API_URL}/portfolio`, signal)
+    if (!portfolio) return null
 
-  useEffect(() => {
-    const controller = new AbortController()
-
-    async function load() {
-      const portfolio = await fetchJson<PortfolioDto>(`${API_URL}/portfolio`, controller.signal)
-      if (!portfolio) return null
-
-      const params = new URLSearchParams({ pageType: 'portfolio', pageRef: portfolio.id })
-      return fetchJson<PageLayoutDto>(`${API_URL}/page-layouts/by-ref?${params}`, controller.signal)
-    }
-
-    setStatus('loading')
-    load()
-      .then(data => {
-        setLayout(data)
-        setStatus('ready')
-      })
-      .catch(err => {
-        if (err.name !== 'AbortError') setStatus('error')
-      })
-
-    return () => controller.abort()
-  }, [attempt])
+    const params = new URLSearchParams({ pageType: 'portfolio', pageRef: portfolio.id })
+    return fetchJson<PageLayoutDto>(`${API_URL}/page-layouts/by-ref?${params}`, signal)
+  })
 
   if (status === 'loading') return <LoadingMessage />
-  if (status === 'error') return <ErrorMessage onRetry={() => setAttempt(n => n + 1)} />
+  if (status === 'error') return <ErrorMessage onRetry={retry} />
 
   // Portfolio absent, layout jamais créé ou vidé : ce n'est pas une erreur, juste la page nue.
   if (!layout || layout.sections.length === 0) {

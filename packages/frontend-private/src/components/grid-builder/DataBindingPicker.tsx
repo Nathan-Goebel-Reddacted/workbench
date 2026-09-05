@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Button } from '@atelier/shared-ui'
+import { Button, useAsync } from '@atelier/shared-ui'
 import {
   BINDING_ENTITY_LABELS,
   BINDING_FIELDS,
@@ -22,22 +22,15 @@ type Props = {
 
 // Petit hook de fetch de liste avec abort. url null => liste vide, pas de requête.
 function useFetchList<T>(url: string | null): T[] {
-  const [items, setItems] = useState<T[]>([])
-  useEffect(() => {
-    if (!url) {
-      setItems([])
-      return
-    }
-    const controller = new AbortController()
-    fetch(url, { credentials: 'include', signal: controller.signal })
-      .then(res => (res.ok ? (res.json() as Promise<T[]>) : []))
-      .then(setItems)
-      .catch(err => {
-        if (err.name !== 'AbortError') setItems([])
-      })
-    return () => controller.abort()
-  }, [url])
-  return items
+  const { data } = useAsync<T[]>(
+    async signal => {
+      if (!url) return []
+      const res = await fetch(url, { credentials: 'include', signal })
+      return res.ok ? ((await res.json()) as T[]) : []
+    },
+    [url],
+  )
+  return data ?? []
 }
 
 export function DataBindingPicker({ apiUrl, onInsert, onClose }: Props) {

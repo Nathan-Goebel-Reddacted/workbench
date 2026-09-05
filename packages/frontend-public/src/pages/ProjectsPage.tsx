@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react'
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ErrorMessage, LoadingMessage, type LoadStatus } from '../components/PageStatus'
-import { fetchJson } from '../lib/fetchJson'
+import { ErrorMessage, LoadingMessage } from '../components/PageStatus'
+import { fetchJson, useAsync } from '@atelier/shared-ui'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
@@ -25,28 +25,15 @@ const CATEGORIES: { value: Category; label: string }[] = [
 
 export function ProjectsPage() {
   useDocumentTitle('Projets')
-  const [projects, setProjects] = useState<ProjectSummary[]>([])
-  const [status, setStatus] = useState<LoadStatus>('loading')
-  const [attempt, setAttempt] = useState(0)
+  const { data, status, retry } = useAsync(signal => fetchJson<ProjectSummary[]>(`${API_URL}/projects`, signal))
 
-  useEffect(() => {
-    const controller = new AbortController()
-
-    setStatus('loading')
-    fetchJson<ProjectSummary[]>(`${API_URL}/projects`, controller.signal)
-      .then(data => {
-        setProjects((data ?? []).filter(p => p.visible).sort((a, b) => a.name.localeCompare(b.name)))
-        setStatus('ready')
-      })
-      .catch(err => {
-        if (err.name !== 'AbortError') setStatus('error')
-      })
-
-    return () => controller.abort()
-  }, [attempt])
+  const projects = useMemo(
+    () => (data ?? []).filter(p => p.visible).sort((a, b) => a.name.localeCompare(b.name)),
+    [data],
+  )
 
   if (status === 'loading') return <LoadingMessage />
-  if (status === 'error') return <ErrorMessage onRetry={() => setAttempt(n => n + 1)} />
+  if (status === 'error') return <ErrorMessage onRetry={retry} />
 
   return (
     <main style={pageStyle}>

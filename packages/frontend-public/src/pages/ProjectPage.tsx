@@ -1,9 +1,8 @@
 import type { CSSProperties } from 'react'
-import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { LayoutPreview, type PageLayoutDto } from '@atelier/content-renderer'
-import { ErrorMessage, LoadingMessage, type LoadStatus } from '../components/PageStatus'
-import { fetchJson } from '../lib/fetchJson'
+import { ErrorMessage, LoadingMessage } from '../components/PageStatus'
+import { fetchJson, useAsync } from '@atelier/shared-ui'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
@@ -12,19 +11,10 @@ type ProjectDto = { id: string; name: string; visible: boolean }
 
 export function ProjectPage() {
   const { id } = useParams<{ id: string }>()
-  const [project, setProject] = useState<ProjectDto | null>(null)
-  const [layout, setLayout] = useState<PageLayoutDto | null>(null)
-  const [status, setStatus] = useState<LoadStatus>('loading')
-  const [attempt, setAttempt] = useState(0)
+  const { data, status, retry } = useAsync(
+    async signal => {
+      if (!id) return null
 
-  useDocumentTitle(project?.name)
-
-  useEffect(() => {
-    if (!id) return
-    const controller = new AbortController()
-    const { signal } = controller
-
-    async function load() {
       // Un projet inexistant ou masqué rend 200 sans corps : c'est « rien à montrer »,
       // pas une panne. Seul un statut d'erreur remonte en exception.
       const found = await fetchJson<ProjectDto>(`${API_URL}/projects/${id}`, signal)
@@ -33,24 +23,17 @@ export function ProjectPage() {
       const params = new URLSearchParams({ pageType: 'project', pageRef: found.id })
       const foundLayout = await fetchJson<PageLayoutDto>(`${API_URL}/page-layouts/by-ref?${params}`, signal)
       return { found, foundLayout }
-    }
+    },
+    [id],
+  )
 
-    setStatus('loading')
-    load()
-      .then(data => {
-        setProject(data?.found ?? null)
-        setLayout(data?.foundLayout ?? null)
-        setStatus('ready')
-      })
-      .catch(err => {
-        if (err.name !== 'AbortError') setStatus('error')
-      })
+  const project = data?.found ?? null
+  const layout = data?.foundLayout ?? null
 
-    return () => controller.abort()
-  }, [id, attempt])
+  useDocumentTitle(project?.name)
 
   if (status === 'loading') return <LoadingMessage />
-  if (status === 'error') return <ErrorMessage onRetry={() => setAttempt(n => n + 1)} />
+  if (status === 'error') return <ErrorMessage onRetry={retry} />
 
   if (!project) {
     return (

@@ -1,9 +1,9 @@
 import type { CSSProperties } from 'react'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from '@atelier/shared-ui'
 import { resolveUploadUrl } from '@atelier/content-renderer'
-import { ErrorMessage, LoadingMessage, type LoadStatus } from '../components/PageStatus'
-import { fetchJson } from '../lib/fetchJson'
+import { ErrorMessage, LoadingMessage } from '../components/PageStatus'
+import { fetchJson, useAsync } from '@atelier/shared-ui'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
@@ -18,29 +18,16 @@ type CvDto = {
 
 export function CvPage() {
   useDocumentTitle('CV')
-  const [cvs, setCvs] = useState<CvDto[]>([])
   const [index, setIndex] = useState(0)
-  const [status, setStatus] = useState<LoadStatus>('loading')
-  const [attempt, setAttempt] = useState(0)
+  const { data, status, retry } = useAsync(signal => fetchJson<CvDto[]>(`${API_URL}/cvs`, signal))
 
-  useEffect(() => {
-    const controller = new AbortController()
-
-    setStatus('loading')
-    fetchJson<CvDto[]>(`${API_URL}/cvs`, controller.signal)
-      .then(data => {
-        setCvs((data ?? []).filter(cv => cv.visible).sort((a, b) => a.displayOrder - b.displayOrder))
-        setStatus('ready')
-      })
-      .catch(err => {
-        if (err.name !== 'AbortError') setStatus('error')
-      })
-
-    return () => controller.abort()
-  }, [attempt])
+  const cvs = useMemo(
+    () => (data ?? []).filter(cv => cv.visible).sort((a, b) => a.displayOrder - b.displayOrder),
+    [data],
+  )
 
   if (status === 'loading') return <LoadingMessage />
-  if (status === 'error') return <ErrorMessage onRetry={() => setAttempt(n => n + 1)} />
+  if (status === 'error') return <ErrorMessage onRetry={retry} />
 
   if (cvs.length === 0) {
     return (
