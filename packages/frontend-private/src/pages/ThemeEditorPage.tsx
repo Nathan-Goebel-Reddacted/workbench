@@ -6,7 +6,6 @@ import {
   Button,
   ColorField,
   defaultPalette,
-  themeVariableGroups,
   parseColors,
   serializeColors,
   randomHex,
@@ -14,36 +13,22 @@ import {
   type ThemeDefinition,
 } from '@atelier/shared-ui'
 
-const GROUP_LABELS: Record<string, string> = {
-  Surfaces: 'Surfaces',
-  Text: 'Texte',
-  Primary: 'Primaire',
-  Danger: 'Erreur',
-  Mindmap: 'Mindmap',
-}
+// Un thème ne pilote que ces sept couleurs. Les autres variables du vocabulaire
+// (mindmap, erreur, primaire douce) restent celles de la palette de base.
+const EDITABLE_VARS: Array<{ key: string; label: string }> = [
+  { key: '--color-bg', label: 'Fond' },
+  { key: '--color-surface', label: 'Surface' },
+  { key: '--color-border', label: 'Bordure' },
+  { key: '--color-text-muted', label: 'Texte secondaire' },
+  { key: '--color-text', label: 'Texte' },
+  { key: '--color-primary', label: 'Primaire' },
+  { key: '--color-primary-hover', label: 'Primaire (survol)' },
+]
 
-const VAR_LABELS: Record<string, string> = {
-  '--color-bg': 'Fond',
-  '--color-surface': 'Surface',
-  '--color-border': 'Bordure',
-  '--color-text': 'Texte',
-  '--color-text-muted': 'Texte secondaire',
-  '--color-primary': 'Primaire',
-  '--color-primary-hover': 'Primaire (survol)',
-  '--color-on-primary': 'Sur primaire',
-  '--color-primary-soft': 'Primaire (doux)',
-  '--color-danger': 'Erreur',
-  '--color-danger-soft': 'Erreur (doux)',
-  '--color-mindmap-red': 'Rouge',
-  '--color-mindmap-red-soft': 'Rouge (doux)',
-  '--color-mindmap-orange': 'Orange',
-  '--color-mindmap-orange-soft': 'Orange (doux)',
-  '--color-mindmap-green': 'Vert',
-  '--color-mindmap-green-soft': 'Vert (doux)',
-  '--color-mindmap-blue': 'Bleu',
-  '--color-mindmap-blue-soft': 'Bleu (doux)',
-  '--color-mindmap-purple': 'Violet',
-  '--color-mindmap-purple-soft': 'Violet (doux)',
+const EDITABLE_KEYS = EDITABLE_VARS.map(({ key }) => key)
+
+function pickEditable(colors: ThemeColors): ThemeColors {
+  return Object.fromEntries(EDITABLE_KEYS.map(key => [key, colors[key] ?? defaultPalette[key]]))
 }
 
 const NEW_THEME_NAME = 'Nouveau thème'
@@ -55,7 +40,7 @@ export function ThemeEditorPage() {
 
   const [themes, setThemes] = useState<ThemeDefinition[]>([])
   const [defaultId, setDefaultId] = useState<string | null>(null)
-  const [draft, setDraft] = useState<ThemeColors>(() => ({ ...defaultPalette }))
+  const [draft, setDraft] = useState<ThemeColors>(() => pickEditable(defaultPalette))
   const [targetId, setTargetId] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
@@ -71,11 +56,10 @@ export function ThemeEditorPage() {
 
   const handleChange = (key: string, value: string) => setDraft(prev => ({ ...prev, [key]: value }))
 
-  const handleRandomAll = () =>
-    setDraft(prev => Object.fromEntries(Object.keys(prev).map(key => [key, randomHex()])) as ThemeColors)
+  const handleRandomAll = () => setDraft(Object.fromEntries(EDITABLE_KEYS.map(key => [key, randomHex()])))
 
   const handleReset = () => {
-    setDraft({ ...defaultPalette })
+    setDraft(pickEditable(defaultPalette))
     setTargetId(null)
   }
 
@@ -86,12 +70,12 @@ export function ThemeEditorPage() {
   const pasteInto = async (id: string | null) => {
     const parsed = parseColors(await navigator.clipboard.readText())
     if (Object.keys(parsed).length === 0) return
-    setDraft(prev => ({ ...prev, ...parsed }))
+    setDraft(prev => pickEditable({ ...prev, ...parsed }))
     if (id) setTargetId(id)
   }
 
   const handleLoad = (theme: ThemeDefinition) => {
-    setDraft({ ...defaultPalette, ...theme.colors })
+    setDraft(pickEditable(theme.colors))
     setTargetId(theme.id)
   }
 
@@ -140,19 +124,14 @@ export function ThemeEditorPage() {
 
       <div style={layoutStyle}>
         <section style={panelStyle}>
-          {themeVariableGroups.map(group => (
-            <div key={group.label} style={groupStyle}>
-              <p style={panelLabelStyle}>{GROUP_LABELS[group.label] ?? group.label}</p>
-              {group.variables.map(({ key }) => (
-                <ColorField
-                  key={key}
-                  label={VAR_LABELS[key] ?? key}
-                  value={draft[key] ?? '#000000'}
-                  onChange={value => handleChange(key, value)}
-                  randomLabel="Couleur aléatoire"
-                />
-              ))}
-            </div>
+          {EDITABLE_VARS.map(({ key, label }) => (
+            <ColorField
+              key={key}
+              label={label}
+              value={draft[key] ?? '#000000'}
+              onChange={value => handleChange(key, value)}
+              randomLabel="Couleur aléatoire"
+            />
           ))}
 
           <div style={actionsStyle}>
@@ -173,7 +152,7 @@ export function ThemeEditorPage() {
 
         <section style={panelStyle}>
           <p style={panelLabelStyle}>Aperçu</p>
-          <div style={{ ...(draft as CSSProperties), ...previewWrapperStyle }}>
+          <div style={{ ...({ ...defaultPalette, ...draft } as CSSProperties), ...previewWrapperStyle }}>
             <div style={previewNavStyle}>
               <span style={previewBrandStyle}>Atelier</span>
               <span style={previewNavLinkStyle}>Theme Editor</span>
@@ -216,12 +195,8 @@ export function ThemeEditorPage() {
                   aria-label="Nom du thème"
                 />
                 <div style={swatchesStyle}>
-                  {SWATCH_KEYS.map(key => (
-                    <span
-                      key={key}
-                      style={{ ...swatchStyle, backgroundColor: `var(${key})` }}
-                      title={VAR_LABELS[key]}
-                    />
+                  {EDITABLE_VARS.map(({ key, label }) => (
+                    <span key={key} style={{ ...swatchStyle, backgroundColor: `var(${key})` }} title={label} />
                   ))}
                 </div>
                 <p style={rowSampleStyle}>
@@ -280,8 +255,6 @@ export function ThemeEditorPage() {
   )
 }
 
-const SWATCH_KEYS = ['--color-bg', '--color-surface', '--color-primary', '--color-text', '--color-border']
-
 const pageStyle: CSSProperties = { padding: '2rem', maxWidth: '1100px', margin: '0 auto' }
 const headerStyle: CSSProperties = {
   display: 'flex',
@@ -307,8 +280,6 @@ const panelStyle: CSSProperties = {
   flexDirection: 'column',
   gap: '0.5rem',
 }
-
-const groupStyle: CSSProperties = { display: 'flex', flexDirection: 'column', marginBottom: '0.75rem' }
 
 const panelLabelStyle: CSSProperties = {
   fontSize: '0.75rem',

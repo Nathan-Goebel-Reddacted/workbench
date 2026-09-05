@@ -1,6 +1,8 @@
 export { AuthProvider, useAuth, type AuthUser } from './auth/AuthContext'
 export { ProtectedRoute } from './auth/ProtectedRoute'
 export { PopupProvider } from './popup/PopupProvider'
+export { ThemeProvider } from './theme/ThemeProvider'
+export { workbenchPalette as defaultPalette } from './theme/palette'
 export { popupMessages } from './popup/messages'
 
 export {
@@ -15,12 +17,8 @@ export {
   PageMessage,
   LoadingMessage,
   ErrorMessage,
-  ThemeProvider,
   useTheme,
   ThemeSelect,
-  defaultPalette,
-  themeVariableGroups,
-  themeVariableKeys,
   createLocalThemeStore,
   createHttpThemeStore,
   serializeColors,
@@ -44,6 +42,5 @@ export {
   type ThemeCatalog,
   type ThemeDraft,
   type ThemeStore,
-  type ThemeVariableGroup,
   type PopupMessages,
 } from '@-reddacted-/react-ui'
