@@ -15,5 +15,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@-reddacted-/react-ui": "^0.2.2"
   }
 }
