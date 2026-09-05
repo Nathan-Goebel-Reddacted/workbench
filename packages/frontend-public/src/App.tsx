@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { ThemeProvider, NavBar, PopupProvider } from '@atelier/shared-ui'
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { ThemeProvider, NavBar, PopupProvider, ThemeSelect } from '@atelier/shared-ui'
 import { HomePage } from './pages/HomePage'
 import { CvPage } from './pages/CvPage'
 import { ProjectsPage } from './pages/ProjectsPage'
@@ -17,6 +17,8 @@ export function App() {
               { label: 'Projets', to: '/projects' },
               { label: 'CV', to: '/cv' },
             ]}
+            linkAs={Link}
+            actions={<ThemeSelect ariaLabel="Thème" />}
           />
           <Routes>
             <Route path="/" element={<HomePage />} />

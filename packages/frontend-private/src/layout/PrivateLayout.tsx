@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
-import { Outlet } from 'react-router-dom'
-import { NavBar, useAuth } from '@atelier/shared-ui'
+import { Link, Outlet } from 'react-router-dom'
+import { NavBar, ThemeSelect, useAuth } from '@atelier/shared-ui'
 
 const NAV_LINKS = [
   { label: 'Portfolio Editor', to: '/editor' },
@@ -17,12 +17,16 @@ export function PrivateLayout() {
       <NavBar
         brand="Workbench"
         links={NAV_LINKS}
+        linkAs={Link}
         actions={
-          user ? (
-            <button type="button" onClick={() => void logout()} style={logoutStyle}>
-              Déconnexion
-            </button>
-          ) : null
+          <>
+            <ThemeSelect ariaLabel="Thème" />
+            {user && (
+              <button type="button" onClick={() => void logout()} style={logoutStyle}>
+                Déconnexion
+              </button>
+            )}
+          </>
         }
       />
       <main style={mainStyle}>
