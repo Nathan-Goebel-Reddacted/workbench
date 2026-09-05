@@ -31,3 +31,7 @@ ioPort/*
 !ioPort/.gitkeep
 backup/*
 !backup/.gitkeep
+
+# Thèmes — écrits par le serveur au fil des enregistrements, c'est de la donnée
+packages/backend/theme-config.json
+packages/backend/theme-config.legacy.json
