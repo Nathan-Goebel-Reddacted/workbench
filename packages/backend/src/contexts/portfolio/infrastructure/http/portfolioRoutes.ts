@@ -7,6 +7,7 @@ import { RemovePortfolioLanguageCommand } from '@contexts/portfolio/application/
 import { GetPortfolioByIdQuery } from '@contexts/portfolio/application/query/getPortfolioById/getPortfolioByIdQuery';
 import { GetPortfolioQuery } from '@contexts/portfolio/application/query/getPortfolio/getPortfolioQuery';
 import { requirePrivateRead, requireRole } from '@shared/infrastructure/http/roleGuard';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
@@ -21,7 +22,7 @@ export const portfolioRoutes: FastifyPluginAsync<Opts> = async (app, { commandBu
         return reply.send(result);
     });
 
-    app.post('/portfolios', { preHandler: requireRole('edit') }, async (_req, reply) => {
+    app.post('/portfolios', { preHandler: requireRole(UserRole.EDIT) }, async (_req, reply) => {
         await commandBus.dispatch(new CreatePortfolioCommand(crypto.randomUUID()));
         return reply.status(201).send();
     });
@@ -29,7 +30,7 @@ export const portfolioRoutes: FastifyPluginAsync<Opts> = async (app, { commandBu
     app.post<{ Params: { id: string }; Body: { language: string } }>(
         '/portfolios/:id/languages',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -47,7 +48,7 @@ export const portfolioRoutes: FastifyPluginAsync<Opts> = async (app, { commandBu
     app.delete<{ Params: { id: string }; Body: { language: string } }>(
         '/portfolios/:id/languages',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',

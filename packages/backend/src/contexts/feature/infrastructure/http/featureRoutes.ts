@@ -9,6 +9,7 @@ import { DeleteFeatureCommand } from '@contexts/feature/application/command/dele
 import { GetFeatureByIdQuery } from '@contexts/feature/application/query/getFeatureById/getFeatureByIdQuery';
 import { GetFeaturesByOwnerQuery } from '@contexts/feature/application/query/getFeaturesByOwner/getFeaturesByOwnerQuery';
 import { requireRole, requirePrivateRead } from '@shared/infrastructure/http/roleGuard';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 type DocumentBody = { name: string; url: string; type: string };
@@ -54,7 +55,7 @@ export const featureRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     }>(
         '/features',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -100,7 +101,7 @@ export const featureRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     app.patch<{ Params: { id: string }; Body: { name: string; description: string } }>(
         '/features/:id',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -119,15 +120,19 @@ export const featureRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
         },
     );
 
-    app.delete<{ Params: { id: string } }>('/features/:id', { preHandler: requireRole('edit') }, async (req, reply) => {
-        await commandBus.dispatch(new DeleteFeatureCommand(req.params.id));
-        return reply.status(204).send();
-    });
+    app.delete<{ Params: { id: string } }>(
+        '/features/:id',
+        { preHandler: requireRole(UserRole.EDIT) },
+        async (req, reply) => {
+            await commandBus.dispatch(new DeleteFeatureCommand(req.params.id));
+            return reply.status(204).send();
+        },
+    );
 
     app.post<{ Params: { id: string }; Body: DocumentBody }>(
         '/features/:id/documents',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -151,7 +156,7 @@ export const featureRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
 
     app.delete<{ Params: { id: string; documentId: string } }>(
         '/features/:id/documents/:documentId',
-        { preHandler: requireRole('edit') },
+        { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
             await commandBus.dispatch(new RemoveFeatureDocumentCommand(req.params.id, req.params.documentId));
             return reply.status(204).send();

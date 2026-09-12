@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { UserRole } from '@shared/domain/valueObject/userRole.js';
 
-export function requireRole(...roles: string[]) {
+export function requireRole(...roles: UserRole[]) {
     return async (req: FastifyRequest, reply: FastifyReply) => {
         const userRoles: string[] = req.user?.roles ?? [];
         const hasRole = roles.some(r => userRoles.includes(r));
@@ -13,11 +14,11 @@ export function requireRole(...roles: string[]) {
 // La partie privée se lit avec `view`, le rôle de base ; `edit` l'inclut. Les routes qui
 // portent ce garde ne sont consommées que par frontend-private — le site public a son
 // propre jeu de routes ouvertes.
-export const requirePrivateRead = requireRole('view', 'edit');
+export const requirePrivateRead = requireRole(UserRole.VIEW, UserRole.EDIT);
 
 // Pour les routes qui restent publiques mais dont le contenu dépend de l'appelant : le
 // visiteur anonyme ne voit que ce qui est `visible`, la session privée voit tout.
 export function hasPrivateRead(req: FastifyRequest): boolean {
     const userRoles: string[] = req.user?.roles ?? [];
-    return userRoles.includes('view') || userRoles.includes('edit');
+    return userRoles.includes(UserRole.VIEW) || userRoles.includes(UserRole.EDIT);
 }

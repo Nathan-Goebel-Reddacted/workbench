@@ -3,6 +3,7 @@ import { QueryBus } from '@shared/application/query/queryBus';
 import { ResolveReferenceQuery } from '@contexts/reference/application/query/resolveReference/resolveReferenceQuery';
 import { GetReferenceTreeQuery } from '@contexts/reference/application/query/getReferenceTree/getReferenceTreeQuery';
 import { requireRole } from '@shared/infrastructure/http/roleGuard';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { queryBus: QueryBus };
 
@@ -14,14 +15,14 @@ type Opts = { queryBus: QueryBus };
 export const referenceRoutes: FastifyPluginAsync<Opts> = async (app, { queryBus }) => {
     app.get<{ Params: { reference: string } }>(
         '/references/:reference',
-        { preHandler: requireRole('view', 'edit') },
+        { preHandler: requireRole(UserRole.VIEW, UserRole.EDIT) },
         async (req, reply) => {
             const result = await queryBus.dispatch(new ResolveReferenceQuery(req.params.reference));
             return reply.send(result);
         },
     );
 
-    app.get('/references', { preHandler: requireRole('view', 'edit') }, async (_req, reply) => {
+    app.get('/references', { preHandler: requireRole(UserRole.VIEW, UserRole.EDIT) }, async (_req, reply) => {
         const result = await queryBus.dispatch(new GetReferenceTreeQuery());
         return reply.send(result);
     });

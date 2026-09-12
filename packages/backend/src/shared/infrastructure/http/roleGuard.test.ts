@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { hasPrivateRead, requirePrivateRead, requireRole } from './roleGuard.js';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 // Ce garde porte toute la fermeture des routes privées : une régression ici rouvre en silence
 // ce que la section B du backlog a fermé.
@@ -19,7 +20,7 @@ describe('requireRole', () => {
     it('laisse passer un rôle attendu', async () => {
         const { reply, status } = replySpy();
 
-        await requireRole('edit')(requestWith(['edit']), reply);
+        await requireRole(UserRole.EDIT)(requestWith(['edit']), reply);
 
         expect(status).not.toHaveBeenCalled();
     });
@@ -27,7 +28,7 @@ describe('requireRole', () => {
     it('laisse passer dès qu’un seul des rôles attendus est porté', async () => {
         const { reply, status } = replySpy();
 
-        await requireRole('view', 'edit')(requestWith(['edit']), reply);
+        await requireRole(UserRole.VIEW, UserRole.EDIT)(requestWith(['edit']), reply);
 
         expect(status).not.toHaveBeenCalled();
     });
@@ -35,7 +36,7 @@ describe('requireRole', () => {
     it('refuse un rôle absent', async () => {
         const { reply, status, send } = replySpy();
 
-        await requireRole('edit')(requestWith(['view']), reply);
+        await requireRole(UserRole.EDIT)(requestWith(['view']), reply);
 
         expect(status).toHaveBeenCalledWith(403);
         expect(send).toHaveBeenCalledWith({ error: 'Forbidden' });
@@ -44,7 +45,7 @@ describe('requireRole', () => {
     it('refuse un compte sans aucun rôle', async () => {
         const { reply, status } = replySpy();
 
-        await requireRole('edit')(requestWith([]), reply);
+        await requireRole(UserRole.EDIT)(requestWith([]), reply);
 
         expect(status).toHaveBeenCalledWith(403);
     });
@@ -52,7 +53,7 @@ describe('requireRole', () => {
     it('refuse un visiteur anonyme', async () => {
         const { reply, status } = replySpy();
 
-        await requireRole('edit')(requestWith(undefined), reply);
+        await requireRole(UserRole.EDIT)(requestWith(undefined), reply);
 
         expect(status).toHaveBeenCalledWith(403);
     });

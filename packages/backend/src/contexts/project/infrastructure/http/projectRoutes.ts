@@ -12,6 +12,7 @@ import { UpdateProjectCommand } from '@contexts/project/application/command/upda
 import { UpdateProjectVisibilityCommand } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityCommand';
 import { Category } from '@contexts/project/domain/valueObject/category';
 import { requireRole, hasPrivateRead } from '@shared/infrastructure/http/roleGuard';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 type LinkBody = { url: string; displayText: string; logo: string };
@@ -33,7 +34,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     }>(
         '/projects',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -82,7 +83,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     app.patch<{ Params: { id: string }; Body: { name: string; description: string; category?: string } }>(
         '/projects/:id',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -105,7 +106,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     app.patch<{ Params: { id: string }; Body: { visible: boolean } }>(
         '/projects/:id/visibility',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -123,7 +124,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     app.post<{ Params: { id: string }; Body: DocumentBody }>(
         '/projects/:id/documents',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -147,7 +148,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
 
     app.delete<{ Params: { id: string; documentId: string } }>(
         '/projects/:id/documents/:documentId',
-        { preHandler: requireRole('edit') },
+        { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
             await commandBus.dispatch(new RemoveProjectDocumentCommand(req.params.id, req.params.documentId));
             return reply.status(204).send();
@@ -157,7 +158,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     app.post<{ Params: { id: string }; Body: LinkBody }>(
         '/projects/:id/links',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -180,7 +181,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     app.delete<{ Params: { id: string }; Body: LinkBody }>(
         '/projects/:id/links',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',

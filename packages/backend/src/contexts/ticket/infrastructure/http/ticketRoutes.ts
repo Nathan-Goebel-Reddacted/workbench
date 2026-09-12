@@ -13,6 +13,7 @@ import { GetTicketByIdQuery } from '@contexts/ticket/application/query/getTicket
 import { GetTicketsByFeatureIdQuery } from '@contexts/ticket/application/query/getTicketsByFeatureId/getTicketsByFeatureIdQuery';
 import { requireRole, requirePrivateRead } from '@shared/infrastructure/http/roleGuard';
 import { TicketStatus } from '@contexts/ticket/domain/valueObject/status';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 type DocumentBody = { name: string; url: string; type: string };
@@ -39,7 +40,7 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
     app.post<{ Body: { featureId: string; title: string; description: string } }>(
         '/tickets',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -64,7 +65,7 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
     app.patch<{ Params: { id: string }; Body: { title: string; description: string } }>(
         '/tickets/:id',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -85,7 +86,7 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
     app.patch<{ Params: { id: string }; Body: { status: string } }>(
         '/tickets/:id/status',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -103,7 +104,7 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
     app.patch<{ Params: { id: string; index: string }; Body: { note: string } }>(
         '/tickets/:id/notes/:index',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -123,7 +124,7 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
     app.post<{ Params: { id: string }; Body: { note: string } }>(
         '/tickets/:id/notes',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -141,7 +142,7 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
     app.post<{ Params: { id: string }; Body: DocumentBody }>(
         '/tickets/:id/documents',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -163,14 +164,18 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
         },
     );
 
-    app.delete<{ Params: { id: string } }>('/tickets/:id', { preHandler: requireRole('edit') }, async (req, reply) => {
-        await commandBus.dispatch(new DeleteTicketCommand(req.params.id));
-        return reply.status(204).send();
-    });
+    app.delete<{ Params: { id: string } }>(
+        '/tickets/:id',
+        { preHandler: requireRole(UserRole.EDIT) },
+        async (req, reply) => {
+            await commandBus.dispatch(new DeleteTicketCommand(req.params.id));
+            return reply.status(204).send();
+        },
+    );
 
     app.delete<{ Params: { id: string; documentId: string } }>(
         '/tickets/:id/documents/:documentId',
-        { preHandler: requireRole('edit') },
+        { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
             await commandBus.dispatch(new RemoveTicketDocumentCommand(req.params.id, req.params.documentId));
             return reply.status(204).send();

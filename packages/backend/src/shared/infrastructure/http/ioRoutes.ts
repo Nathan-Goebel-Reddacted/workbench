@@ -9,6 +9,7 @@ import { ioPortPath, latestDump, listDumps, readDump, writeDump } from '../io/io
 import { archiveNameFor, createUploadsArchive, extractUploadsArchive } from '../io/uploadsArchive.js';
 import { buildZip, dateStamp, readZipEntries, writeBackupZip } from '../io/backupArchive.js';
 import { createExportBundle } from '../io/exportBundle.js';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 // Un dump complet des 13 tables reste petit, mais les colonnes JSON (documents, links, layouts)
 // grossissent sans plafond : le défaut de Fastify (1 Mo) serait atteint bien avant que le dump
@@ -39,44 +40,48 @@ export const ioRoutes: FastifyPluginAsync<IoRoutesOptions> = async (app, { orm }
         done(null, body),
     );
 
-    app.post<{ Body?: { target?: string } }>('/io/export', { preHandler: requireRole('edit') }, async (req, reply) => {
-        const requested = req.body?.target ?? 'download';
-        if (!isExportTarget(requested)) {
-            return reply.code(400).send({ message: `Unknown export target: ${requested}` });
-        }
-
-        // ioPort/ reçoit le dump et l'archive côte à côte, sans zip englobant : c'est cette
-        // disposition que `make db-import` et /io/import savent apparier.
-        if (requested === 'ioport') {
-            const { filename, sql } = await exportDatabase(orm);
-            await writeDump(filename, sql);
-            const uploads = await createUploadsArchive(ioPortPath(archiveNameFor(filename)));
-
-            return reply.send({ target: requested, filename, uploads });
-        }
-
-        const bundle = await createExportBundle(orm);
-        try {
-            if (requested === 'backup') {
-                const filename = await writeBackupZip(bundle.entries);
-                return reply.send({ target: requested, filename, uploads: bundle.uploads });
+    app.post<{ Body?: { target?: string } }>(
+        '/io/export',
+        { preHandler: requireRole(UserRole.EDIT) },
+        async (req, reply) => {
+            const requested = req.body?.target ?? 'download';
+            if (!isExportTarget(requested)) {
+                return reply.code(400).send({ message: `Unknown export target: ${requested}` });
             }
 
-            const folder = dateStamp();
-            return reply
-                .header('content-type', 'application/zip')
-                .header('content-disposition', `attachment; filename="${folder}.zip"`)
-                .send(buildZip(folder, bundle.entries));
-        } finally {
-            await bundle.dispose();
-        }
-    });
+            // ioPort/ reçoit le dump et l'archive côte à côte, sans zip englobant : c'est cette
+            // disposition que `make db-import` et /io/import savent apparier.
+            if (requested === 'ioport') {
+                const { filename, sql } = await exportDatabase(orm);
+                await writeDump(filename, sql);
+                const uploads = await createUploadsArchive(ioPortPath(archiveNameFor(filename)));
+
+                return reply.send({ target: requested, filename, uploads });
+            }
+
+            const bundle = await createExportBundle(orm);
+            try {
+                if (requested === 'backup') {
+                    const filename = await writeBackupZip(bundle.entries);
+                    return reply.send({ target: requested, filename, uploads: bundle.uploads });
+                }
+
+                const folder = dateStamp();
+                return reply
+                    .header('content-type', 'application/zip')
+                    .header('content-disposition', `attachment; filename="${folder}.zip"`)
+                    .send(buildZip(folder, bundle.entries));
+            } finally {
+                await bundle.dispose();
+            }
+        },
+    );
 
     // Trois façons de désigner ce qu'on importe : un zip complet, le SQL dans le corps, ou le nom
     // d'un fichier déjà déposé dans ioPort/.
     app.post<{ Body: Buffer | string | { file?: string }; Querystring: { dryRun?: string } }>(
         '/io/import',
-        { preHandler: requireRole('edit'), bodyLimit: MAX_DUMP_BYTES },
+        { preHandler: requireRole(UserRole.EDIT), bodyLimit: MAX_DUMP_BYTES },
         async (req, reply) => {
             // Une simulation joue l'import et rend son rapport, puis annule tout : c'est le seul
             // moyen de savoir ce qu'un dump ferait à cette base-ci sans le lui faire.
@@ -151,5 +156,5 @@ export const ioRoutes: FastifyPluginAsync<IoRoutesOptions> = async (app, { orm }
     );
 
     // Sans cette route, l'appelant de /io/import ne peut pas savoir quels dumps sont déposés.
-    app.get('/io/dumps', { preHandler: requireRole('edit') }, async () => ({ dumps: await listDumps() }));
+    app.get('/io/dumps', { preHandler: requireRole(UserRole.EDIT) }, async () => ({ dumps: await listDumps() }));
 };

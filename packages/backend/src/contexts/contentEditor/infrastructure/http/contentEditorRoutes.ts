@@ -12,6 +12,7 @@ import { ListMediaImagesQuery } from '@contexts/contentEditor/application/query/
 import { requirePrivateRead, requireRole } from '@shared/infrastructure/http/roleGuard';
 import { PageType } from '@contexts/contentEditor/domain/valueObject/pageType';
 import { SectionType } from '@contexts/contentEditor/domain/valueObject/sectionType';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
@@ -56,7 +57,7 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
     app.post<{ Body: { pageType: string; pageRef: string } }>(
         '/page-layouts',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -90,7 +91,7 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
     }>(
         '/page-layouts/:id/sections',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -132,7 +133,7 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
     }>(
         '/page-layouts/:id/sections/:sectionId/content',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -154,7 +155,7 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
 
     app.delete<{ Params: { id: string; sectionId: string } }>(
         '/page-layouts/:id/sections/:sectionId',
-        { preHandler: requireRole('edit') },
+        { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
             await commandBus.dispatch(new RemoveSectionCommand(req.params.id, req.params.sectionId));
             return reply.status(204).send();
@@ -167,7 +168,7 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
     }>(
         '/page-layouts/:id/sections/:sectionId/move',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',

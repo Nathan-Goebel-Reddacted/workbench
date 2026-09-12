@@ -4,6 +4,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { requireRole } from './roleGuard.js';
 import { MINDMAP_SUFFIX } from '@shared/domain/valueObject/documentType';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UPLOADS_DIR = join(__dirname, '../../../../uploads');
@@ -63,7 +64,7 @@ export const uploadRoutes: FastifyPluginAsync = async app => {
     app.post(
         '/uploads',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             config: { rateLimit: { max: 60, timeWindow: '15 minutes' } },
         },
         async (req, reply) => {
@@ -109,7 +110,7 @@ export const uploadRoutes: FastifyPluginAsync = async app => {
     app.put<{ Params: { filename: string }; Body: unknown }>(
         '/uploads/:filename',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             bodyLimit: MAX_MINDMAP_BYTES,
             schema: {
                 body: {

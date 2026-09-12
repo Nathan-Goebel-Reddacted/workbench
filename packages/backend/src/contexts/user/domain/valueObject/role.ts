@@ -1,7 +1,6 @@
-export enum UserRole {
-    VIEW = 'view',
-    EDIT = 'edit',
-}
+import { UserRole } from '@shared/domain/valueObject/userRole';
+
+export { UserRole };
 
 export function normalizeRoles(roles: UserRole[]): UserRole[] {
     return [...new Set(roles)];

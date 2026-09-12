@@ -12,6 +12,7 @@ import { RemoveIdeaLinkCommand } from '@contexts/idea/application/command/remove
 import { ConvertIdeaToProjectCommand } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectCommand';
 import { GetIdeaByIdQuery } from '@contexts/idea/application/query/getIdeaById/getIdeaByIdQuery';
 import { ListIdeasQuery } from '@contexts/idea/application/query/listIdeas/listIdeasQuery';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 type LinkBody = { url: string; displayText: string; logo: string };
@@ -33,7 +34,7 @@ export const ideaRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
     }>(
         '/ideas',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -83,7 +84,7 @@ export const ideaRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
     app.post<{ Params: { id: string }; Body?: { category?: string } }>(
         '/ideas/:id/convert-to-project',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -103,7 +104,7 @@ export const ideaRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
     app.put<{ Params: { id: string }; Body: { name: string; description: string; category?: string } }>(
         '/ideas/:id',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -123,15 +124,19 @@ export const ideaRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
         },
     );
 
-    app.delete<{ Params: { id: string } }>('/ideas/:id', { preHandler: requireRole('edit') }, async (req, reply) => {
-        await commandBus.dispatch(new DeleteIdeaCommand(req.params.id));
-        return reply.status(204).send();
-    });
+    app.delete<{ Params: { id: string } }>(
+        '/ideas/:id',
+        { preHandler: requireRole(UserRole.EDIT) },
+        async (req, reply) => {
+            await commandBus.dispatch(new DeleteIdeaCommand(req.params.id));
+            return reply.status(204).send();
+        },
+    );
 
     app.post<{ Params: { id: string }; Body: DocumentBody }>(
         '/ideas/:id/documents',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -153,7 +158,7 @@ export const ideaRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
 
     app.delete<{ Params: { id: string; documentId: string } }>(
         '/ideas/:id/documents/:documentId',
-        { preHandler: requireRole('edit') },
+        { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
             await commandBus.dispatch(new RemoveIdeaDocumentCommand(req.params.id, req.params.documentId));
             return reply.status(204).send();
@@ -163,7 +168,7 @@ export const ideaRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
     app.post<{ Params: { id: string }; Body: LinkBody }>(
         '/ideas/:id/links',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -186,7 +191,7 @@ export const ideaRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
     app.delete<{ Params: { id: string }; Body: LinkBody }>(
         '/ideas/:id/links',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',

@@ -7,6 +7,7 @@ import { GetUserByEmailQuery } from '@contexts/user/application/query/getUserByE
 import { GetAllUsersQuery } from '@contexts/user/application/query/getAllUsers/getAllUsersQuery';
 import { DeleteUserCommand } from '@contexts/user/application/command/deleteUser/deleteUserCommand';
 import { UpdateUserRolesCommand } from '@contexts/user/application/command/updateUserRoles/updateUserRolesCommand';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
@@ -32,15 +33,19 @@ export const userRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
         return reply.send(result);
     });
 
-    app.delete<{ Params: { id: string } }>('/users/:id', { preHandler: requireRole('edit') }, async (req, reply) => {
-        await commandBus.dispatch(new DeleteUserCommand(req.params.id));
-        return reply.status(204).send();
-    });
+    app.delete<{ Params: { id: string } }>(
+        '/users/:id',
+        { preHandler: requireRole(UserRole.EDIT) },
+        async (req, reply) => {
+            await commandBus.dispatch(new DeleteUserCommand(req.params.id));
+            return reply.status(204).send();
+        },
+    );
 
     app.patch<{ Params: { id: string }; Body: { roles: string[] } }>(
         '/users/:id/roles',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',

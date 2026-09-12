@@ -14,6 +14,7 @@ import { GetAgentToolByIdQuery } from '@contexts/ai-assistant/application/query/
 import { GetAgentToolsByUserIdQuery } from '@contexts/ai-assistant/application/query/getAgentToolsByUserId/getAgentToolsByUserIdQuery';
 import { GetAllAgentToolsQuery } from '@contexts/ai-assistant/application/query/getAllAgentTools/getAllAgentToolsQuery';
 import { issueAgentToken } from '@contexts/ai-assistant/application/auth/agentToken';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
@@ -22,7 +23,7 @@ type Opts = { commandBus: CommandBus; queryBus: QueryBus };
  * administration: the session guard alone would let any signed-in account mint an agent.
  */
 export const agentToolRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
-    app.addHook('preHandler', requireRole('edit'));
+    app.addHook('preHandler', requireRole(UserRole.EDIT));
 
     app.get('/agent-tools', async (_req, reply) => {
         const result = await queryBus.dispatch(new GetAllAgentToolsQuery());
