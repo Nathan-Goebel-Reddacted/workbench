@@ -91,3 +91,81 @@ describe('frontières entre contextes', () => {
         expect(offenders.map(v => `${v.file}:${v.line} → ${v.path}`)).toEqual([]);
     });
 });
+
+// ── Les couches à l'intérieur d'un contexte ────────────────────────────────────────────
+//
+// La règle précédente ne voit que ce qui traverse une frontière de contexte. Elle a laissé
+// passer l'appairage d'agent : demande, code, durée de vie et quota vivaient dans une route,
+// avec le dépôt concret injecté à la main — un cas d'usage entier logé dans l'infrastructure,
+// invisible au compilateur comme aux tests.
+
+/** `'./x'`, `'../x'` ou `'@contexts/<sien>/x'` — ce qui, au bout du compte, désigne un fichier du même contexte. */
+function localTarget(file: string, specifier: string): string | null {
+    const own = contextOf(file);
+
+    if (specifier.startsWith('@contexts/')) {
+        const rest = specifier.slice('@contexts/'.length);
+        return rest.startsWith(`${own}/`) ? rest.slice(own.length + 1) : null;
+    }
+    if (!specifier.startsWith('.')) return null;
+
+    const resolved = join(dirname(file), specifier);
+    const path = relative(CONTEXTS_DIR, resolved).split(sep).join('/');
+    return path.startsWith(`${own}/`) ? path.slice(own.length + 1) : null;
+}
+
+const IMPORT_SPECIFIER = /from '([^']+)'/g;
+
+type LayerViolation = { file: string; line: number; specifier: string };
+
+function collectLayerViolations(forbidden: (from: string, to: string) => boolean): LayerViolation[] {
+    const violations: LayerViolation[] = [];
+
+    for (const file of sourceFiles()) {
+        const from = relative(CONTEXTS_DIR, file).split(sep).slice(1).join('/');
+        const lines = readFileSync(file, 'utf8').split(/\r?\n/);
+
+        lines.forEach((line, index) => {
+            for (const [, specifier] of line.matchAll(IMPORT_SPECIFIER)) {
+                const to = specifier.startsWith('@shared/')
+                    ? specifier.slice('@shared/'.length)
+                    : localTarget(file, specifier);
+                if (to === null) continue;
+                if (!forbidden(from, to)) continue;
+                violations.push({ file: relative(CONTEXTS_DIR, file), line: index + 1, specifier });
+            }
+        });
+    }
+
+    return violations;
+}
+
+describe('couches à l’intérieur d’un contexte', () => {
+    it('garde un domaine qui ne connaît que lui-même', () => {
+        const offenders = collectLayerViolations((from, to) => from.startsWith('domain/') && !to.startsWith('domain/'));
+
+        // Un domaine qui importe une bibliothèque de persistance, un framework HTTP ou un
+        // client de chiffrement n'est plus transposable : il est amarré à son exécution.
+        expect(offenders.map(v => `${v.file}:${v.line} → ${v.specifier}`)).toEqual([]);
+    });
+
+    it('garde une application qui ignore l’infrastructure', () => {
+        const offenders = collectLayerViolations(
+            (from, to) => from.startsWith('application/') && to.startsWith('infrastructure/'),
+        );
+
+        // Un cas d'usage nomme ce dont il a besoin par un port ; le composition root décide
+        // seul quelle implémentation le remplit.
+        expect(offenders.map(v => `${v.file}:${v.line} → ${v.specifier}`)).toEqual([]);
+    });
+
+    it('n’injecte pas un dépôt dans une route', () => {
+        const offenders = collectLayerViolations(
+            (from, to) => from.startsWith('infrastructure/http/') && to.startsWith('infrastructure/repository/'),
+        );
+
+        // Une route transporte : elle lit une requête, dispatche, rend une réponse. Dès
+        // qu'elle tient un dépôt, la règle métier suit — et elle n'a plus de nom.
+        expect(offenders.map(v => `${v.file}:${v.line} → ${v.specifier}`)).toEqual([]);
+    });
+});
