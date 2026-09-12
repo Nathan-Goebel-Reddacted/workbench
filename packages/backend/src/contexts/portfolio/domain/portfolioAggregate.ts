@@ -19,6 +19,8 @@ export class Portfolio {
     }
 
     addLanguage(language: Language): void {
+        const alreadyDeclared = this.languages.some(lang => lang.getValue() === language.getValue());
+        if (alreadyDeclared) return;
         this.languages.push(language);
     }
 
