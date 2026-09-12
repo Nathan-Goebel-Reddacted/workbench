@@ -14,3 +14,6 @@ export class CreateUserCommand implements Command {
         this.commandName = CreateUserCommand.commandName;
     }
 }
+
+/** Ce que cette commande peut refuser : l'adresse est déjà portée par un compte. */
+export { UserAlreadyExistsException } from '@contexts/user/domain/exception/userAlreadyExists';

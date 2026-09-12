@@ -1,4 +1,5 @@
 import { EntityManager } from '@mikro-orm/postgresql';
+import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import { IUserRepository } from '../../domain/repository/iUserRepository';
 import { User } from '../../domain/userAggregate';
 import { UserOrmEntity } from '../entity/userOrmEntity';
@@ -7,6 +8,7 @@ import { Name } from '../../domain/valueObject/name';
 import { Surname } from '../../domain/valueObject/surname';
 import { Email } from '../../domain/valueObject/email';
 import { UserRole } from '../../domain/valueObject/role';
+import { UserAlreadyExistsException } from '../../domain/exception/userAlreadyExists';
 
 export class UserRepository implements IUserRepository {
     constructor(private readonly em: EntityManager) {}
@@ -31,9 +33,19 @@ export class UserRepository implements IUserRepository {
     }
 
     async save(user: User): Promise<void> {
-        await this.em.transactional(async em => {
-            await em.upsert(UserOrmEntity, this.toOrm(user));
-        });
+        try {
+            await this.em.transactional(async em => {
+                await em.upsert(UserOrmEntity, this.toOrm(user));
+            });
+        } catch (error) {
+            // L'adresse est unique en base. Deux connexions simultanées de la même personne
+            // arrivent ici ; l'appelant a besoin de distinguer ce cas d'une vraie panne, et
+            // le lui faire lire dans le texte du message dépendait du pilote.
+            if (error instanceof UniqueConstraintViolationException) {
+                throw new UserAlreadyExistsException(user.getEmail().getValue());
+            }
+            throw error;
+        }
     }
 
     async deleteById(id: string): Promise<void> {
