@@ -60,8 +60,8 @@ try {
     await app.register(contentEditorRoutes, buses);
     await app.register(agentToolRoutes, buses);
     await app.register(cvRoutes, buses);
-    // Public, unauthenticated: the contact form is filled by site visitors.
-    await app.register(contactRoutes, { commandBus: buses.commandBus });
+    // POST is public: the contact form is filled by site visitors. Reading is reserved to editors.
+    await app.register(contactRoutes, buses);
     await app.register(mcpRoutes, {
         registry: buses.toolRegistry,
         authenticator: buses.agentAuthenticator,

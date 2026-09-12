@@ -6,10 +6,31 @@ import { ContactMessageOrmEntity } from '../entity/contactMessageOrmEntity';
 export class ContactMessageRepository implements IContactMessageRepository {
     constructor(private readonly em: EntityManager) {}
 
+    async findAll(): Promise<ContactMessage[]> {
+        const entities = await this.em.find(ContactMessageOrmEntity, {}, { orderBy: { submittedAt: 'desc' } });
+        return entities.map(e => this.toDomain(e));
+    }
+
     async save(message: ContactMessage): Promise<void> {
         await this.em.transactional(async em => {
             await em.upsert(ContactMessageOrmEntity, this.toOrm(message));
         });
+    }
+
+    async delete(id: string): Promise<void> {
+        await this.em.transactional(async em => {
+            await em.nativeDelete(ContactMessageOrmEntity, { id });
+        });
+    }
+
+    async deleteAll(): Promise<void> {
+        await this.em.transactional(async em => {
+            await em.nativeDelete(ContactMessageOrmEntity, {});
+        });
+    }
+
+    private toDomain(e: ContactMessageOrmEntity): ContactMessage {
+        return ContactMessage.rehydrate(e.id, e.fields, e.senderEmail, e.submittedAt, e.mailSent);
     }
 
     private toOrm(message: ContactMessage): ContactMessageOrmEntity {

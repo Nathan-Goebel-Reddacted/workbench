@@ -1,9 +1,14 @@
 import { FastifyPluginAsync } from 'fastify';
 import { CommandBus } from '@shared/application/command/commandBus';
+import { QueryBus } from '@shared/application/query/queryBus';
+import { requireRole } from '@shared/infrastructure/http/roleGuard';
 import { SubmitContactMessageCommand } from '@contexts/contact/application/command/submitContactMessage/submitContactMessageCommand';
+import { DeleteContactMessageCommand } from '@contexts/contact/application/command/deleteContactMessage/deleteContactMessageCommand';
+import { DeleteAllContactMessagesCommand } from '@contexts/contact/application/command/deleteAllContactMessages/deleteAllContactMessagesCommand';
+import { ListContactMessagesQuery } from '@contexts/contact/application/query/listContactMessages/listContactMessagesQuery';
 import { ContactMessageError, isValidEmail } from '@contexts/contact/domain/contactMessageAggregate';
 
-type Opts = { commandBus: CommandBus };
+type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
 type SubmittedField = { label: string; value: string; type?: string };
 
@@ -42,10 +47,26 @@ const bodySchema = {
 } as const;
 
 /**
- * The only public write endpoint of the app: everything here assumes an unauthenticated,
- * possibly hostile caller. Spam is answered with a plain 200 so bots learn nothing.
+ * POST is the only public write endpoint of the app: it assumes an unauthenticated, possibly
+ * hostile caller, and spam is answered with a plain 200 so bots learn nothing. Reading and
+ * deleting the stored messages is reserved to editors.
  */
-export const contactRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus }) => {
+export const contactRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
+    app.get('/contact', { preHandler: requireRole('edit') }, async (_req, reply) => {
+        const result = await queryBus.dispatch(new ListContactMessagesQuery());
+        return reply.send(result);
+    });
+
+    app.delete<{ Params: { id: string } }>('/contact/:id', { preHandler: requireRole('edit') }, async (req, reply) => {
+        await commandBus.dispatch(new DeleteContactMessageCommand(req.params.id));
+        return reply.status(204).send();
+    });
+
+    app.delete('/contact', { preHandler: requireRole('edit') }, async (_req, reply) => {
+        await commandBus.dispatch(new DeleteAllContactMessagesCommand());
+        return reply.status(204).send();
+    });
+
     app.post<{ Body: ContactBody }>(
         '/contact',
         {

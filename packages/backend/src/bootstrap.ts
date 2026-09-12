@@ -206,6 +206,12 @@ import { createMailer } from '@contexts/contact/infrastructure/mailer/createMail
 import { ILogger } from '@shared/application/port/iLogger';
 import { SubmitContactMessageCommand } from '@contexts/contact/application/command/submitContactMessage/submitContactMessageCommand';
 import { SubmitContactMessageHandler } from '@contexts/contact/application/command/submitContactMessage/submitContactMessageHandler';
+import { DeleteContactMessageCommand } from '@contexts/contact/application/command/deleteContactMessage/deleteContactMessageCommand';
+import { DeleteContactMessageHandler } from '@contexts/contact/application/command/deleteContactMessage/deleteContactMessageHandler';
+import { DeleteAllContactMessagesCommand } from '@contexts/contact/application/command/deleteAllContactMessages/deleteAllContactMessagesCommand';
+import { DeleteAllContactMessagesHandler } from '@contexts/contact/application/command/deleteAllContactMessages/deleteAllContactMessagesHandler';
+import { ListContactMessagesQuery } from '@contexts/contact/application/query/listContactMessages/listContactMessagesQuery';
+import { ListContactMessagesHandler } from '@contexts/contact/application/query/listContactMessages/listContactMessagesHandler';
 
 export function bootstrap(
     em: EntityManager,
@@ -418,6 +424,12 @@ export function bootstrap(
             logger,
         ),
     );
+    commandBus.register(DeleteContactMessageCommand.commandName, new DeleteContactMessageHandler(repos.contactMessage));
+    commandBus.register(
+        DeleteAllContactMessagesCommand.commandName,
+        new DeleteAllContactMessagesHandler(repos.contactMessage),
+    );
+    queryBus.register(ListContactMessagesQuery.queryName, new ListContactMessagesHandler(repos.contactMessage));
 
     // CV
     commandBus.register(CreateCvCommand.commandName, new CreateCvHandler(repos.cv, cvFactory));
