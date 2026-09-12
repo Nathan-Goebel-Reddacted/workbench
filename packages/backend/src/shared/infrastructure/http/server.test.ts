@@ -22,7 +22,7 @@ vi.mock('@mikro-orm/core', async importOriginal => {
 // createServer lit env au chargement du module : sans .env (CI), le minimum requis suffit.
 // Les 500 provoqués ici sont attendus : leurs traces n'ont rien à faire dans la sortie de test.
 process.env.LOG_LEVEL = 'fatal';
-process.env.JWT_SECRET ??= 'test-secret';
+process.env.JWT_SECRET ??= '0'.repeat(64);
 process.env.APP_URL ??= 'http://localhost:3000';
 process.env.FRONTEND_PUBLIC_URL ??= 'http://localhost:5173';
 process.env.FRONTEND_PRIVATE_URL ??= 'http://localhost:5174';

@@ -9,8 +9,18 @@ const required = z
     .min(1, 'variable requise, mais vide');
 const optional = z.string().trim().default('');
 
+const PLACEHOLDER_SECRETS = ['change_me', 'changeme', 'change-me', 'secret', 'test-secret'];
+
+const jwtSecret = required
+    .min(32, 'au moins 32 caractères : un secret court se retrouve par force brute hors ligne')
+    .refine(
+        value => !PLACEHOLDER_SECRETS.includes(value.toLowerCase()),
+        'valeur d’exemple — générer un secret propre : ' +
+            `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`,
+    );
+
 const schema = z.object({
-    JWT_SECRET: required,
+    JWT_SECRET: jwtSecret,
     APP_URL: required,
     // Les deux origines sont les seules acceptées par CORS (server.ts). Une valeur de repli y
     // ferait passer le site public pour une origine étrangère en production, sans un mot dans
