@@ -5,6 +5,7 @@ import { Permission } from './valueObject/permission';
 import { Scope } from './valueObject/scope';
 import { Token } from './valueObject/token';
 import { AgentToolMustKeepScopeException } from './exception/agentToolMustKeepScope';
+import { ISecretHasher } from './port/iSecretHasher';
 
 export class AgentTool {
     private readonly id: AgentToolId;
@@ -51,7 +52,7 @@ export class AgentTool {
         return this.name;
     }
 
-    setName(name: Name): void {
+    rename(name: Name): void {
         this.name = name;
     }
 
@@ -59,7 +60,7 @@ export class AgentTool {
         return this.permission;
     }
 
-    setPermission(permission: Permission): void {
+    changePermission(permission: Permission): void {
         this.permission = permission;
     }
 
@@ -84,8 +85,9 @@ export class AgentTool {
         return this.token;
     }
 
-    async verifyToken(candidate: string): Promise<boolean> {
-        return this.token.verify(candidate);
+    /** La règle est ici, le hachage est ailleurs : l'agrégat reçoit de quoi comparer, pas de quoi hacher. */
+    async verifyToken(candidate: string, hasher: ISecretHasher): Promise<boolean> {
+        return hasher.matches(candidate, this.token.getValue());
     }
 
     rotateToken(newToken: Token): void {

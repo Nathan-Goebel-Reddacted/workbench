@@ -1,10 +1,14 @@
 import { AgentTool } from '../../domain/agentToolAggregate';
 import { IAgentToolRepository } from '../../domain/repository/iAgentToolRepository';
 import { parseAgentToken } from './agentToken';
+import { ISecretHasher } from '../../domain/port/iSecretHasher';
 
 /** Resolves the AgentTool behind a presented token, or nothing if it cannot be trusted. */
 export class AgentAuthenticator {
-    constructor(private readonly repository: IAgentToolRepository) {}
+    constructor(
+        private readonly repository: IAgentToolRepository,
+        private readonly hasher: ISecretHasher,
+    ) {}
 
     async authenticate(presented: string | undefined): Promise<AgentTool | null> {
         if (!presented) return null;
@@ -18,7 +22,7 @@ export class AgentAuthenticator {
         // Checked before the token: a revoked agent must not even learn whether its secret is still valid.
         if (agentTool.isRevoked()) return null;
 
-        const isValid = await agentTool.verifyToken(parts.secret);
+        const isValid = await agentTool.verifyToken(parts.secret, this.hasher);
         return isValid ? agentTool : null;
     }
 }

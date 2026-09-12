@@ -10,7 +10,7 @@ export class UpdateAgentToolNameHandler implements ICommandHandler<UpdateAgentTo
     async handle(command: UpdateAgentToolNameCommand): Promise<void> {
         const agentTool = await this.repository.findById(command.id);
         if (!agentTool) throw new NotFoundError('AgentTool', command.id);
-        agentTool.setName(new Name(command.name));
+        agentTool.rename(new Name(command.name));
         await this.repository.save(agentTool);
     }
 }

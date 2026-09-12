@@ -1,6 +1,6 @@
-import bcrypt from 'bcrypt';
 import { InvalidAgentToolTokenException } from '../exception/invalidAgentToolToken';
 
+/** Le jeton tel qu'il est conservé : son empreinte. Le secret en clair ne vit que le temps de rejoindre l'agent. */
 export class Token {
     private readonly value: string;
 
@@ -13,14 +13,5 @@ export class Token {
 
     getValue(): string {
         return this.value;
-    }
-
-    async verify(candidate: string): Promise<boolean> {
-        return bcrypt.compare(candidate, this.value);
-    }
-
-    static async hash(rawToken: string): Promise<Token> {
-        const hashed = await bcrypt.hash(rawToken, 12);
-        return new Token(hashed);
     }
 }

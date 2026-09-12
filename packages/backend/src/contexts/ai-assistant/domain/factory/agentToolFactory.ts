@@ -5,8 +5,11 @@ import { Name } from '../valueObject/name';
 import { Permission } from '../valueObject/permission';
 import { Scope } from '../valueObject/scope';
 import { Token } from '../valueObject/token';
+import { ISecretHasher } from '../port/iSecretHasher';
 
 export class AgentToolFactory {
+    constructor(private readonly hasher: ISecretHasher) {}
+
     async create(
         id: string,
         userId: string,
@@ -15,7 +18,7 @@ export class AgentToolFactory {
         scopes: string[],
         rawToken: string,
     ): Promise<AgentTool> {
-        const token = await Token.hash(rawToken);
+        const token = new Token(await this.hasher.hash(rawToken));
         return new AgentTool(
             new AgentToolId(id),
             new UserId(userId),

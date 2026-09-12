@@ -171,6 +171,7 @@ import { RevokeAgentToolCommand } from '@contexts/ai-assistant/application/comma
 import { RevokeAgentToolHandler } from '@contexts/ai-assistant/application/command/revokeAgentTool/revokeAgentToolHandler';
 import { RestoreAgentToolCommand } from '@contexts/ai-assistant/application/command/restoreAgentTool/restoreAgentToolCommand';
 import { RestoreAgentToolHandler } from '@contexts/ai-assistant/application/command/restoreAgentTool/restoreAgentToolHandler';
+import { BcryptSecretHasher } from '@contexts/ai-assistant/infrastructure/security/bcryptSecretHasher';
 
 import { ToolRegistry } from '@contexts/ai-assistant/application/tool/toolRegistry';
 import { createToolRegistry } from '@contexts/ai-assistant/application/tool/catalog';
@@ -344,7 +345,9 @@ export function bootstrap(
     const ticketFactory = new TicketFactory();
     const ideaFactory = new IdeaFactory();
     const pageLayoutFactory = new PageLayoutFactory();
-    const agentToolFactory = new AgentToolFactory();
+    // Le haché est un choix d'infrastructure : le domaine ne connaît que le port.
+    const secretHasher = new BcryptSecretHasher();
+    const agentToolFactory = new AgentToolFactory(secretHasher);
     const cvFactory = new CvFactory();
 
     // User
@@ -481,7 +484,10 @@ export function bootstrap(
     );
     commandBus.register(AddAgentToolScopeCommand.commandName, new AddAgentToolScopeHandler(repos.agentTool));
     commandBus.register(RemoveAgentToolScopeCommand.commandName, new RemoveAgentToolScopeHandler(repos.agentTool));
-    commandBus.register(RotateAgentToolTokenCommand.commandName, new RotateAgentToolTokenHandler(repos.agentTool));
+    commandBus.register(
+        RotateAgentToolTokenCommand.commandName,
+        new RotateAgentToolTokenHandler(repos.agentTool, secretHasher),
+    );
     queryBus.register(GetAgentToolByIdQuery.queryName, new GetAgentToolByIdHandler(repos.agentTool));
     queryBus.register(GetAgentToolsByUserIdQuery.queryName, new GetAgentToolsByUserIdHandler(repos.agentTool));
     queryBus.register(GetAllAgentToolsQuery.queryName, new GetAllAgentToolsHandler(repos.agentTool));
@@ -551,7 +557,7 @@ export function bootstrap(
 
     // Tools reuse the very same buses as the REST API: one implementation, two audiences.
     const toolRegistry = createToolRegistry(commandBus, queryBus, logger);
-    const agentAuthenticator = new AgentAuthenticator(repos.agentTool);
+    const agentAuthenticator = new AgentAuthenticator(repos.agentTool, secretHasher);
 
     return { commandBus, queryBus, toolRegistry, agentAuthenticator };
 }
