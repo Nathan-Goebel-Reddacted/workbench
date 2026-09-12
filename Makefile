@@ -66,7 +66,13 @@ db-shell:
 # ──────────────────────────────────────────────
 # Migrations MikroORM
 # ──────────────────────────────────────────────
-MIKRO = cd packages/backend && node --import tsx node_modules/@mikro-orm/cli/cli
+# npm décide seul s'il installe @mikro-orm/cli dans packages/backend/node_modules ou s'il le
+# remonte à la racine du monorepo, et il change d'avis quand les dépendances bougent. On
+# cherche donc le binaire aux deux endroits, en chemin absolu — sinon le `cd` ci-dessous le
+# fait disparaître.
+MIKRO_CLI := $(abspath $(firstword $(wildcard packages/backend/node_modules/@mikro-orm/cli/cli node_modules/@mikro-orm/cli/cli)))
+
+MIKRO = cd packages/backend && node --import tsx "$(MIKRO_CLI)"
 
 db-migrate:
 	$(MIKRO) migration:up
