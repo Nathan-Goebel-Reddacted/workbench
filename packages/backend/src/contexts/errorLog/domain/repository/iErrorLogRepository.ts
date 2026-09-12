@@ -1,4 +1,5 @@
-import { ErrorLogEntry, ErrorOrigin } from '../errorLogEntryAggregate';
+import { ErrorLogEntry } from '../errorLogEntryAggregate';
+import { ErrorOrigin } from '../valueObject/errorOrigin';
 
 export type ErrorLogSearch = Readonly<{
     origin?: ErrorOrigin;

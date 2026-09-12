@@ -1,15 +1,20 @@
 import { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { requireRole } from '@shared/infrastructure/http/roleGuard.js';
-import { ErrorLogRecorder } from '@contexts/errorLog/application/errorLogRecorder';
-import { IErrorLogRepository, ErrorLogSearch } from '@contexts/errorLog/domain/repository/iErrorLogRepository';
+import { UserRole } from '@shared/domain/valueObject/userRole.js';
+import { CommandBus } from '@shared/application/command/commandBus.js';
+import { QueryBus } from '@shared/application/query/queryBus.js';
+import { RecordErrorLogEntryCommand } from '@contexts/errorLog/application/command/recordErrorLogEntry/recordErrorLogEntryCommand.js';
+import { PurgeErrorLogCommand } from '@contexts/errorLog/application/command/purgeErrorLog/purgeErrorLogCommand.js';
+import { SearchErrorLogQuery } from '@contexts/errorLog/application/query/searchErrorLog/searchErrorLogQuery.js';
+import { ErrorLogPageDto } from '@contexts/errorLog/application/query/searchErrorLog/errorLogEntryDto.js';
+import { ErrorOrigin } from '@contexts/errorLog/domain/valueObject/errorOrigin.js';
 import {
-    ErrorLogEntry,
     MAX_MESSAGE_LENGTH,
     MAX_STACK_LENGTH,
     MAX_URL_LENGTH,
-} from '@contexts/errorLog/domain/errorLogEntryAggregate';
+} from '@contexts/errorLog/domain/valueObject/boundedText.js';
 
-type Opts = { repository: IErrorLogRepository; recorder: ErrorLogRecorder };
+type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
 type ReportBody = {
     message: string;
@@ -20,7 +25,7 @@ type ReportBody = {
 };
 
 type SearchQuery = {
-    origin?: 'front' | 'back';
+    origin?: ErrorOrigin;
     from?: string;
     to?: string;
     q?: string;
@@ -44,27 +49,13 @@ const reportSchema = {
     additionalProperties: false,
 } as const;
 
-function toDto(entry: ErrorLogEntry) {
-    return {
-        id: entry.getId(),
-        origin: entry.getOrigin(),
-        message: entry.getMessage(),
-        stack: entry.getStack(),
-        url: entry.getUrl(),
-        userId: entry.getUserId(),
-        correlationId: entry.getCorrelationId(),
-        context: entry.getContext(),
-        occurredAt: entry.getOccurredAt().toISOString(),
-    };
-}
-
 function parseDate(value?: string): Date | undefined {
     if (!value) return undefined;
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
-/** The guard hook leaves POST /error-log open, so the session has to be read here if there is one. */
+/** La route est publique : s'il y a une session, elle doit être lue ici. */
 async function optionalUserId(req: FastifyRequest): Promise<string | null> {
     try {
         await req.jwtVerify();
@@ -74,49 +65,54 @@ async function optionalUserId(req: FastifyRequest): Promise<string | null> {
     }
 }
 
-export const errorLogRoutes: FastifyPluginAsync<Opts> = async (app, { repository, recorder }) => {
+export const errorLogRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
     app.post<{ Body: ReportBody }>(
         '/error-log',
         {
             schema: { body: reportSchema },
-            config: { rateLimit: { max: 30, timeWindow: '5 minutes' } },
+            config: { public: true, rateLimit: { max: 30, timeWindow: '5 minutes' } },
             bodyLimit: 32 * 1024,
         },
         async (req, reply) => {
             const { message, stack, url, context, occurredAt } = req.body;
 
-            await recorder.record({
-                origin: 'front',
-                message,
-                stack,
-                url,
-                userId: await optionalUserId(req),
-                context: { ...context, userAgent: req.headers['user-agent'] ?? null },
-                occurredAt: parseDate(occurredAt),
-            });
+            await commandBus.dispatch(
+                new RecordErrorLogEntryCommand(ErrorOrigin.FRONT, message, {
+                    stack,
+                    url,
+                    userId: await optionalUserId(req),
+                    context: { ...context, userAgent: req.headers['user-agent'] ?? null },
+                    occurredAt: parseDate(occurredAt),
+                }),
+            );
 
             return reply.status(204).send();
         },
     );
 
-    app.get<{ Querystring: SearchQuery }>('/error-log', { preHandler: requireRole('edit') }, async req => {
+    app.get<{ Querystring: SearchQuery }>('/error-log', { preHandler: requireRole(UserRole.EDIT) }, async req => {
         const limit = Math.min(Math.max(Number(req.query.limit) || DEFAULT_LIMIT, 1), MAX_LIMIT);
         const offset = Math.max(Number(req.query.offset) || 0, 0);
 
-        const criteria: ErrorLogSearch = {
-            origin: req.query.origin,
-            from: parseDate(req.query.from),
-            to: parseDate(req.query.to),
-            query: req.query.q?.trim() || undefined,
-            limit,
-            offset,
-        };
-
-        const page = await repository.search(criteria);
-        return { entries: page.entries.map(toDto), total: page.total, limit, offset };
+        return queryBus.dispatch<SearchErrorLogQuery, ErrorLogPageDto>(
+            new SearchErrorLogQuery({
+                origin: req.query.origin,
+                from: parseDate(req.query.from),
+                to: parseDate(req.query.to),
+                query: req.query.q?.trim() || undefined,
+                limit,
+                offset,
+            }),
+        );
     });
 
-    app.delete<{ Querystring: { before?: string } }>('/error-log', { preHandler: requireRole('edit') }, async req => ({
-        deleted: await repository.purge(parseDate(req.query.before)),
-    }));
+    app.delete<{ Querystring: { before?: string } }>(
+        '/error-log',
+        { preHandler: requireRole(UserRole.EDIT) },
+        async req => ({
+            deleted: await commandBus.dispatch<PurgeErrorLogCommand, number>(
+                new PurgeErrorLogCommand(parseDate(req.query.before)),
+            ),
+        }),
+    );
 };

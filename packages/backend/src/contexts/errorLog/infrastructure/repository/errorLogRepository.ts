@@ -3,8 +3,12 @@ import { FilterQuery } from '@mikro-orm/core';
 import { IErrorLogRepository, ErrorLogPage, ErrorLogSearch } from '../../domain/repository/iErrorLogRepository';
 import { ErrorLogEntry } from '../../domain/errorLogEntryAggregate';
 import { ErrorLogEntryOrmEntity } from '../entity/errorLogEntryOrmEntity';
+import { ErrorLogEntryFactory } from '../../domain/factory/errorLogEntryFactory';
+import { ErrorOrigin } from '../../domain/valueObject/errorOrigin';
 
 export class ErrorLogRepository implements IErrorLogRepository {
+    private readonly factory = new ErrorLogEntryFactory();
+
     constructor(private readonly em: EntityManager) {}
 
     /**
@@ -58,11 +62,11 @@ export class ErrorLogRepository implements IErrorLogRepository {
 
     private toOrm(entry: ErrorLogEntry): ErrorLogEntryOrmEntity {
         const e = new ErrorLogEntryOrmEntity();
-        e.id = entry.getId();
+        e.id = entry.getId().getValue();
         e.origin = entry.getOrigin();
-        e.message = entry.getMessage();
-        e.stack = entry.getStack();
-        e.url = entry.getUrl();
+        e.message = entry.getMessage().getValue();
+        e.stack = entry.getStack()?.getValue() ?? null;
+        e.url = entry.getUrl()?.getValue() ?? null;
         e.userId = entry.getUserId();
         e.correlationId = entry.getCorrelationId();
         e.context = entry.getContext();
@@ -71,9 +75,9 @@ export class ErrorLogRepository implements IErrorLogRepository {
     }
 
     private toDomain(row: ErrorLogEntryOrmEntity): ErrorLogEntry {
-        return ErrorLogEntry.record({
+        return this.factory.rehydrate({
             id: row.id,
-            origin: row.origin,
+            origin: row.origin as ErrorOrigin,
             message: row.message,
             stack: row.stack,
             url: row.url,

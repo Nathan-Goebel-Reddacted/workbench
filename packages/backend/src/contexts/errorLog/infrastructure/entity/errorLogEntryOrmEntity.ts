@@ -1,5 +1,6 @@
 import { Entity, Index, PrimaryKey, Property } from '@mikro-orm/core';
-import { ErrorContext, ErrorOrigin } from '../../domain/errorLogEntryAggregate';
+import { ErrorContext } from '../../domain/errorLogEntryAggregate';
+import { ErrorOrigin } from '../../domain/valueObject/errorOrigin';
 
 @Entity({ tableName: 'error_log_entries' })
 export class ErrorLogEntryOrmEntity {
