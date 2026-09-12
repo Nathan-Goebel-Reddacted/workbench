@@ -10,8 +10,8 @@ export class UpdateFeatureHandler implements ICommandHandler<UpdateFeatureComman
     async handle(command: UpdateFeatureCommand): Promise<void> {
         const feature = await this.repository.findById(command.id);
         if (!feature) return;
-        feature.setName(new Name(command.name));
-        feature.setDescription(new Description(command.description));
+        feature.rename(new Name(command.name));
+        feature.describe(new Description(command.description));
         await this.repository.save(feature);
     }
 }

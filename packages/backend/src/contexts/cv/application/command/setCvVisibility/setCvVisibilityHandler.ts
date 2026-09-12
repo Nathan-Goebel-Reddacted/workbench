@@ -10,7 +10,8 @@ export class SetCvVisibilityHandler implements ICommandHandler<SetCvVisibilityCo
     async handle(command: SetCvVisibilityCommand): Promise<void> {
         const cv = await this.repository.findById(new CvId(command.id));
         if (!cv) throw new NotFoundError('Cv', command.id);
-        cv.setVisible(command.visible);
+        if (command.visible) cv.publish();
+        else cv.hide();
         await this.repository.save(cv);
     }
 }

@@ -10,8 +10,8 @@ export class UpdateTicketHandler implements ICommandHandler<UpdateTicketCommand>
     async handle(command: UpdateTicketCommand): Promise<void> {
         const ticket = await this.repository.findById(command.id);
         if (!ticket) return;
-        ticket.setTitle(new Title(command.title));
-        ticket.setDescription(new Description(command.description));
+        ticket.retitle(new Title(command.title));
+        ticket.describe(new Description(command.description));
         await this.repository.save(ticket);
     }
 }

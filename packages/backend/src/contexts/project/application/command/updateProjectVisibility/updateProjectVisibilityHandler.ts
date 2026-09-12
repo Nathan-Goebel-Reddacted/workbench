@@ -8,7 +8,8 @@ export class UpdateProjectVisibilityHandler implements ICommandHandler<UpdatePro
     async handle(command: UpdateProjectVisibilityCommand): Promise<void> {
         const project = await this.repository.findById(command.id);
         if (!project) return;
-        project.setVisible(command.visible);
+        if (command.visible) project.publish();
+        else project.hide();
         await this.repository.save(project);
     }
 }

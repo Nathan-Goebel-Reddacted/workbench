@@ -10,7 +10,7 @@ export class ListProjectsHandler implements IQueryHandler<ListProjectsQuery, Pro
 
     async handle(query: ListProjectsQuery): Promise<ProjectSummaryDto[]> {
         const projects = await this.repository.findAll();
-        const exposed = query.includeHidden ? projects : projects.filter(p => p.getVisible());
+        const exposed = query.includeHidden ? projects : projects.filter(p => p.isVisible());
         return exposed.map(p => this.toDto(p));
     }
 
@@ -21,7 +21,7 @@ export class ListProjectsHandler implements IQueryHandler<ListProjectsQuery, Pro
             reference: formatSegment(project.getNumber()),
             name: project.getName().getValue(),
             description: project.getDescription().getValue(),
-            visible: project.getVisible(),
+            visible: project.isVisible(),
             category: project.getCategory(),
         };
     }

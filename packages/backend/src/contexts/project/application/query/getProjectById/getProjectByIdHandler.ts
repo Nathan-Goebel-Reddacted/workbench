@@ -12,7 +12,7 @@ export class GetProjectByIdHandler implements IQueryHandler<GetProjectByIdQuery,
         const project = await this.repository.findById(query.id);
         if (!project) return null;
         // Un projet caché est indiscernable d'un projet inexistant pour l'appelant anonyme.
-        if (!query.includeHidden && !project.getVisible()) return null;
+        if (!query.includeHidden && !project.isVisible()) return null;
         return this.toDto(project);
     }
 
@@ -23,7 +23,7 @@ export class GetProjectByIdHandler implements IQueryHandler<GetProjectByIdQuery,
             reference: formatSegment(project.getNumber()),
             name: project.getName().getValue(),
             description: project.getDescription().getValue(),
-            visible: project.getVisible(),
+            visible: project.isVisible(),
             category: project.getCategory(),
             links: project.getLinks().map(l => ({
                 url: l.getUrl(),

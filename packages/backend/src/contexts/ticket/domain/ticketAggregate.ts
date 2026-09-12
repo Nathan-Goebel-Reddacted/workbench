@@ -68,11 +68,11 @@ export class Ticket {
         return [...this.notes];
     }
 
-    setTitle(title: Title): void {
+    retitle(title: Title): void {
         this.title = title;
     }
 
-    setDescription(description: Description): void {
+    describe(description: Description): void {
         this.description = description;
     }
 

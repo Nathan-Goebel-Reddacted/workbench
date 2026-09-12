@@ -54,7 +54,7 @@ export class Project {
         return this.description;
     }
 
-    getVisible(): boolean {
+    isVisible(): boolean {
         return this.visible;
     }
 
@@ -62,19 +62,25 @@ export class Project {
         return this.category;
     }
 
-    setName(name: Name): void {
+    rename(name: Name): void {
         this.name = name;
     }
 
-    setDescription(description: Description): void {
+    describe(description: Description): void {
         this.description = description;
     }
 
-    setVisible(visible: boolean): void {
-        this.visible = visible;
+    /** Le projet rejoint le site public. */
+    publish(): void {
+        this.visible = true;
     }
 
-    setCategory(category: Category): void {
+    /** Il en sort sans disparaître : le retrait est réversible. */
+    hide(): void {
+        this.visible = false;
+    }
+
+    reclassify(category: Category): void {
         this.category = category;
     }
 

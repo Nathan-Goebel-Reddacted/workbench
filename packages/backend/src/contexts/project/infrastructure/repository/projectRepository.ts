@@ -49,7 +49,7 @@ export class ProjectRepository implements IProjectRepository {
         e.number = project.getNumber();
         e.name = project.getName().getValue();
         e.description = project.getDescription().getValue();
-        e.visible = project.getVisible();
+        e.visible = project.isVisible();
         e.category = project.getCategory();
         e.documents = project.getDocuments().map(d => ({
             id: d.getId().getValue(),

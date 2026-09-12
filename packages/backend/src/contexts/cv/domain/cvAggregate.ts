@@ -42,8 +42,13 @@ export class Cv {
         return this.createdAt;
     }
 
-    setVisible(visible: boolean): void {
-        this.visible = visible;
+    /** Le CV devient téléchargeable depuis le site public. */
+    publish(): void {
+        this.visible = true;
+    }
+
+    hide(): void {
+        this.visible = false;
     }
 
     moveTo(displayOrder: number): void {

@@ -12,9 +12,9 @@ export class UpdateIdeaHandler implements ICommandHandler<UpdateIdeaCommand> {
     async handle(command: UpdateIdeaCommand): Promise<void> {
         const idea = await this.repository.findById(command.id);
         if (!idea) return;
-        idea.setName(new Name(command.name));
-        idea.setDescription(new Description(command.description));
-        if (command.category != null) idea.setCategory(parseEnum(command.category, Category, 'category'));
+        idea.rename(new Name(command.name));
+        idea.describe(new Description(command.description));
+        if (command.category != null) idea.reclassify(parseEnum(command.category, Category, 'category'));
         await this.repository.save(idea);
     }
 }

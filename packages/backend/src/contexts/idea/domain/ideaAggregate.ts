@@ -57,11 +57,11 @@ export class Idea {
         return this.createdAt;
     }
 
-    setName(name: Name): void {
+    rename(name: Name): void {
         this.name = name;
     }
 
-    setDescription(description: Description): void {
+    describe(description: Description): void {
         this.description = description;
     }
 
@@ -69,7 +69,7 @@ export class Idea {
         return this.category;
     }
 
-    setCategory(category: Category): void {
+    reclassify(category: Category): void {
         this.category = category;
     }
 

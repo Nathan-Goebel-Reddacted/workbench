@@ -73,11 +73,11 @@ export class Feature {
         this.documents = this.documents.filter(d => !d.getId().equals(id));
     }
 
-    setName(name: Name): void {
+    rename(name: Name): void {
         this.name = name;
     }
 
-    setDescription(description: Description): void {
+    describe(description: Description): void {
         this.description = description;
     }
 }

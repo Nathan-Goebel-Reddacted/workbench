@@ -12,9 +12,9 @@ export class UpdateProjectHandler implements ICommandHandler<UpdateProjectComman
     async handle(command: UpdateProjectCommand): Promise<void> {
         const project = await this.repository.findById(command.id);
         if (!project) return;
-        project.setName(new Name(command.name));
-        project.setDescription(new Description(command.description));
-        if (command.category != null) project.setCategory(parseEnum(command.category, Category, 'category'));
+        project.rename(new Name(command.name));
+        project.describe(new Description(command.description));
+        if (command.category != null) project.reclassify(parseEnum(command.category, Category, 'category'));
         await this.repository.save(project);
     }
 }
