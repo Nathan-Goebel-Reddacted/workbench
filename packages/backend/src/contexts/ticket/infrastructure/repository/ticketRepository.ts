@@ -28,6 +28,16 @@ export class TicketRepository implements ITicketRepository {
         return entities.map(e => this.toDomain(e));
     }
 
+    async findByFeatureIds(featureIds: string[]): Promise<Ticket[]> {
+        if (featureIds.length === 0) return [];
+        const entities = await this.em.find(
+            TicketOrmEntity,
+            { featureId: { $in: featureIds } },
+            { orderBy: { number: 'asc' } },
+        );
+        return entities.map(e => this.toDomain(e));
+    }
+
     async countByFeatureId(featureId: string): Promise<number> {
         return this.em.count(TicketOrmEntity, { featureId });
     }

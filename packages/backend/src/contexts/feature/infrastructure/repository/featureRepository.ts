@@ -25,6 +25,16 @@ export class FeatureRepository implements IFeatureRepository {
         return entities.map(e => this.toDomain(e));
     }
 
+    async findByOwners(ownerType: OwnerType, ownerIds: string[]): Promise<Feature[]> {
+        if (ownerIds.length === 0) return [];
+        const entities = await this.em.find(
+            FeatureOrmEntity,
+            { ownerType, ownerId: { $in: ownerIds } },
+            { orderBy: { number: 'asc' } },
+        );
+        return entities.map(e => this.toDomain(e));
+    }
+
     async existsById(id: string): Promise<boolean> {
         return (await this.em.count(FeatureOrmEntity, { id })) > 0;
     }

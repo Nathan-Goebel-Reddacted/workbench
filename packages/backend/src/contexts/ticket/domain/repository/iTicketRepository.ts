@@ -3,6 +3,8 @@ import { Ticket } from '../ticketAggregate';
 export interface ITicketRepository {
     findById(id: string): Promise<Ticket | null>;
     findByFeatureId(featureId: string): Promise<Ticket[]>;
+    /** Les tickets de plusieurs features d'un coup — même raison que `findByOwners`. */
+    findByFeatureIds(featureIds: string[]): Promise<Ticket[]>;
     countByFeatureId(featureId: string): Promise<number>;
     /** Plus grand numéro déjà attribué dans cette feature ; 0 si elle n'a aucun ticket. */
     lastNumberOf(featureId: string): Promise<number>;

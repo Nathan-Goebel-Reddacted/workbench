@@ -1,26 +1,8 @@
-export type MediaImageDto = Readonly<{
-    id: string;
-    name: string;
-    url: string;
-}>;
+import { FeatureMedia, MediaItem, ProjectMedia, TicketMedia } from '../../../domain/port/iMediaLibrary';
 
-export type TicketImagesDto = Readonly<{
-    ticketId: string;
-    reference: string;
-    title: string;
-    images: MediaImageDto[];
-}>;
-
-export type FeatureImagesDto = Readonly<{
-    featureId: string;
-    featureName: string;
-    images: MediaImageDto[];
-    tickets: TicketImagesDto[];
-}>;
-
-export type ProjectImagesDto = Readonly<{
-    projectId: string;
-    projectName: string;
-    images: MediaImageDto[];
-    features: FeatureImagesDto[];
-}>;
+// La forme rendue par l'API est celle que le port décrit : la nommer deux fois inviterait
+// les deux définitions à diverger.
+export type MediaImageDto = MediaItem;
+export type TicketImagesDto = TicketMedia;
+export type FeatureImagesDto = FeatureMedia;
+export type ProjectImagesDto = ProjectMedia;
