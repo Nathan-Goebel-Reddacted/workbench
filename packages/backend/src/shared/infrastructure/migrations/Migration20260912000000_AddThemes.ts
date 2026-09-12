@@ -1,5 +1,5 @@
 import { Migration } from '@mikro-orm/migrations';
-import { existsSync, readFileSync, renameSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 
@@ -8,7 +8,6 @@ type FileTheme = { id?: string; name?: string; visible?: boolean; colors?: Recor
 type FileCatalog = { themes?: FileTheme[]; defaultId?: string | null };
 
 const CONFIG_PATH = join(process.cwd(), 'theme-config.json');
-const MIGRATED_PATH = join(process.cwd(), 'theme-config.migrated.json');
 const LEGACY_THEME_NAME = 'Mon thème';
 
 /**
@@ -17,9 +16,9 @@ const LEGACY_THEME_NAME = 'Mon thème';
  * Le fichier vivait dans le répertoire de travail du processus : il disparaissait à chaque
  * redéploiement du conteneur, et deux écritures simultanées s'écrasaient l'une l'autre.
  *
- * La reprise est tolérante et sans perte : le fichier n'est jamais supprimé, seulement
- * renommé une fois lu. S'il est absent, illisible, ou si la table contient déjà quelque
- * chose, la migration se contente de créer la structure — elle est rejouable sans risque.
+ * La reprise est tolérante et sans perte : le fichier n'est ni supprimé ni déplacé, il est
+ * seulement lu. S'il est absent ou illisible, la migration se contente de créer la
+ * structure. Rien n'est écrit hors de la transaction, donc un échec la laisse rejouable.
  */
 export class Migration20260912000000_AddThemes extends Migration {
     override async up(): Promise<void> {
@@ -63,10 +62,9 @@ export class Migration20260912000000_AddThemes extends Migration {
             );
         });
 
-        // Lu et repris : le fichier est mis de côté sous un autre nom plutôt que supprimé.
-        // Un rollback de la migration le laisse intact et lisible à côté.
-        if (existsSync(CONFIG_PATH) && !existsSync(MIGRATED_PATH)) renameSync(CONFIG_PATH, MIGRATED_PATH);
-
+        // Le fichier reste sur le disque tel quel. Le déplacer ici le ferait hors de la
+        // transaction : un échec plus loin dans la migration la laisserait rejouable en
+        // apparence, mais sans plus rien à reprendre au second passage.
         return statements;
     }
 }
