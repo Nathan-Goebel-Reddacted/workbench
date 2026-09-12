@@ -1,6 +1,6 @@
 import { IQueryHandler } from '@shared/application/query/iQueryHandler';
 import { GetReferenceTreeQuery } from './getReferenceTreeQuery';
-import { IReferenceDirectory } from '../../../domain/iReferenceDirectory';
+import { IReferenceDirectory } from '../../../domain/port/iReferenceDirectory';
 import { formatSegment } from '@shared/domain/valueObject/referenceSegment';
 
 export type ReferenceTreeTicket = Readonly<{ id: string; reference: string; title: string; status: string }>;

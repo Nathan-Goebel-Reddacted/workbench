@@ -11,24 +11,24 @@ export class IdeaFeaturesGateway implements IIdeaFeaturesGateway {
     ) {}
 
     async countOf(ideaId: string): Promise<{ features: number; tickets: number }> {
-        const features = await this.features.findByOwner('idea', ideaId);
+        const features = await this.features.findByOwner(FeatureOwner.idea(ideaId));
         const counts = await Promise.all(features.map(f => this.tickets.countOf(f.getId().getValue())));
         return { features: features.length, tickets: counts.reduce((sum, n) => sum + n, 0) };
     }
 
     async deleteAllOf(ideaId: string): Promise<string[]> {
-        const features = await this.features.findByOwner('idea', ideaId);
+        const features = await this.features.findByOwner(FeatureOwner.idea(ideaId));
         const urls: string[] = [];
         for (const feature of features) {
             urls.push(...(await this.tickets.deleteAllOf(feature.getId().getValue())));
             urls.push(...feature.getDocuments().map(d => d.getUrl()));
-            await this.features.delete(feature.getId().getValue());
+            await this.features.delete(feature.getId());
         }
         return urls;
     }
 
     async transferToProject(ideaId: string, projectId: string): Promise<void> {
-        const features = await this.features.findByOwner('idea', ideaId);
+        const features = await this.features.findByOwner(FeatureOwner.idea(ideaId));
         const owner = FeatureOwner.project(projectId);
         for (const feature of features) {
             // Le numéro de la feature ne bouge pas, et celui du porteur non plus : les références

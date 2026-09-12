@@ -3,12 +3,18 @@ import { GetPageLayoutByRefQuery } from './getPageLayoutByRefQuery';
 import { PageLayoutDto } from '../getPageLayoutById/pageLayoutDto';
 import { IPageLayoutRepository } from '../../../domain/repository/iPageLayoutRepository';
 import { PageLayout } from '../../../domain/pageLayoutAggregate';
+import { PageType } from '../../../domain/valueObject/pageType';
+import { PageRef } from '../../../domain/valueObject/pageRef';
+import { parseEnum } from '@shared/domain/valueObject/parseEnum';
 
 export class GetPageLayoutByRefHandler implements IQueryHandler<GetPageLayoutByRefQuery, PageLayoutDto | null> {
     constructor(private readonly repository: IPageLayoutRepository) {}
 
     async handle(query: GetPageLayoutByRefQuery): Promise<PageLayoutDto | null> {
-        const pageLayout = await this.repository.findByRef(query.pageType, query.pageRef);
+        const pageLayout = await this.repository.findByRef(
+            parseEnum(query.pageType, PageType, 'page type'),
+            new PageRef(query.pageRef),
+        );
         if (!pageLayout) return null;
         return this.toDto(pageLayout);
     }

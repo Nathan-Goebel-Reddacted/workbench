@@ -6,6 +6,7 @@ import { TicketFactory } from '../../../domain/factory/ticketFactory';
 import { TicketReference } from '../../../domain/valueObject/reference';
 import { DuplicateReferenceException } from '../../../domain/exception/duplicateReferenceException';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
+import { FeatureId } from '../../../domain/valueObject/featureId';
 
 /** Deux tickets créés en même temps dans la même feature calculent le même numéro : on retente. */
 const MAX_ATTEMPTS = 5;
@@ -24,7 +25,7 @@ export class CreateTicketHandler implements ICommandHandler<CreateTicketCommand>
         if (!feature) throw new NotFoundError('Feature', command.featureId);
 
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            const position = (await this.repository.lastNumberOf(command.featureId)) + 1;
+            const position = (await this.repository.lastNumberOf(new FeatureId(command.featureId))) + 1;
             const reference = TicketReference.create(feature.ownerNumber, feature.featureNumber, position);
             const ticket = this.factory.create(
                 command.id,

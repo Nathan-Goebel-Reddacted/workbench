@@ -1,6 +1,8 @@
 import { IProjectRepository } from '@contexts/project/domain/repository/iProjectRepository';
 import { IFeatureRepository } from '@contexts/feature/domain/repository/iFeatureRepository';
 import { ITicketRepository } from '@contexts/ticket/domain/repository/iTicketRepository';
+import { FeatureOwner } from '@contexts/feature/domain/valueObject/featureOwner';
+import { FeatureId } from '@contexts/ticket/domain/valueObject/featureId';
 import { Document } from '@shared/domain/entity/document';
 import {
     isImageDocument,
@@ -53,10 +55,10 @@ export class MediaLibrary implements IMediaLibrary {
         const projects = await this.projects.findAll();
         if (projects.length === 0) return [];
 
-        const projectIds = projects.map(project => project.getId().getValue());
-        const features = await this.features.findByOwners('project', projectIds);
+        const owners = projects.map(project => FeatureOwner.project(project.getId().getValue()));
+        const features = await this.features.findByOwners(owners);
 
-        const featureIds = features.map(feature => feature.getId().getValue());
+        const featureIds = features.map(feature => new FeatureId(feature.getId().getValue()));
         const tickets = await this.tickets.findByFeatureIds(featureIds);
 
         const ticketsByFeature = groupBy(tickets, ticket => ticket.getFeatureId().getValue());

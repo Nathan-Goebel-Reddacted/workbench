@@ -4,12 +4,13 @@ import { IPageLayoutRepository } from '../../../domain/repository/iPageLayoutRep
 import { SectionId } from '../../../domain/valueObject/sectionId';
 import { ContentRef } from '../../../domain/valueObject/contentRef';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
+import { PageLayoutId } from '../../../domain/valueObject/pageLayoutId';
 
 export class UpdateSectionContentHandler implements ICommandHandler<UpdateSectionContentCommand> {
     constructor(private readonly repository: IPageLayoutRepository) {}
 
     async handle(command: UpdateSectionContentCommand): Promise<void> {
-        const pageLayout = await this.repository.findById(command.pageLayoutId);
+        const pageLayout = await this.repository.findById(new PageLayoutId(command.pageLayoutId));
         if (!pageLayout) throw new NotFoundError('PageLayout', command.pageLayoutId);
         pageLayout.updateSectionContent(
             new SectionId(command.sectionId),

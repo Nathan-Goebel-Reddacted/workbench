@@ -3,12 +3,13 @@ import { GetUserByIdQuery } from './getUserByIdQuery';
 import { UserDto } from './userDto';
 import { IUserRepository } from '../../../domain/repository/iUserRepository';
 import { User } from '../../../domain/userAggregate';
+import { UserId } from '../../../domain/valueObject/userId';
 
 export class GetUserByIdHandler implements IQueryHandler<GetUserByIdQuery, UserDto | null> {
     constructor(private readonly repository: IUserRepository) {}
 
     async handle(query: GetUserByIdQuery): Promise<UserDto | null> {
-        const user = await this.repository.findById(query.id);
+        const user = await this.repository.findById(new UserId(query.id));
         if (!user) return null;
         return this.toDto(user);
     }

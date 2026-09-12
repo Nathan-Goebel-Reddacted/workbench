@@ -20,7 +20,6 @@ function repository(trace: Trace, tx: FakeTransactionRunner, onDelete?: () => ne
             ({ getDocuments: () => [{ getUrl: () => '/uploads/feature.png' }] }) as unknown as Feature,
         findByOwner: async () => [],
         findByOwners: async () => [],
-        existsById: async () => true,
         lastNumberOf: async () => 0,
         save: async () => {},
         delete: async () => {

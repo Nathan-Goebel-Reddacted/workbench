@@ -4,6 +4,7 @@ import { FeatureDto } from './featureDto';
 import { IFeatureRepository } from '../../../domain/repository/iFeatureRepository';
 import { IOwnerGateway } from '../../../domain/port/iOwnerGateway';
 import { toFeatureDto } from '../featureDtoMapper';
+import { FeatureId } from '../../../domain/valueObject/featureId';
 
 export class GetFeatureByIdHandler implements IQueryHandler<GetFeatureByIdQuery, FeatureDto | null> {
     constructor(
@@ -12,7 +13,7 @@ export class GetFeatureByIdHandler implements IQueryHandler<GetFeatureByIdQuery,
     ) {}
 
     async handle(query: GetFeatureByIdQuery): Promise<FeatureDto | null> {
-        const feature = await this.repository.findById(query.id);
+        const feature = await this.repository.findById(new FeatureId(query.id));
         if (!feature) return null;
         const ownerNumber = await this.owners.numberOf(feature.getOwner());
         return toFeatureDto(feature, ownerNumber);

@@ -1,5 +1,6 @@
 import { IUserDeletionListener } from '@contexts/user/domain/port/iUserDeletionListener';
 import { IAgentToolRepository } from '../../domain/repository/iAgentToolRepository';
+import { UserId } from '../../domain/valueObject/userId';
 
 // `agent_tools.userId` n'a pas de clé étrangère : rien en base ne fait tomber les agents
 // avec leur propriétaire, et l'authentificateur ne regarde que la révocation. Sans ce
@@ -8,7 +9,7 @@ export class RevokeAgentToolsOnUserDeleted implements IUserDeletionListener {
     constructor(private readonly repository: IAgentToolRepository) {}
 
     async onUserDeleted(userId: string): Promise<void> {
-        const tools = await this.repository.findByUserId(userId);
+        const tools = await this.repository.findByUserId(new UserId(userId));
         for (const tool of tools) {
             if (tool.isRevoked()) continue;
             tool.revoke();

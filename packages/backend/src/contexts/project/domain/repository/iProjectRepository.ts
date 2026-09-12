@@ -1,7 +1,8 @@
 import { Project } from '../projectAggregate';
+import { ProjectId } from '../valueObject/projectId';
 
 export interface IProjectRepository {
-    findById(id: string): Promise<Project | null>;
+    findById(id: ProjectId): Promise<Project | null>;
     findAll(): Promise<Project[]>;
     save(project: Project): Promise<void>;
 }

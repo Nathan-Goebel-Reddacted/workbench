@@ -5,6 +5,8 @@ import { IAgentToolRepository } from '../../../domain/repository/iAgentToolRepos
 import { AgentToolFactory } from '../../../domain/factory/agentToolFactory';
 import { AgentToolId } from '../../../domain/valueObject/agentToolId';
 import { issueAgentToken } from '../../auth/agentToken';
+import { ITransactionRunner } from '@shared/application/port/iTransactionRunner';
+import { PairingRequestId } from '../../../domain/valueObject/pairingRequestId';
 
 export class ApprovePairingRequestHandler
     implements ICommandHandler<ApprovePairingRequestCommand, ApprovalOutcome | null>
@@ -13,11 +15,12 @@ export class ApprovePairingRequestHandler
         private readonly requests: IPairingRequestRepository,
         private readonly agentTools: IAgentToolRepository,
         private readonly agentToolFactory: AgentToolFactory,
+        private readonly transaction: ITransactionRunner,
     ) {}
 
     /** Rend `null` quand la demande n'existe pas : à l'appelant de dire ce que cela vaut. */
     async handle(command: ApprovePairingRequestCommand): Promise<ApprovalOutcome | null> {
-        const request = await this.requests.findById(command.id);
+        const request = await this.requests.findById(new PairingRequestId(command.id));
         if (!request) return null;
         if (!request.isPending()) return { outcome: 'alreadyDecided', status: request.getStatus() };
 
@@ -35,10 +38,15 @@ export class ApprovePairingRequestHandler
             scopes,
             secret,
         );
-        await this.agentTools.save(agentTool);
-
         request.approve(agentToolId);
-        await this.requests.save(request);
+
+        // Les deux écritures sont solidaires. Séparées, un incident entre elles laissait un
+        // outil orphelin — porteur d'un secret que personne n'a reçu — pendant que la demande
+        // restait en attente : la réapprouver en fabriquait simplement un second.
+        await this.transaction.run(async () => {
+            await this.agentTools.save(agentTool);
+            await this.requests.save(request);
+        });
 
         return { outcome: 'approved', agentToolId: agentToolId.getValue(), scopes, permission };
     }

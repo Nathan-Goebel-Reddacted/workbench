@@ -8,8 +8,8 @@ import { Language, LanguageEnum } from '../../domain/valueObject/language';
 export class PortfolioRepository implements IPortfolioRepository {
     constructor(private readonly em: EntityManager) {}
 
-    async findById(id: string): Promise<Portfolio | null> {
-        const e = await this.em.findOne(PortfolioOrmEntity, { id });
+    async findById(id: PortfolioId): Promise<Portfolio | null> {
+        const e = await this.em.findOne(PortfolioOrmEntity, { id: id.getValue() });
         return e ? this.toDomain(e) : null;
     }
 

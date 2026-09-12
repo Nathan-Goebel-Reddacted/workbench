@@ -12,13 +12,13 @@ import { Token } from '../../domain/valueObject/token';
 export class AgentToolRepository implements IAgentToolRepository {
     constructor(private readonly em: EntityManager) {}
 
-    async findById(id: string): Promise<AgentTool | null> {
-        const e = await this.em.findOne(AgentToolOrmEntity, { id });
+    async findById(id: AgentToolId): Promise<AgentTool | null> {
+        const e = await this.em.findOne(AgentToolOrmEntity, { id: id.getValue() });
         return e ? this.toDomain(e) : null;
     }
 
-    async findByUserId(userId: string): Promise<AgentTool[]> {
-        const entities = await this.em.find(AgentToolOrmEntity, { userId });
+    async findByUserId(userId: UserId): Promise<AgentTool[]> {
+        const entities = await this.em.find(AgentToolOrmEntity, { userId: userId.getValue() });
         return entities.map(e => this.toDomain(e));
     }
 

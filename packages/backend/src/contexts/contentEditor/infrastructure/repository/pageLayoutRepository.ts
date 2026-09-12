@@ -14,13 +14,13 @@ import { GridPosition } from '../../domain/valueObject/gridPosition';
 export class PageLayoutRepository implements IPageLayoutRepository {
     constructor(private readonly em: EntityManager) {}
 
-    async findById(id: string): Promise<PageLayout | null> {
-        const e = await this.em.findOne(PageLayoutOrmEntity, { id });
+    async findById(id: PageLayoutId): Promise<PageLayout | null> {
+        const e = await this.em.findOne(PageLayoutOrmEntity, { id: id.getValue() });
         return e ? this.toDomain(e) : null;
     }
 
-    async findByRef(pageType: string, pageRef: string): Promise<PageLayout | null> {
-        const e = await this.em.findOne(PageLayoutOrmEntity, { pageType, pageRef });
+    async findByRef(pageType: PageType, pageRef: PageRef): Promise<PageLayout | null> {
+        const e = await this.em.findOne(PageLayoutOrmEntity, { pageType, pageRef: pageRef.getValue() });
         return e ? this.toDomain(e) : null;
     }
 

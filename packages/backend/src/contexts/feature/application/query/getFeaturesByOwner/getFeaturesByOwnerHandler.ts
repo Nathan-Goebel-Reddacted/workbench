@@ -14,7 +14,7 @@ export class GetFeaturesByOwnerHandler implements IQueryHandler<GetFeaturesByOwn
 
     async handle(query: GetFeaturesByOwnerQuery): Promise<FeatureDto[]> {
         const owner = new FeatureOwner(query.ownerType, query.ownerId);
-        const features = await this.repository.findByOwner(owner.getType(), owner.getId());
+        const features = await this.repository.findByOwner(owner);
         // Un seul aller-retour pour tout le lot : le numéro du porteur est le même pour toutes.
         const ownerNumber = await this.owners.numberOf(owner);
         return features.map(f => toFeatureDto(f, ownerNumber));

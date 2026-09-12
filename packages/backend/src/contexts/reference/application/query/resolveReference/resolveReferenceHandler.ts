@@ -1,7 +1,7 @@
 import { IQueryHandler } from '@shared/application/query/iQueryHandler';
 import { ResolveReferenceQuery } from './resolveReferenceQuery';
 import { ResolvedReferenceDto } from './resolvedReferenceDto';
-import { IReferenceDirectory } from '../../../domain/iReferenceDirectory';
+import { IReferenceDirectory } from '../../../domain/port/iReferenceDirectory';
 import { formatSegment } from '@shared/domain/valueObject/referenceSegment';
 import { Reference } from '../../../domain/valueObject/reference';
 import { NotFoundError } from '@shared/application/errors/notFoundError';

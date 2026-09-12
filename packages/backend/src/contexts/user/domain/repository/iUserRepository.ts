@@ -1,10 +1,11 @@
 import { User } from '../userAggregate';
+import { UserId } from '../valueObject/userId';
+import { Email } from '../valueObject/email';
 
 export interface IUserRepository {
-    findById(id: string): Promise<User | null>;
-    findByEmail(email: string): Promise<User | null>;
+    findById(id: UserId): Promise<User | null>;
+    findByEmail(email: Email): Promise<User | null>;
     findAll(): Promise<User[]>;
-    existsById(id: string): Promise<boolean>;
     save(user: User): Promise<void>;
-    deleteById(id: string): Promise<void>;
+    deleteById(id: UserId): Promise<void>;
 }

@@ -4,12 +4,13 @@ import { IdeaDto } from './ideaDto';
 import { IIdeaRepository } from '../../../domain/repository/iIdeaRepository';
 import { Idea } from '../../../domain/ideaAggregate';
 import { formatSegment } from '@shared/domain/valueObject/referenceSegment';
+import { IdeaId } from '../../../domain/valueObject/ideaId';
 
 export class GetIdeaByIdHandler implements IQueryHandler<GetIdeaByIdQuery, IdeaDto | null> {
     constructor(private readonly repository: IIdeaRepository) {}
 
     async handle(query: GetIdeaByIdQuery): Promise<IdeaDto | null> {
-        const idea = await this.repository.findById(query.id);
+        const idea = await this.repository.findById(new IdeaId(query.id));
         if (!idea) return null;
         return this.toDto(idea);
     }

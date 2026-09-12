@@ -4,12 +4,13 @@ import { ProjectDto } from './projectDto';
 import { IProjectRepository } from '../../../domain/repository/iProjectRepository';
 import { Project } from '../../../domain/projectAggregate';
 import { formatSegment } from '@shared/domain/valueObject/referenceSegment';
+import { ProjectId } from '../../../domain/valueObject/projectId';
 
 export class GetProjectByIdHandler implements IQueryHandler<GetProjectByIdQuery, ProjectDto | null> {
     constructor(private readonly repository: IProjectRepository) {}
 
     async handle(query: GetProjectByIdQuery): Promise<ProjectDto | null> {
-        const project = await this.repository.findById(query.id);
+        const project = await this.repository.findById(new ProjectId(query.id));
         if (!project) return null;
         // Un projet caché est indiscernable d'un projet inexistant pour l'appelant anonyme.
         if (!query.includeHidden && !project.isVisible()) return null;

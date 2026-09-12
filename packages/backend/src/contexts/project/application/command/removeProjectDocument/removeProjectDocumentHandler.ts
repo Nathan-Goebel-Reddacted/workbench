@@ -4,6 +4,7 @@ import { IProjectRepository } from '../../../domain/repository/iProjectRepositor
 import { DocumentId } from '@shared/domain/valueObject/documentId';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
 import { IUploadStorage } from '@shared/application/port/iUploadStorage';
+import { ProjectId } from '../../../domain/valueObject/projectId';
 
 export class RemoveProjectDocumentHandler implements ICommandHandler<RemoveProjectDocumentCommand> {
     constructor(
@@ -12,7 +13,7 @@ export class RemoveProjectDocumentHandler implements ICommandHandler<RemoveProje
     ) {}
 
     async handle(command: RemoveProjectDocumentCommand): Promise<void> {
-        const project = await this.repository.findById(command.projectId);
+        const project = await this.repository.findById(new ProjectId(command.projectId));
         if (!project) throw new NotFoundError('Project', command.projectId);
         const removed = project.getDocuments().find(d => d.getId().getValue() === command.documentId);
         project.removeDocument(new DocumentId(command.documentId));

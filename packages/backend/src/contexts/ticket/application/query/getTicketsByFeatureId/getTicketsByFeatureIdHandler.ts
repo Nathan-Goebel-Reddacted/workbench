@@ -4,6 +4,7 @@ import { TicketDto } from '../getTicketById/ticketDto';
 import { ITicketRepository } from '../../../domain/repository/iTicketRepository';
 import { IFeatureGateway } from '../../../domain/port/iFeatureGateway';
 import { toTicketDto } from '../ticketDtoMapper';
+import { FeatureId } from '../../../domain/valueObject/featureId';
 
 export class GetTicketsByFeatureIdHandler implements IQueryHandler<GetTicketsByFeatureIdQuery, TicketDto[]> {
     constructor(
@@ -12,7 +13,7 @@ export class GetTicketsByFeatureIdHandler implements IQueryHandler<GetTicketsByF
     ) {}
 
     async handle(query: GetTicketsByFeatureIdQuery): Promise<TicketDto[]> {
-        const tickets = await this.repository.findByFeatureId(query.featureId);
+        const tickets = await this.repository.findByFeatureId(new FeatureId(query.featureId));
         // Tous ces tickets partagent la même feature : une seule question suffit pour le lot.
         const feature = await this.features.describe(query.featureId);
         const ownedByIdea = feature?.ownerType === 'idea';

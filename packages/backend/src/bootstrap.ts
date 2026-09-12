@@ -514,11 +514,11 @@ export function bootstrap(
     );
     commandBus.register(
         ClaimPairingRequestCommand.commandName,
-        new ClaimPairingRequestHandler(repos.pairingRequest, repos.agentTool, secretHasher),
+        new ClaimPairingRequestHandler(repos.pairingRequest, repos.agentTool, secretHasher, transactions),
     );
     commandBus.register(
         ApprovePairingRequestCommand.commandName,
-        new ApprovePairingRequestHandler(repos.pairingRequest, repos.agentTool, agentToolFactory),
+        new ApprovePairingRequestHandler(repos.pairingRequest, repos.agentTool, agentToolFactory, transactions),
     );
     commandBus.register(RejectPairingRequestCommand.commandName, new RejectPairingRequestHandler(repos.pairingRequest));
     queryBus.register(ListPairingRequestsQuery.queryName, new ListPairingRequestsHandler(repos.pairingRequest));

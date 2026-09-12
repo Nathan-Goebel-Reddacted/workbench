@@ -14,8 +14,8 @@ import { DocumentType } from '@shared/domain/valueObject/documentType';
 export class IdeaRepository implements IIdeaRepository {
     constructor(private readonly em: EntityManager) {}
 
-    async findById(id: string): Promise<Idea | null> {
-        const e = await this.em.findOne(IdeaOrmEntity, { id });
+    async findById(id: IdeaId): Promise<Idea | null> {
+        const e = await this.em.findOne(IdeaOrmEntity, { id: id.getValue() });
         return e ? this.toDomain(e) : null;
     }
 
@@ -30,9 +30,9 @@ export class IdeaRepository implements IIdeaRepository {
         });
     }
 
-    async delete(id: string): Promise<void> {
+    async delete(id: IdeaId): Promise<void> {
         await this.em.transactional(async em => {
-            await em.nativeDelete(IdeaOrmEntity, { id });
+            await em.nativeDelete(IdeaOrmEntity, { id: id.getValue() });
         });
     }
 

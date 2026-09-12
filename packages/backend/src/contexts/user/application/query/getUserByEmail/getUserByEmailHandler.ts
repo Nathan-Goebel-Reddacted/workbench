@@ -3,12 +3,13 @@ import { GetUserByEmailQuery } from './getUserByEmailQuery';
 import { UserDto } from '../getUserById/userDto';
 import { IUserRepository } from '../../../domain/repository/iUserRepository';
 import { User } from '../../../domain/userAggregate';
+import { Email } from '../../../domain/valueObject/email';
 
 export class GetUserByEmailHandler implements IQueryHandler<GetUserByEmailQuery, UserDto | null> {
     constructor(private readonly repository: IUserRepository) {}
 
     async handle(query: GetUserByEmailQuery): Promise<UserDto | null> {
-        const user = await this.repository.findByEmail(query.email);
+        const user = await this.repository.findByEmail(new Email(query.email));
         if (!user) return null;
         return this.toDto(user);
     }

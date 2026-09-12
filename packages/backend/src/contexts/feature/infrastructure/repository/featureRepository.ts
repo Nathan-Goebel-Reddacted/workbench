@@ -15,42 +15,50 @@ import { DocumentType } from '@shared/domain/valueObject/documentType';
 export class FeatureRepository implements IFeatureRepository {
     constructor(private readonly em: EntityManager) {}
 
-    async findById(id: string): Promise<Feature | null> {
-        const e = await this.em.findOne(FeatureOrmEntity, { id });
+    async findById(id: FeatureId): Promise<Feature | null> {
+        const e = await this.em.findOne(FeatureOrmEntity, { id: id.getValue() });
         return e ? this.toDomain(e) : null;
     }
 
-    async findByOwner(ownerType: OwnerType, ownerId: string): Promise<Feature[]> {
-        const entities = await this.em.find(FeatureOrmEntity, { ownerType, ownerId }, { orderBy: { number: 'asc' } });
-        return entities.map(e => this.toDomain(e));
-    }
-
-    async findByOwners(ownerType: OwnerType, ownerIds: string[]): Promise<Feature[]> {
-        if (ownerIds.length === 0) return [];
+    async findByOwner(owner: FeatureOwner): Promise<Feature[]> {
         const entities = await this.em.find(
             FeatureOrmEntity,
-            { ownerType, ownerId: { $in: ownerIds } },
+            { ownerType: owner.getType(), ownerId: owner.getId() },
             { orderBy: { number: 'asc' } },
         );
         return entities.map(e => this.toDomain(e));
     }
 
-    async existsById(id: string): Promise<boolean> {
-        return (await this.em.count(FeatureOrmEntity, { id })) > 0;
+    async findByOwners(owners: FeatureOwner[]): Promise<Feature[]> {
+        if (owners.length === 0) return [];
+        // Regroupés par type, les porteurs tiennent en un `in` par type plutôt qu'en une
+        // disjonction longue comme la liste : c'est ce qui garde la requête indexable.
+        const idsByType = new Map<OwnerType, string[]>();
+        for (const owner of owners) {
+            const ids = idsByType.get(owner.getType()) ?? [];
+            ids.push(owner.getId());
+            idsByType.set(owner.getType(), ids);
+        }
+        const entities = await this.em.find(
+            FeatureOrmEntity,
+            { $or: [...idsByType].map(([ownerType, ownerIds]) => ({ ownerType, ownerId: { $in: ownerIds } })) },
+            { orderBy: { number: 'asc' } },
+        );
+        return entities.map(e => this.toDomain(e));
     }
 
-    async lastNumberOf(ownerType: OwnerType, ownerId: string): Promise<number> {
+    async lastNumberOf(owner: FeatureOwner): Promise<number> {
         const [row] = await this.em
             .getConnection()
             .execute<
                 Array<{ max: number | null }>
-            >('select max("number") as max from features where owner_type = ? and owner_id = ?', [ownerType, ownerId]);
+            >('select max("number") as max from features where owner_type = ? and owner_id = ?', [owner.getType(), owner.getId()]);
         return row?.max ?? 0;
     }
 
-    async delete(id: string): Promise<void> {
+    async delete(id: FeatureId): Promise<void> {
         await this.em.transactional(async em => {
-            await em.nativeDelete(FeatureOrmEntity, { id });
+            await em.nativeDelete(FeatureOrmEntity, { id: id.getValue() });
         });
     }
 

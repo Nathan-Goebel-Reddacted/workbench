@@ -4,6 +4,7 @@ import { TicketDto } from './ticketDto';
 import { ITicketRepository } from '../../../domain/repository/iTicketRepository';
 import { IFeatureGateway } from '../../../domain/port/iFeatureGateway';
 import { toTicketDto } from '../ticketDtoMapper';
+import { TicketId } from '../../../domain/valueObject/ticketId';
 
 export class GetTicketByIdHandler implements IQueryHandler<GetTicketByIdQuery, TicketDto | null> {
     constructor(
@@ -12,7 +13,7 @@ export class GetTicketByIdHandler implements IQueryHandler<GetTicketByIdQuery, T
     ) {}
 
     async handle(query: GetTicketByIdQuery): Promise<TicketDto | null> {
-        const ticket = await this.repository.findById(query.id);
+        const ticket = await this.repository.findById(new TicketId(query.id));
         if (!ticket) return null;
         const feature = await this.features.describe(ticket.getFeatureId().getValue());
         return toTicketDto(ticket, feature?.ownerType === 'idea');

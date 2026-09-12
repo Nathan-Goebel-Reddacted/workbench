@@ -5,6 +5,7 @@ import { IUserDeletionListener } from '../../../domain/port/iUserDeletionListene
 import { UserRole } from '../../../domain/valueObject/role';
 import { LastEditorCannotBeRemovedException } from '../../../domain/exception/lastEditorCannotBeRemoved';
 import { ITransactionRunner } from '@shared/application/port/iTransactionRunner';
+import { UserId } from '../../../domain/valueObject/userId';
 
 export class DeleteUserHandler implements ICommandHandler<DeleteUserCommand> {
     constructor(
@@ -14,7 +15,7 @@ export class DeleteUserHandler implements ICommandHandler<DeleteUserCommand> {
     ) {}
 
     async handle(command: DeleteUserCommand): Promise<void> {
-        const user = await this.repository.findById(command.userId);
+        const user = await this.repository.findById(new UserId(command.userId));
         if (!user) return;
 
         if (user.getRoles().includes(UserRole.EDIT) && (await this.isLastEditor(command.userId))) {
@@ -32,7 +33,7 @@ export class DeleteUserHandler implements ICommandHandler<DeleteUserCommand> {
             for (const listener of this.listeners) {
                 await listener.onUserDeleted(command.userId);
             }
-            await this.repository.deleteById(command.userId);
+            await this.repository.deleteById(new UserId(command.userId));
         });
     }
 

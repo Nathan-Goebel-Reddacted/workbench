@@ -18,54 +18,54 @@ import { DuplicateReferenceException } from '../../domain/exception/duplicateRef
 export class TicketRepository implements ITicketRepository {
     constructor(private readonly em: EntityManager) {}
 
-    async findById(id: string): Promise<Ticket | null> {
-        const e = await this.em.findOne(TicketOrmEntity, { id });
+    async findById(id: TicketId): Promise<Ticket | null> {
+        const e = await this.em.findOne(TicketOrmEntity, { id: id.getValue() });
         return e ? this.toDomain(e) : null;
     }
 
-    async findByFeatureId(featureId: string): Promise<Ticket[]> {
-        const entities = await this.em.find(TicketOrmEntity, { featureId }, { orderBy: { number: 'asc' } });
-        return entities.map(e => this.toDomain(e));
-    }
-
-    async findByFeatureIds(featureIds: string[]): Promise<Ticket[]> {
-        if (featureIds.length === 0) return [];
+    async findByFeatureId(featureId: FeatureId): Promise<Ticket[]> {
         const entities = await this.em.find(
             TicketOrmEntity,
-            { featureId: { $in: featureIds } },
+            { featureId: featureId.getValue() },
             { orderBy: { number: 'asc' } },
         );
         return entities.map(e => this.toDomain(e));
     }
 
-    async countByFeatureId(featureId: string): Promise<number> {
-        return this.em.count(TicketOrmEntity, { featureId });
+    async findByFeatureIds(featureIds: FeatureId[]): Promise<Ticket[]> {
+        if (featureIds.length === 0) return [];
+        const entities = await this.em.find(
+            TicketOrmEntity,
+            { featureId: { $in: featureIds.map(featureId => featureId.getValue()) } },
+            { orderBy: { number: 'asc' } },
+        );
+        return entities.map(e => this.toDomain(e));
     }
 
-    async lastNumberOf(featureId: string): Promise<number> {
+    async countByFeatureId(featureId: FeatureId): Promise<number> {
+        return this.em.count(TicketOrmEntity, { featureId: featureId.getValue() });
+    }
+
+    async lastNumberOf(featureId: FeatureId): Promise<number> {
         // Le plus grand numéro, pas le nombre de tickets : une suppression ne doit pas réattribuer
         // un numéro déjà porté par un ticket cité ailleurs.
         const [row] = await this.em
             .getConnection()
             .execute<
                 Array<{ max: number | null }>
-            >('select max("number") as max from tickets where feature_id = ?', [featureId]);
+            >('select max("number") as max from tickets where feature_id = ?', [featureId.getValue()]);
         return row?.max ?? 0;
     }
 
-    async existsByReference(reference: string): Promise<boolean> {
-        return (await this.em.count(TicketOrmEntity, { reference })) > 0;
-    }
-
-    async deleteByFeatureId(featureId: string): Promise<void> {
+    async deleteByFeatureId(featureId: FeatureId): Promise<void> {
         await this.em.transactional(async em => {
-            await em.nativeDelete(TicketOrmEntity, { featureId });
+            await em.nativeDelete(TicketOrmEntity, { featureId: featureId.getValue() });
         });
     }
 
-    async delete(id: string): Promise<void> {
+    async delete(id: TicketId): Promise<void> {
         await this.em.transactional(async em => {
-            await em.nativeDelete(TicketOrmEntity, { id });
+            await em.nativeDelete(TicketOrmEntity, { id: id.getValue() });
         });
     }
 

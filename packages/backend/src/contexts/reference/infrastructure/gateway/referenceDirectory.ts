@@ -1,4 +1,6 @@
-import { FeatureRow, IReferenceDirectory, OwnerRow, TicketRow } from '../../domain/iReferenceDirectory';
+import { FeatureRow, IReferenceDirectory, OwnerRow, TicketRow } from '../../domain/port/iReferenceDirectory';
+import { FeatureOwner } from '@contexts/feature/domain/valueObject/featureOwner';
+import { FeatureId } from '@contexts/ticket/domain/valueObject/featureId';
 import { IProjectRepository } from '@contexts/project/domain/repository/iProjectRepository';
 import { IIdeaRepository } from '@contexts/idea/domain/repository/iIdeaRepository';
 import { IFeatureRepository } from '@contexts/feature/domain/repository/iFeatureRepository';
@@ -42,7 +44,7 @@ export class ReferenceDirectory implements IReferenceDirectory {
     }
 
     async listFeaturesOf(owner: OwnerRow): Promise<FeatureRow[]> {
-        const features = await this.features.findByOwner(owner.type, owner.id);
+        const features = await this.features.findByOwner(new FeatureOwner(owner.type, owner.id));
         return features.map(f => ({
             id: f.getId().getValue(),
             number: f.getNumber(),
@@ -51,7 +53,7 @@ export class ReferenceDirectory implements IReferenceDirectory {
     }
 
     async listTicketsOf(featureId: string): Promise<TicketRow[]> {
-        const tickets = await this.tickets.findByFeatureId(featureId);
+        const tickets = await this.tickets.findByFeatureId(new FeatureId(featureId));
         return tickets.map(t => ({
             id: t.getId().getValue(),
             number: t.getReference().getPosition(),

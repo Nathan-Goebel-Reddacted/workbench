@@ -4,6 +4,7 @@ import { IFeatureRepository } from '../../../domain/repository/iFeatureRepositor
 import { DocumentId } from '@shared/domain/valueObject/documentId';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
 import { IUploadStorage } from '@shared/application/port/iUploadStorage';
+import { FeatureId } from '../../../domain/valueObject/featureId';
 
 export class RemoveFeatureDocumentHandler implements ICommandHandler<RemoveFeatureDocumentCommand> {
     constructor(
@@ -12,7 +13,7 @@ export class RemoveFeatureDocumentHandler implements ICommandHandler<RemoveFeatu
     ) {}
 
     async handle(command: RemoveFeatureDocumentCommand): Promise<void> {
-        const feature = await this.repository.findById(command.featureId);
+        const feature = await this.repository.findById(new FeatureId(command.featureId));
         if (!feature) throw new NotFoundError('Feature', command.featureId);
         const removed = feature.getDocuments().find(d => d.getId().getValue() === command.documentId);
         feature.removeDocument(new DocumentId(command.documentId));

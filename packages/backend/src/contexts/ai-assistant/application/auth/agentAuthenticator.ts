@@ -2,6 +2,7 @@ import { AgentTool } from '../../domain/agentToolAggregate';
 import { IAgentToolRepository } from '../../domain/repository/iAgentToolRepository';
 import { parseAgentToken } from './agentToken';
 import { ISecretHasher } from '../../domain/port/iSecretHasher';
+import { AgentToolId } from '../../domain/valueObject/agentToolId';
 
 /** Resolves the AgentTool behind a presented token, or nothing if it cannot be trusted. */
 export class AgentAuthenticator {
@@ -16,7 +17,7 @@ export class AgentAuthenticator {
         const parts = parseAgentToken(presented);
         if (!parts) return null;
 
-        const agentTool = await this.repository.findById(parts.agentToolId);
+        const agentTool = await this.repository.findById(new AgentToolId(parts.agentToolId));
         if (!agentTool) return null;
 
         // Checked before the token: a revoked agent must not even learn whether its secret is still valid.

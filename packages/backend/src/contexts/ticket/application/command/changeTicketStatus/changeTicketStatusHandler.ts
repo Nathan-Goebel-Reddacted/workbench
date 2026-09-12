@@ -5,6 +5,7 @@ import { IFeatureGateway } from '../../../domain/port/iFeatureGateway';
 import { TicketStatus } from '../../../domain/valueObject/status';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
 import { parseEnum } from '@shared/domain/valueObject/parseEnum';
+import { TicketId } from '../../../domain/valueObject/ticketId';
 
 export class ChangeTicketStatusHandler implements ICommandHandler<ChangeTicketStatusCommand> {
     constructor(
@@ -13,7 +14,7 @@ export class ChangeTicketStatusHandler implements ICommandHandler<ChangeTicketSt
     ) {}
 
     async handle(command: ChangeTicketStatusCommand): Promise<void> {
-        const ticket = await this.repository.findById(command.ticketId);
+        const ticket = await this.repository.findById(new TicketId(command.ticketId));
         if (!ticket) throw new NotFoundError('Ticket', command.ticketId);
 
         // Le ticket ne sait pas ce qui porte sa feature : on le lui demande, puis on le lui dit.

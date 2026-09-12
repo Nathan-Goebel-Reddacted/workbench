@@ -4,6 +4,8 @@ import { IUserRepository } from '../../../domain/repository/iUserRepository';
 import { UserFactory } from '../../../domain/factory/userFactory';
 import { UserRole } from '../../../domain/valueObject/role';
 import { LastEditorCannotBeRemovedException } from '../../../domain/exception/lastEditorCannotBeRemoved';
+import { NotFoundError } from '@shared/application/errors/notFoundError';
+import { UserId } from '../../../domain/valueObject/userId';
 
 export class UpdateUserRolesHandler implements ICommandHandler<UpdateUserRolesCommand> {
     constructor(
@@ -12,8 +14,8 @@ export class UpdateUserRolesHandler implements ICommandHandler<UpdateUserRolesCo
     ) {}
 
     async handle(command: UpdateUserRolesCommand): Promise<void> {
-        const existing = await this.repository.findById(command.userId);
-        if (!existing) throw new Error(`User not found: ${command.userId}`);
+        const existing = await this.repository.findById(new UserId(command.userId));
+        if (!existing) throw new NotFoundError('User', command.userId);
 
         const losesEdit = existing.getRoles().includes(UserRole.EDIT) && !command.roles.includes(UserRole.EDIT);
         if (losesEdit && (await this.isLastEditor(command.userId))) {

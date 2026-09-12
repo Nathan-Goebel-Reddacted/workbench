@@ -14,8 +14,8 @@ import { DocumentType } from '@shared/domain/valueObject/documentType';
 export class ProjectRepository implements IProjectRepository {
     constructor(private readonly em: EntityManager) {}
 
-    async findById(id: string): Promise<Project | null> {
-        const e = await this.em.findOne(ProjectOrmEntity, { id });
+    async findById(id: ProjectId): Promise<Project | null> {
+        const e = await this.em.findOne(ProjectOrmEntity, { id: id.getValue() });
         return e ? this.toDomain(e) : null;
     }
 

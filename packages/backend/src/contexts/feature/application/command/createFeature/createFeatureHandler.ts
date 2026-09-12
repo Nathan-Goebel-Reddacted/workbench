@@ -24,7 +24,7 @@ export class CreateFeatureHandler implements ICommandHandler<CreateFeatureComman
         }
 
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            const number = (await this.repository.lastNumberOf(owner.getType(), owner.getId())) + 1;
+            const number = (await this.repository.lastNumberOf(owner)) + 1;
             const feature = this.factory.create(
                 command.id,
                 command.ownerType,

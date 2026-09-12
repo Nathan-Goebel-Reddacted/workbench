@@ -14,8 +14,8 @@ import { parseEnum } from '@shared/domain/valueObject/parseEnum';
 export class PairingRequestRepository implements IPairingRequestRepository {
     constructor(private readonly em: EntityManager) {}
 
-    async findById(id: string): Promise<PairingRequest | null> {
-        const entity = await this.em.findOne(AgentPairingRequestOrmEntity, { id });
+    async findById(id: PairingRequestId): Promise<PairingRequest | null> {
+        const entity = await this.em.findOne(AgentPairingRequestOrmEntity, { id: id.getValue() });
         return entity ? this.toDomain(entity) : null;
     }
 

@@ -5,6 +5,7 @@ import { IIdeaFeaturesGateway } from '../../../domain/port/iIdeaFeaturesGateway'
 import { IProjectCreationGateway } from '../../../domain/port/iProjectCreationGateway';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
 import { ITransactionRunner } from '@shared/application/port/iTransactionRunner';
+import { IdeaId } from '../../../domain/valueObject/ideaId';
 
 /**
  * Convertit une idée en projet : l'idée est recopiée, ses features (et donc leurs tickets) sont
@@ -25,7 +26,7 @@ export class ConvertIdeaToProjectHandler implements ICommandHandler<ConvertIdeaT
     ) {}
 
     async handle(command: ConvertIdeaToProjectCommand): Promise<void> {
-        const idea = await this.repository.findById(command.ideaId);
+        const idea = await this.repository.findById(new IdeaId(command.ideaId));
         if (!idea) throw new NotFoundError('Idea', command.ideaId);
 
         await this.transaction.run(async () => {
@@ -54,7 +55,7 @@ export class ConvertIdeaToProjectHandler implements ICommandHandler<ConvertIdeaT
 
             // Suppression directe, sans passer par DeleteIdeaCommand : cette commande-là déclenche
             // la cascade, qui effacerait les features qu'on vient tout juste de transférer.
-            await this.repository.delete(command.ideaId);
+            await this.repository.delete(new IdeaId(command.ideaId));
         });
     }
 }

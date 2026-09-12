@@ -13,23 +13,19 @@ import { UserAlreadyExistsException } from '../../domain/exception/userAlreadyEx
 export class UserRepository implements IUserRepository {
     constructor(private readonly em: EntityManager) {}
 
-    async findById(id: string): Promise<User | null> {
-        const e = await this.em.findOne(UserOrmEntity, { id });
+    async findById(id: UserId): Promise<User | null> {
+        const e = await this.em.findOne(UserOrmEntity, { id: id.getValue() });
         return e ? this.toDomain(e) : null;
     }
 
-    async findByEmail(email: string): Promise<User | null> {
-        const e = await this.em.findOne(UserOrmEntity, { email });
+    async findByEmail(email: Email): Promise<User | null> {
+        const e = await this.em.findOne(UserOrmEntity, { email: email.getValue() });
         return e ? this.toDomain(e) : null;
     }
 
     async findAll(): Promise<User[]> {
         const rows = await this.em.findAll(UserOrmEntity);
         return rows.map(e => this.toDomain(e));
-    }
-
-    async existsById(id: string): Promise<boolean> {
-        return (await this.em.count(UserOrmEntity, { id })) > 0;
     }
 
     async save(user: User): Promise<void> {
@@ -48,8 +44,8 @@ export class UserRepository implements IUserRepository {
         }
     }
 
-    async deleteById(id: string): Promise<void> {
-        await this.em.nativeDelete(UserOrmEntity, { id });
+    async deleteById(id: UserId): Promise<void> {
+        await this.em.nativeDelete(UserOrmEntity, { id: id.getValue() });
     }
 
     private toDomain(e: UserOrmEntity): User {

@@ -8,12 +8,13 @@ import { ContentRef } from '../../../domain/valueObject/contentRef';
 import { GridPosition } from '../../../domain/valueObject/gridPosition';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
 import { parseEnum } from '@shared/domain/valueObject/parseEnum';
+import { PageLayoutId } from '../../../domain/valueObject/pageLayoutId';
 
 export class AddSectionHandler implements ICommandHandler<AddSectionCommand> {
     constructor(private readonly repository: IPageLayoutRepository) {}
 
     async handle(command: AddSectionCommand): Promise<void> {
-        const pageLayout = await this.repository.findById(command.pageLayoutId);
+        const pageLayout = await this.repository.findById(new PageLayoutId(command.pageLayoutId));
         if (!pageLayout) throw new NotFoundError('PageLayout', command.pageLayoutId);
         pageLayout.addSection(
             new Section(
