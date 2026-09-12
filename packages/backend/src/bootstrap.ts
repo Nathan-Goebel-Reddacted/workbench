@@ -78,7 +78,7 @@ import { ProjectCreationGateway } from '@contexts/idea/infrastructure/gateway/pr
 import { ConvertIdeaToProjectCommand } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectCommand';
 import { ConvertIdeaToProjectHandler } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectHandler';
 import { MikroOrmTransactionRunner } from '@shared/infrastructure/persistence/mikroOrmTransactionRunner';
-import { ReferenceDirectory } from '@contexts/reference/infrastructure/referenceDirectory';
+import { ReferenceDirectory } from '@contexts/reference/infrastructure/gateway/referenceDirectory';
 import { ResolveReferenceQuery } from '@contexts/reference/application/query/resolveReference/resolveReferenceQuery';
 import { ResolveReferenceHandler } from '@contexts/reference/application/query/resolveReference/resolveReferenceHandler';
 import { GetReferenceTreeQuery } from '@contexts/reference/application/query/getReferenceTree/getReferenceTreeQuery';
@@ -203,6 +203,7 @@ import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
 import { ContactMessageRepository } from '@contexts/contact/infrastructure/repository/contactMessageRepository';
 import { CvRepository } from '@contexts/cv/infrastructure/repository/cvRepository';
 import { createMailer } from '@contexts/contact/infrastructure/mailer/createMailer';
+import { ContactMessageFactory } from '@contexts/contact/domain/factory/contactMessageFactory';
 import { ILogger } from '@shared/application/port/iLogger';
 import { SubmitContactMessageCommand } from '@contexts/contact/application/command/submitContactMessage/submitContactMessageCommand';
 import { SubmitContactMessageHandler } from '@contexts/contact/application/command/submitContactMessage/submitContactMessageHandler';
@@ -212,6 +213,62 @@ import { DeleteAllContactMessagesCommand } from '@contexts/contact/application/c
 import { DeleteAllContactMessagesHandler } from '@contexts/contact/application/command/deleteAllContactMessages/deleteAllContactMessagesHandler';
 import { ListContactMessagesQuery } from '@contexts/contact/application/query/listContactMessages/listContactMessagesQuery';
 import { ListContactMessagesHandler } from '@contexts/contact/application/query/listContactMessages/listContactMessagesHandler';
+
+// --- Auth ---
+import { AllowedEmailRepository } from '@contexts/auth/infrastructure/repository/allowedEmailRepository';
+import { AccessRequestRepository } from '@contexts/auth/infrastructure/repository/accessRequestRepository';
+import { AccessPolicy } from '@contexts/auth/domain/policy/accessPolicy';
+import { bootstrapAdminEmail } from '@contexts/auth/infrastructure/bootstrapAdmin';
+import { RecordAccessRequestCommand } from '@contexts/auth/application/command/recordAccessRequest/recordAccessRequestCommand';
+import { RecordAccessRequestHandler } from '@contexts/auth/application/command/recordAccessRequest/recordAccessRequestHandler';
+import { ApproveAccessRequestCommand } from '@contexts/auth/application/command/approveAccessRequest/approveAccessRequestCommand';
+import { ApproveAccessRequestHandler } from '@contexts/auth/application/command/approveAccessRequest/approveAccessRequestHandler';
+import { RejectAccessRequestCommand } from '@contexts/auth/application/command/rejectAccessRequest/rejectAccessRequestCommand';
+import { RejectAccessRequestHandler } from '@contexts/auth/application/command/rejectAccessRequest/rejectAccessRequestHandler';
+import { AddAllowedEmailCommand } from '@contexts/auth/application/command/addAllowedEmail/addAllowedEmailCommand';
+import { AddAllowedEmailHandler } from '@contexts/auth/application/command/addAllowedEmail/addAllowedEmailHandler';
+import { RemoveAllowedEmailCommand } from '@contexts/auth/application/command/removeAllowedEmail/removeAllowedEmailCommand';
+import { RemoveAllowedEmailHandler } from '@contexts/auth/application/command/removeAllowedEmail/removeAllowedEmailHandler';
+import { ProvisionUserFromOAuthCommand } from '@contexts/auth/application/command/provisionUserFromOAuth/provisionUserFromOAuthCommand';
+import { ProvisionUserFromOAuthHandler } from '@contexts/auth/application/command/provisionUserFromOAuth/provisionUserFromOAuthHandler';
+import { ListAllowedEmailsQuery } from '@contexts/auth/application/query/listAllowedEmails/listAllowedEmailsQuery';
+import { ListAllowedEmailsHandler } from '@contexts/auth/application/query/listAllowedEmails/listAllowedEmailsHandler';
+import { ListAccessRequestsQuery } from '@contexts/auth/application/query/listAccessRequests/listAccessRequestsQuery';
+import { ListAccessRequestsHandler } from '@contexts/auth/application/query/listAccessRequests/listAccessRequestsHandler';
+
+// --- Theme ---
+import { ThemeRepository } from '@contexts/theme/infrastructure/repository/themeRepository';
+import { ThemeFactory } from '@contexts/theme/domain/factory/themeFactory';
+import { CreateThemeCommand } from '@contexts/theme/application/command/createTheme/createThemeCommand';
+import { CreateThemeHandler } from '@contexts/theme/application/command/createTheme/createThemeHandler';
+import { UpdateThemeCommand } from '@contexts/theme/application/command/updateTheme/updateThemeCommand';
+import { UpdateThemeHandler } from '@contexts/theme/application/command/updateTheme/updateThemeHandler';
+import { SetDefaultThemeCommand } from '@contexts/theme/application/command/setDefaultTheme/setDefaultThemeCommand';
+import { SetDefaultThemeHandler } from '@contexts/theme/application/command/setDefaultTheme/setDefaultThemeHandler';
+import { ListThemesQuery } from '@contexts/theme/application/query/listThemes/listThemesQuery';
+import { ListThemesHandler } from '@contexts/theme/application/query/listThemes/listThemesHandler';
+import { ListVisibleThemesQuery } from '@contexts/theme/application/query/listVisibleThemes/listVisibleThemesQuery';
+import { ListVisibleThemesHandler } from '@contexts/theme/application/query/listVisibleThemes/listVisibleThemesHandler';
+
+// --- ErrorLog ---
+import { ErrorLogRepository } from '@contexts/errorLog/infrastructure/repository/errorLogRepository';
+import { ErrorLogEntryFactory } from '@contexts/errorLog/domain/factory/errorLogEntryFactory';
+import { RecordErrorLogEntryCommand } from '@contexts/errorLog/application/command/recordErrorLogEntry/recordErrorLogEntryCommand';
+import { RecordErrorLogEntryHandler } from '@contexts/errorLog/application/command/recordErrorLogEntry/recordErrorLogEntryHandler';
+import { PurgeErrorLogCommand } from '@contexts/errorLog/application/command/purgeErrorLog/purgeErrorLogCommand';
+import { PurgeErrorLogHandler } from '@contexts/errorLog/application/command/purgeErrorLog/purgeErrorLogHandler';
+import { SearchErrorLogQuery } from '@contexts/errorLog/application/query/searchErrorLog/searchErrorLogQuery';
+import { SearchErrorLogHandler } from '@contexts/errorLog/application/query/searchErrorLog/searchErrorLogHandler';
+
+import { MediaLibrary } from '@contexts/contentEditor/infrastructure/gateway/mediaLibrary';
+
+// --- Registre des fichiers uploadés ---
+import { projectUploadReferences } from '@contexts/project/infrastructure/uploadReferences';
+import { ideaUploadReferences } from '@contexts/idea/infrastructure/uploadReferences';
+import { featureUploadReferences } from '@contexts/feature/infrastructure/uploadReferences';
+import { ticketUploadReferences } from '@contexts/ticket/infrastructure/uploadReferences';
+import { cvUploadReferences } from '@contexts/cv/infrastructure/uploadReferences';
+import { contentEditorUploadReferences } from '@contexts/contentEditor/infrastructure/uploadReferences';
 
 export function bootstrap(
     em: EntityManager,
@@ -233,13 +290,28 @@ export function bootstrap(
         agentTool: new AgentToolRepository(em),
         contactMessage: new ContactMessageRepository(em),
         cv: new CvRepository(em),
+        allowedEmail: new AllowedEmailRepository(em),
+        accessRequest: new AccessRequestRepository(em),
+        theme: new ThemeRepository(em),
+        errorLog: new ErrorLogRepository(em),
     };
     const commandBus = new CommandBus();
     const queryBus = new QueryBus();
 
     // Les fichiers uploadés n'appartiennent à aucun agrégat : plusieurs peuvent citer le même.
     // Le stockage compte les références restantes avant de supprimer quoi que ce soit.
-    const uploads = new UploadStorage(em);
+    //
+    // Chaque contexte déclare où il cite des uploads ; c'est ici qu'on les rassemble. Un
+    // contexte manquant à cette liste verrait ses fichiers effacés alors qu'il les cite encore,
+    // sans la moindre erreur — d'où la déclaration chez soi plutôt qu'une liste enfouie.
+    const uploads = new UploadStorage(em, [
+        ...projectUploadReferences,
+        ...ideaUploadReferences,
+        ...featureUploadReferences,
+        ...ticketUploadReferences,
+        ...cvUploadReferences,
+        ...contentEditorUploadReferences,
+    ]);
 
     // Un seul exécutant de transaction pour tous les cas d'usage multi-dépôts.
     const transactions = new MikroOrmTransactionRunner(em);
@@ -279,7 +351,7 @@ export function bootstrap(
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
     commandBus.register(
         DeleteUserCommand.commandName,
-        new DeleteUserHandler(repos.user, [new RevokeAgentToolsOnUserDeleted(repos.agentTool)]),
+        new DeleteUserHandler(repos.user, [new RevokeAgentToolsOnUserDeleted(repos.agentTool)], transactions),
     );
     commandBus.register(UpdateUserRolesCommand.commandName, new UpdateUserRolesHandler(repos.user, userFactory));
     commandBus.register(InvalidateUserSessionsCommand.commandName, new InvalidateUserSessionsHandler(repos.user));
@@ -332,7 +404,7 @@ export function bootstrap(
     commandBus.register(UpdateFeatureCommand.commandName, new UpdateFeatureHandler(repos.feature));
     commandBus.register(
         DeleteFeatureCommand.commandName,
-        new DeleteFeatureHandler(repos.feature, featureTicketsGateway, uploads),
+        new DeleteFeatureHandler(repos.feature, featureTicketsGateway, uploads, transactions),
     );
 
     // Ticket
@@ -362,7 +434,10 @@ export function bootstrap(
     // Idea
     commandBus.register(CreateIdeaCommand.commandName, new CreateIdeaHandler(repos.idea, ideaFactory, ownerNumbers));
     commandBus.register(UpdateIdeaCommand.commandName, new UpdateIdeaHandler(repos.idea));
-    commandBus.register(DeleteIdeaCommand.commandName, new DeleteIdeaHandler(repos.idea, ideaFeaturesGateway, uploads));
+    commandBus.register(
+        DeleteIdeaCommand.commandName,
+        new DeleteIdeaHandler(repos.idea, ideaFeaturesGateway, uploads, transactions),
+    );
     commandBus.register(AddIdeaDocumentCommand.commandName, new AddIdeaDocumentHandler(repos.idea));
     commandBus.register(RemoveIdeaDocumentCommand.commandName, new RemoveIdeaDocumentHandler(repos.idea, uploads));
     commandBus.register(AddIdeaLinkCommand.commandName, new AddIdeaLinkHandler(repos.idea));
@@ -389,10 +464,10 @@ export function bootstrap(
     commandBus.register(UpdateSectionContentCommand.commandName, new UpdateSectionContentHandler(repos.pageLayout));
     queryBus.register(GetPageLayoutByIdQuery.queryName, new GetPageLayoutByIdHandler(repos.pageLayout));
     queryBus.register(GetPageLayoutByRefQuery.queryName, new GetPageLayoutByRefHandler(repos.pageLayout));
-    queryBus.register(
-        ListMediaImagesQuery.queryName,
-        new ListMediaImagesHandler(repos.project, repos.feature, repos.ticket),
-    );
+    // Seul point de contact entre l'éditeur de contenu et les contextes qui détiennent
+    // les médias : il pose la question, eux répondent — aucun agrégat étranger ne remonte.
+    const mediaLibrary = new MediaLibrary(repos.project, repos.feature, repos.ticket);
+    queryBus.register(ListMediaImagesQuery.queryName, new ListMediaImagesHandler(mediaLibrary));
 
     // AI Assistant
     commandBus.register(
@@ -419,6 +494,7 @@ export function bootstrap(
         SubmitContactMessageCommand.commandName,
         new SubmitContactMessageHandler(
             repos.contactMessage,
+            new ContactMessageFactory(),
             createMailer(logger),
             env.CONTACT_MAIL_TO || null,
             logger,
@@ -437,6 +513,41 @@ export function bootstrap(
     commandBus.register(SetCvVisibilityCommand.commandName, new SetCvVisibilityHandler(repos.cv));
     commandBus.register(ReorderCvsCommand.commandName, new ReorderCvsHandler(repos.cv));
     queryBus.register(ListCvsQuery.queryName, new ListCvsHandler(repos.cv));
+
+    // Auth
+    // La politique d'accès reçoit l'adresse d'amorçage : c'est une donnée de déploiement,
+    // elle ne va pas la chercher elle-même.
+    const accessPolicy = new AccessPolicy(bootstrapAdminEmail());
+    commandBus.register(RecordAccessRequestCommand.commandName, new RecordAccessRequestHandler(repos.accessRequest));
+    commandBus.register(
+        ApproveAccessRequestCommand.commandName,
+        new ApproveAccessRequestHandler(repos.accessRequest, repos.allowedEmail, transactions),
+    );
+    commandBus.register(RejectAccessRequestCommand.commandName, new RejectAccessRequestHandler(repos.accessRequest));
+    commandBus.register(AddAllowedEmailCommand.commandName, new AddAllowedEmailHandler(repos.allowedEmail));
+    commandBus.register(RemoveAllowedEmailCommand.commandName, new RemoveAllowedEmailHandler(repos.allowedEmail));
+    commandBus.register(
+        ProvisionUserFromOAuthCommand.commandName,
+        new ProvisionUserFromOAuthHandler(repos.allowedEmail, accessPolicy, commandBus, queryBus),
+    );
+    queryBus.register(ListAllowedEmailsQuery.queryName, new ListAllowedEmailsHandler(repos.allowedEmail));
+    queryBus.register(ListAccessRequestsQuery.queryName, new ListAccessRequestsHandler(repos.accessRequest));
+
+    // Theme
+    const themeFactory = new ThemeFactory();
+    commandBus.register(CreateThemeCommand.commandName, new CreateThemeHandler(repos.theme, themeFactory));
+    commandBus.register(UpdateThemeCommand.commandName, new UpdateThemeHandler(repos.theme));
+    commandBus.register(SetDefaultThemeCommand.commandName, new SetDefaultThemeHandler(repos.theme, transactions));
+    queryBus.register(ListThemesQuery.queryName, new ListThemesHandler(repos.theme));
+    queryBus.register(ListVisibleThemesQuery.queryName, new ListVisibleThemesHandler(repos.theme));
+
+    // ErrorLog
+    commandBus.register(
+        RecordErrorLogEntryCommand.commandName,
+        new RecordErrorLogEntryHandler(repos.errorLog, new ErrorLogEntryFactory()),
+    );
+    commandBus.register(PurgeErrorLogCommand.commandName, new PurgeErrorLogHandler(repos.errorLog));
+    queryBus.register(SearchErrorLogQuery.queryName, new SearchErrorLogHandler(repos.errorLog));
 
     // Tools reuse the very same buses as the REST API: one implementation, two audiences.
     const toolRegistry = createToolRegistry(commandBus, queryBus, logger);

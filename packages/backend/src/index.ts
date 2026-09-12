@@ -2,11 +2,9 @@ import { MikroORM } from '@mikro-orm/postgresql';
 import { env, envWarnings } from './shared/infrastructure/config/env.js';
 import config from './shared/infrastructure/mikro-orm.config.js';
 import { bootstrap } from './bootstrap.js';
-import { PinoLogger } from './shared/infrastructure/logging/pinoLogger.js';
+import { createLoggerInstance, PinoLogger } from './shared/infrastructure/logging/pinoLogger.js';
 import { createServer } from './shared/infrastructure/http/server.js';
 import { authRoutes } from './contexts/auth/infrastructure/http/authRoutes.js';
-import { AllowedEmailRepository } from './contexts/auth/infrastructure/repository/allowedEmailRepository.js';
-import { AccessRequestRepository } from './contexts/auth/infrastructure/repository/accessRequestRepository.js';
 import { bootstrapAdmin } from './contexts/auth/infrastructure/bootstrapAdmin.js';
 import { userRoutes } from './contexts/user/infrastructure/http/userRoutes.js';
 import { portfolioRoutes } from './contexts/portfolio/infrastructure/http/portfolioRoutes.js';
@@ -22,34 +20,34 @@ import { cvRoutes } from './contexts/cv/infrastructure/http/cvRoutes.js';
 import { mcpRoutes } from './contexts/ai-assistant/infrastructure/mcp/mcpRoutes.js';
 import { pairingRoutes } from './contexts/ai-assistant/infrastructure/http/pairingRoutes.js';
 import { AgentPairingRequestRepository } from './contexts/ai-assistant/infrastructure/repository/agentPairingRequestRepository.js';
-import { themeRoutes } from './shared/infrastructure/http/themeRoutes.js';
+import { themeRoutes } from './contexts/theme/infrastructure/http/themeRoutes.js';
 import { uploadRoutes } from './shared/infrastructure/http/uploadRoutes.js';
 import { ioRoutes } from './shared/infrastructure/http/ioRoutes.js';
 import { errorLogRoutes } from './contexts/errorLog/infrastructure/http/errorLogRoutes.js';
-import { ErrorLogRepository } from './contexts/errorLog/infrastructure/repository/errorLogRepository.js';
-import { ErrorLogRecorder } from './contexts/errorLog/application/errorLogRecorder.js';
 
 try {
-    const orm = await MikroORM.init(config);
-    // Le journal avant le serveur : le gestionnaire d'erreurs de Fastify écrit dedans.
-    const errorLogRepo = new ErrorLogRepository(orm.em);
-    const errorRecorder = new ErrorLogRecorder(errorLogRepo);
-    // Le serveur ensuite : c'est lui qui porte le logger que reçoit tout le reste.
-    const app = createServer(orm, errorRecorder);
-    const buses = bootstrap(orm.em, new PinoLogger(app.log));
+    // Le logger d'abord : tout le reste peut avoir besoin de journaliser, y compris
+    // l'échec de son propre démarrage.
+    const loggerInstance = createLoggerInstance(env.LOG_LEVEL);
+    const logger = new PinoLogger(loggerInstance);
 
-    const allowedEmailRepo = new AllowedEmailRepository(orm.em);
-    const accessRequestRepo = new AccessRequestRepository(orm.em);
+    const orm = await MikroORM.init(config);
+
+    // Les bus ensuite : le gestionnaire d'erreurs du serveur consigne les pannes par le bus,
+    // il lui faut donc des bus déjà montés. Le cycle d'autrefois — journal, puis serveur,
+    // puis bus — est rompu par le logger autonome ci-dessus.
+    const buses = bootstrap(orm.em, logger);
+
+    const app = createServer(orm, buses.commandBus, loggerInstance);
 
     await bootstrapAdmin({
         em: orm.em,
         commandBus: buses.commandBus,
         queryBus: buses.queryBus,
-        allowedEmailRepo,
         log: message => app.log.info(message),
     });
 
-    await app.register(authRoutes, { ...buses, allowedEmailRepo, accessRequestRepo });
+    await app.register(authRoutes, buses);
     await app.register(userRoutes, buses);
     await app.register(portfolioRoutes, buses);
     await app.register(projectRoutes, buses);
@@ -70,11 +68,11 @@ try {
         commandBus: buses.commandBus,
         pairingRepo: new AgentPairingRequestRepository(orm.em),
     });
-    await app.register(themeRoutes);
+    await app.register(themeRoutes, buses);
     await app.register(uploadRoutes);
     await app.register(ioRoutes, { orm });
     // Public en écriture : le site public n'a pas de session et ses erreurs comptent autant.
-    await app.register(errorLogRoutes, { repository: errorLogRepo, recorder: errorRecorder });
+    await app.register(errorLogRoutes, buses);
 
     for (const warning of envWarnings) app.log.warn(warning);
 
