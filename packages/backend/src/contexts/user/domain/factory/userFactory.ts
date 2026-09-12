@@ -4,6 +4,7 @@ import { Name } from '../valueObject/name';
 import { Surname } from '../valueObject/surname';
 import { Email } from '../valueObject/email';
 import { UserRole } from '../valueObject/role';
+import { InvalidRoleException } from '../exception/invalidRole';
 
 export class UserFactory {
     create(id: string, name: string, surname: string, email: string, roles: string[], tokenVersion = 0): User {
@@ -14,7 +15,7 @@ export class UserFactory {
             new Email(email),
             roles.map(r => {
                 if (!Object.values(UserRole).includes(r as UserRole)) {
-                    throw new Error(`Invalid role: "${r}". Allowed: ${Object.values(UserRole).join(', ')}`);
+                    throw new InvalidRoleException(r);
                 }
                 return r as UserRole;
             }),

@@ -55,15 +55,8 @@ export const userRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
             },
         },
         async (req, reply) => {
-            try {
-                await commandBus.dispatch(new UpdateUserRolesCommand(req.params.id, req.body.roles));
-                return reply.status(204).send();
-            } catch (err: unknown) {
-                const msg = err instanceof Error ? err.message : '';
-                if (msg.startsWith('User not found')) return reply.status(404).send({ error: msg });
-                if (msg.startsWith('Invalid role')) return reply.status(400).send({ error: msg });
-                throw err;
-            }
+            await commandBus.dispatch(new UpdateUserRolesCommand(req.params.id, req.body.roles));
+            return reply.status(204).send();
         },
     );
 };
