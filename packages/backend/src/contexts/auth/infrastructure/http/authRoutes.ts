@@ -1,17 +1,27 @@
 import { FastifyPluginAsync, FastifyReply } from 'fastify';
-import { requireRole } from '@shared/infrastructure/http/roleGuard.js';
 import fastifyOAuth2 from '@fastify/oauth2';
-import { AllowedEmailRepository, EmailAlreadyAllowedException } from '../repository/allowedEmailRepository.js';
-import { AccessRequestRepository } from '../repository/accessRequestRepository.js';
+import { requireRole } from '@shared/infrastructure/http/roleGuard.js';
+import { UserRole } from '@shared/domain/valueObject/userRole.js';
 import { CommandBus } from '@shared/application/command/commandBus.js';
 import { QueryBus } from '@shared/application/query/queryBus.js';
-import { CreateUserCommand } from '@contexts/user/application/command/createUser/createUserCommand.js';
 import { InvalidateUserSessionsCommand } from '@contexts/user/application/command/invalidateUserSessions/invalidateUserSessionsCommand.js';
-import { GetUserByEmailQuery } from '@contexts/user/application/query/getUserByEmail/getUserByEmailQuery.js';
-import { UserDto } from '@contexts/user/application/query/getUserById/userDto.js';
-import { UserRole } from '@contexts/user/domain/valueObject/role.js';
-import { bootstrapAdminEmail } from '../bootstrapAdmin.js';
+import {
+    ProvisionOutcome,
+    ProvisionUserFromOAuthCommand,
+} from '../../application/command/provisionUserFromOAuth/provisionUserFromOAuthCommand.js';
+import { AddAllowedEmailCommand } from '../../application/command/addAllowedEmail/addAllowedEmailCommand.js';
+import { RemoveAllowedEmailCommand } from '../../application/command/removeAllowedEmail/removeAllowedEmailCommand.js';
+import { ApproveAccessRequestCommand } from '../../application/command/approveAccessRequest/approveAccessRequestCommand.js';
+import { RejectAccessRequestCommand } from '../../application/command/rejectAccessRequest/rejectAccessRequestCommand.js';
+import { ListAllowedEmailsQuery } from '../../application/query/listAllowedEmails/listAllowedEmailsQuery.js';
+import { ListAccessRequestsQuery } from '../../application/query/listAccessRequests/listAccessRequestsQuery.js';
+import { AccessRequestDto } from '../../application/query/listAccessRequests/accessRequestDto.js';
 import { env, isOAuthEnabled, oauthCredentials } from '@shared/infrastructure/config/env.js';
+
+// Ce fichier ne décide plus rien. Il échange un code contre un profil chez le fournisseur,
+// passe le résultat au bus, et traduit ce qu'on lui rend en cookie ou en redirection.
+// Qui a le droit d'entrer, avec quel rôle, et ce qu'il advient d'une demande d'accès se
+// décide dans `auth/domain` et `auth/application`.
 
 // Un jeton sans expiration reste valable pour toujours : le vol du cookie n'a alors
 // aucune fin naturelle. Sept jours par défaut, ajustable sans redéploiement.
@@ -33,25 +43,32 @@ function sessionCookieOptions() {
 type AuthOpts = {
     commandBus: CommandBus;
     queryBus: QueryBus;
-    allowedEmailRepo: AllowedEmailRepository;
-    accessRequestRepo: AccessRequestRepository;
 };
 
-interface OAuthSuccessParams {
-    email: string;
-    name: string;
-    surname: string;
-    reply: FastifyReply;
-    repo: AllowedEmailRepository;
-    accessRequestRepo: AccessRequestRepository;
-    commandBus: CommandBus;
-    queryBus: QueryBus;
-}
+type OAuthProfile = { email: string; name: string; surname: string };
 
-export const authRoutes: FastifyPluginAsync<AuthOpts> = async (
-    app,
-    { commandBus, queryBus, allowedEmailRepo, accessRequestRepo },
-) => {
+export const authRoutes: FastifyPluginAsync<AuthOpts> = async (app, { commandBus, queryBus }) => {
+    /**
+     * Le seul endroit où une identité vérifiée devient une session. La décision vient du bus ;
+     * ici on ne fait que poser le cookie ou rediriger vers l'écran d'attente.
+     */
+    async function completeLogin(profile: OAuthProfile, reply: FastifyReply): Promise<void> {
+        const outcome = await commandBus.dispatch<ProvisionUserFromOAuthCommand, ProvisionOutcome>(
+            new ProvisionUserFromOAuthCommand(profile.email, profile.name, profile.surname),
+        );
+
+        if (outcome.kind === 'accessRequested') {
+            return reply.redirect(`${env.FRONTEND_PRIVATE_URL}/access-requested?status=${outcome.status}`);
+        }
+
+        const { user } = outcome;
+        const jwtToken = await reply.jwtSign(
+            { sub: user.id, email: user.email, roles: user.roles, tv: user.tokenVersion },
+            { expiresIn: SESSION_TTL },
+        );
+        return reply.setCookie('session', jwtToken, sessionCookieOptions()).redirect(env.FRONTEND_PRIVATE_URL);
+    }
+
     // ── OAuth providers ────────────────────────────────────────────────────
 
     // Un fournisseur n'existe que si sa paire d'identifiants est complète (cf. env.ts, qui refuse
@@ -60,7 +77,7 @@ export const authRoutes: FastifyPluginAsync<AuthOpts> = async (
     // un 500 opaque au visiteur.
 
     // Atteignables sans session : ce sont les seules portes ouvertes de l'authentification.
-    const oauthRateLimit = { config: { rateLimit: { max: 20, timeWindow: '15 minutes' } } };
+    const oauthRateLimit = { config: { public: true, rateLimit: { max: 20, timeWindow: '15 minutes' } } };
 
     // Le site privé n'a pas à deviner ce qui est configuré : il dessine ses boutons à partir d'ici.
     app.get('/auth/providers', async () => ({ providers: env.oauth.map(credentials => credentials.provider) }));
@@ -109,16 +126,7 @@ export const authRoutes: FastifyPluginAsync<AuthOpts> = async (
             const [name, ...rest] = displayName.split(' ');
             const surname = rest.join(' ') || name;
 
-            return handleOAuthSuccess({
-                email,
-                name,
-                surname,
-                reply,
-                repo: allowedEmailRepo,
-                accessRequestRepo,
-                commandBus,
-                queryBus,
-            });
+            return completeLogin({ email, name, surname }, reply);
         });
     }
 
@@ -149,16 +157,14 @@ export const authRoutes: FastifyPluginAsync<AuthOpts> = async (
             if (!profileRes.ok) return reply.status(502).send({ error: 'Google API unavailable' });
             const profile = (await profileRes.json()) as { email: string; given_name: string; family_name?: string };
 
-            return handleOAuthSuccess({
-                email: profile.email,
-                name: profile.given_name,
-                surname: profile.family_name ?? profile.given_name,
+            return completeLogin(
+                {
+                    email: profile.email,
+                    name: profile.given_name,
+                    surname: profile.family_name ?? profile.given_name,
+                },
                 reply,
-                repo: allowedEmailRepo,
-                accessRequestRepo,
-                commandBus,
-                queryBus,
-            });
+            );
         });
     }
 
@@ -194,115 +200,56 @@ export const authRoutes: FastifyPluginAsync<AuthOpts> = async (
     // ── Whitelist API ──────────────────────────────────────────────────────────────
 
     // Who is allowed in is administration data, like the requests and the roles beside it.
-    app.get('/auth/allowed-emails', { preHandler: requireRole('edit') }, async (_req, reply) => {
-        const emails = await allowedEmailRepo.findAll();
+    app.get('/auth/allowed-emails', { preHandler: requireRole(UserRole.EDIT) }, async (_req, reply) => {
+        const emails = await queryBus.dispatch<ListAllowedEmailsQuery, string[]>(new ListAllowedEmailsQuery());
         return reply.send({ emails });
     });
 
     app.post<{ Body: { email: string } }>(
         '/auth/allowed-emails',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: { body: { type: 'object', required: ['email'], properties: { email: { type: 'string' } } } },
         },
         async (req, reply) => {
-            await allowedEmailRepo.add(req.body.email.toLowerCase());
+            await commandBus.dispatch(new AddAllowedEmailCommand(req.body.email));
             return reply.status(201).send();
         },
     );
 
     app.delete<{ Params: { email: string } }>(
         '/auth/allowed-emails/:email',
-        { preHandler: requireRole('edit') },
+        { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
-            await allowedEmailRepo.remove(req.params.email.toLowerCase());
+            await commandBus.dispatch(new RemoveAllowedEmailCommand(req.params.email));
             return reply.status(204).send();
         },
     );
 
     // ── Demandes d'accès ───────────────────────────────────────────────────────────
 
-    app.get('/auth/access-requests', { preHandler: requireRole('edit') }, async (_req, reply) => {
-        const requests = await accessRequestRepo.findAll();
+    app.get('/auth/access-requests', { preHandler: requireRole(UserRole.EDIT) }, async (_req, reply) => {
+        const requests = await queryBus.dispatch<ListAccessRequestsQuery, AccessRequestDto[]>(
+            new ListAccessRequestsQuery(),
+        );
         return reply.send({ requests });
     });
 
     app.post<{ Params: { email: string } }>(
         '/auth/access-requests/:email/approve',
-        { preHandler: requireRole('edit') },
+        { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
-            const email = req.params.email.toLowerCase();
-            const exists = await accessRequestRepo.setStatus(email, 'approved');
-            if (!exists) return reply.status(404).send({ error: 'Access request not found' });
-
-            // Approving only whitelists the email: the user account is provisioned on next login.
-            try {
-                await allowedEmailRepo.add(email);
-            } catch (err: unknown) {
-                if (!(err instanceof EmailAlreadyAllowedException)) throw err;
-            }
+            await commandBus.dispatch(new ApproveAccessRequestCommand(req.params.email));
             return reply.status(204).send();
         },
     );
 
     app.post<{ Params: { email: string } }>(
         '/auth/access-requests/:email/reject',
-        { preHandler: requireRole('edit') },
+        { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
-            const exists = await accessRequestRepo.setStatus(req.params.email.toLowerCase(), 'rejected');
-            if (!exists) return reply.status(404).send({ error: 'Access request not found' });
+            await commandBus.dispatch(new RejectAccessRequestCommand(req.params.email));
             return reply.status(204).send();
         },
     );
 };
-
-// ── Helper ─────────────────────────────────────────────────────────────────
-
-async function handleOAuthSuccess({
-    email,
-    name,
-    surname,
-    reply,
-    repo,
-    accessRequestRepo,
-    commandBus,
-    queryBus,
-}: OAuthSuccessParams): Promise<void> {
-    const normalizedEmail = email.toLowerCase();
-
-    if (!(await repo.exists(normalizedEmail))) {
-        // The provider already verified this email, so the request carries a real identity.
-        const status = await accessRequestRepo.record(normalizedEmail, `${name} ${surname}`.trim() || normalizedEmail);
-        const frontend = env.FRONTEND_PRIVATE_URL;
-        return reply.redirect(`${frontend}/access-requested?status=${status}`);
-    }
-
-    let user = await queryBus.dispatch<GetUserByEmailQuery, UserDto | null>(new GetUserByEmailQuery(normalizedEmail));
-
-    if (!user) {
-        const id = crypto.randomUUID();
-        // Le compte d'amorçage doit naître utilisable : sans ce rôle, la première connexion
-        // sur une base vierge produit un compte incapable d'ouvrir la whitelist à qui que
-        // ce soit, y compris à lui-même.
-        // `view` est le rôle de base de la partie privée : un compte whitelisté sans rôle
-        // se connecterait pour ne rien pouvoir lire. L'accès a déjà été accordé en amont,
-        // par l'ajout de l'email à la whitelist.
-        const roles = normalizedEmail === bootstrapAdminEmail() ? [UserRole.EDIT] : [UserRole.VIEW];
-        try {
-            await commandBus.dispatch(new CreateUserCommand(id, name, surname, normalizedEmail, roles));
-        } catch (err: unknown) {
-            // Race condition : un autre callback a provisionné l'utilisateur simultanément
-            const msg = err instanceof Error ? err.message : '';
-            if (!msg.includes('unique') && !msg.includes('duplicate')) throw err;
-        }
-        user = await queryBus.dispatch<GetUserByEmailQuery, UserDto | null>(new GetUserByEmailQuery(normalizedEmail));
-        if (!user) throw new Error('User provisioning failed');
-    }
-
-    const jwtToken = await reply.jwtSign(
-        { sub: user.id, email: normalizedEmail, roles: user.roles, tv: user.tokenVersion },
-        { expiresIn: SESSION_TTL },
-    );
-
-    return reply.setCookie('session', jwtToken, sessionCookieOptions()).redirect(env.FRONTEND_PRIVATE_URL);
-}

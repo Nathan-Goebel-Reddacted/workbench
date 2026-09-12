@@ -5,42 +5,51 @@ import { QueryBus } from '@shared/application/query/queryBus.js';
 import { GetUserByEmailQuery } from '@contexts/user/application/query/getUserByEmail/getUserByEmailQuery.js';
 import { UpdateUserRolesCommand } from '@contexts/user/application/command/updateUserRoles/updateUserRolesCommand.js';
 import { UserDto } from '@contexts/user/application/query/getUserById/userDto.js';
-import { UserRole } from '@contexts/user/domain/valueObject/role.js';
-import { AllowedEmailRepository } from './repository/allowedEmailRepository.js';
+import { UserRole } from '@shared/domain/valueObject/userRole.js';
+import { AddAllowedEmailCommand } from '../application/command/addAllowedEmail/addAllowedEmailCommand.js';
+import { EmailAlreadyAllowedException } from '../domain/exception/emailAlreadyAllowed.js';
+import { AuthEmail } from '../domain/valueObject/email.js';
 import { env } from '@shared/infrastructure/config/env.js';
 
-export function bootstrapAdminEmail(): string | null {
-    return env.BOOTSTRAP_ADMIN_EMAIL ? env.BOOTSTRAP_ADMIN_EMAIL.toLowerCase() : null;
+/** L'adresse d'amorçage telle que le déploiement la déclare, ou `null` si aucune ne l'est. */
+export function bootstrapAdminEmail(): AuthEmail | null {
+    if (!env.BOOTSTRAP_ADMIN_EMAIL) return null;
+    try {
+        return new AuthEmail(env.BOOTSTRAP_ADMIN_EMAIL);
+    } catch {
+        // Une adresse d'amorçage illisible ne doit pas empêcher l'application de démarrer :
+        // elle rend seulement l'amorçage inopérant, ce que le journal signale au démarrage.
+        return null;
+    }
 }
 
 type Deps = {
     em: EntityManager;
     commandBus: CommandBus;
     queryBus: QueryBus;
-    allowedEmailRepo: AllowedEmailRepository;
     log: (message: string) => void;
 };
 
-// Sur une base vierge la whitelist est vide, donc aucune connexion OAuth n'aboutit, et
+// Sur une base vierge la liste blanche est vide, donc aucune connexion OAuth n'aboutit, et
 // personne ne peut y ajouter d'adresse puisque la route exige déjà le rôle 'edit'.
 // Cette amorce est la seule porte d'entrée ; elle est idempotente et ne retire jamais rien.
-export async function bootstrapAdmin({ em, commandBus, queryBus, allowedEmailRepo, log }: Deps): Promise<void> {
-    const email = bootstrapAdminEmail();
-    if (!email) return;
+export async function bootstrapAdmin({ em, commandBus, queryBus, log }: Deps): Promise<void> {
+    const admin = bootstrapAdminEmail();
+    if (!admin) return;
+    const email = admin.getValue();
 
     await RequestContext.create(em, async () => {
-        // exists() plutôt que le catch de add() : sur violation d'unicité, l'entité refusée
-        // reste dans l'unit of work et le flush suivant (l'octroi de rôle, plus bas) rejoue
-        // l'insert et lève l'exception brute. Une requête HTTP ne le voit pas, son contexte
-        // EM mourant juste après le catch.
-        if (!(await allowedEmailRepo.exists(email))) {
-            await allowedEmailRepo.add(email);
+        try {
+            await commandBus.dispatch(new AddAllowedEmailCommand(email));
             log(`BOOTSTRAP_ADMIN_EMAIL: ${email} ajouté à la whitelist`);
+        } catch (error) {
+            // Déjà présente : c'est le cas normal à partir du deuxième démarrage.
+            if (!(error instanceof EmailAlreadyAllowedException)) throw error;
         }
 
         const user = await queryBus.dispatch<GetUserByEmailQuery, UserDto | null>(new GetUserByEmailQuery(email));
         // Pas encore de compte : il sera provisionné à la première connexion, avec le rôle
-        // que handleOAuthSuccess accorde à cette même adresse.
+        // que la politique d'accès accorde à cette même adresse.
         if (!user) return;
         if (user.roles.includes(UserRole.EDIT)) return;
 

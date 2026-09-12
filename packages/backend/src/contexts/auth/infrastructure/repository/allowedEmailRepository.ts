@@ -1,43 +1,39 @@
 import { EntityManager } from '@mikro-orm/postgresql';
+import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import { AllowedEmailOrmEntity } from '../entity/allowedEmailOrmEntity';
+import { IAllowedEmailRepository } from '../../domain/repository/iAllowedEmailRepository';
+import { AuthEmail } from '../../domain/valueObject/email';
+import { EmailAlreadyAllowedException } from '../../domain/exception/emailAlreadyAllowed';
 
-export class EmailAlreadyAllowedException extends Error {
-    constructor(email: string) {
-        super(`Email already allowed: ${email}`);
-    }
-}
-
-export class AllowedEmailRepository {
+export class AllowedEmailRepository implements IAllowedEmailRepository {
     constructor(private readonly em: EntityManager) {}
 
-    async exists(email: string): Promise<boolean> {
-        return (await this.em.count(AllowedEmailOrmEntity, { email })) > 0;
+    async contains(email: AuthEmail): Promise<boolean> {
+        return (await this.em.count(AllowedEmailOrmEntity, { email: email.getValue() })) > 0;
     }
 
-    async findAll(): Promise<string[]> {
+    async findAll(): Promise<AuthEmail[]> {
         const rows = await this.em.findAll(AllowedEmailOrmEntity);
-        return rows.map(r => r.email);
+        return rows.map(row => new AuthEmail(row.email));
     }
 
-    async add(email: string): Promise<void> {
-        if (await this.exists(email)) throw new EmailAlreadyAllowedException(email);
-
-        const entity = this.em.create(AllowedEmailOrmEntity, { email, createdAt: new Date() });
+    async add(email: AuthEmail): Promise<void> {
+        const entity = this.em.create(AllowedEmailOrmEntity, { email: email.getValue(), createdAt: new Date() });
         try {
             await this.em.persistAndFlush(entity);
-        } catch (err: unknown) {
-            // L'entité refusée reste dans l'unit of work et serait rejouée au flush suivant,
-            // hors de ce try : le contexte doit l'oublier avant que l'exception ne remonte.
+        } catch (error) {
+            // L'entité refusée reste dans l'unité de travail et serait rejouée au flush
+            // suivant, hors de ce try : le contexte doit l'oublier avant que l'exception
+            // ne remonte.
             this.em.getUnitOfWork().unsetIdentity(entity);
-            const msg = err instanceof Error ? err.message : '';
-            if (msg.includes('unique') || msg.includes('duplicate')) {
-                throw new EmailAlreadyAllowedException(email);
+            if (error instanceof UniqueConstraintViolationException) {
+                throw new EmailAlreadyAllowedException(email.getValue());
             }
-            throw err;
+            throw error;
         }
     }
 
-    async remove(email: string): Promise<void> {
-        await this.em.nativeDelete(AllowedEmailOrmEntity, { email });
+    async remove(email: AuthEmail): Promise<void> {
+        await this.em.nativeDelete(AllowedEmailOrmEntity, { email: email.getValue() });
     }
 }
