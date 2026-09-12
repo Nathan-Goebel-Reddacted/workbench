@@ -18,6 +18,6 @@ export class RemoveSectionHandler implements ICommandHandler<RemoveSectionComman
         pageLayout.removeSection(new SectionId(command.sectionId));
         await this.repository.save(pageLayout);
         // Le contenu est du JSON libre : le stockage y cherche lui-même les URLs.
-        if (removed) await this.uploads.releaseFrom(removed.getContent());
+        if (removed) await this.uploads.releaseFromContent(removed.getContent());
     }
 }

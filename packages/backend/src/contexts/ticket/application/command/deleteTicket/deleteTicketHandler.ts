@@ -12,6 +12,6 @@ export class DeleteTicketHandler implements ICommandHandler<DeleteTicketCommand>
     async handle(command: DeleteTicketCommand): Promise<void> {
         const ticket = await this.repository.findById(command.id);
         await this.repository.delete(command.id);
-        if (ticket) await this.uploads.releaseFrom(ticket.getDocuments().map(d => d.getUrl()));
+        if (ticket) await this.uploads.release(ticket.getDocuments().map(d => d.getUrl()));
     }
 }

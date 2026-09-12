@@ -18,6 +18,6 @@ export class RemoveTicketDocumentHandler implements ICommandHandler<RemoveTicket
         ticket.removeDocument(new DocumentId(command.documentId));
         await this.repository.save(ticket);
         // Après le save : tant que la ligne porte encore le document, il se compte lui-même.
-        if (removed) await this.uploads.releaseFrom(removed.getUrl());
+        if (removed) await this.uploads.release([removed.getUrl()]);
     }
 }
