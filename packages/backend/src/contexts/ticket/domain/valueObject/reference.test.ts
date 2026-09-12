@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TicketReference } from './reference.js';
 import { SegmentOutOfRangeException } from '@shared/domain/valueObject/referenceSegment.js';
 import { InvalidReferenceException } from '../exception/invalidReference.js';
-import { NotNullOrEmptyException } from '../exception/notNullOrEmpty.js';
+import { NotNullOrEmptyException } from '@shared/domain/exception/notNullOrEmpty.js';
 
 // La référence est l'identifiant lisible porté partout dans l'interface, dans les outils MCP et
 // dans les liaisons de données du site public : sa forme canonique se décide ici et nulle part

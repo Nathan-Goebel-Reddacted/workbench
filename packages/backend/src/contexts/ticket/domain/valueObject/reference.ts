@@ -1,5 +1,5 @@
 import { InvalidReferenceException } from '../exception/invalidReference';
-import { NotNullOrEmptyException } from '../exception/notNullOrEmpty';
+import { NotNullOrEmptyException } from '@shared/domain/exception/notNullOrEmpty';
 import { formatSegment, parseSegment } from '@shared/domain/valueObject/referenceSegment';
 
 /**

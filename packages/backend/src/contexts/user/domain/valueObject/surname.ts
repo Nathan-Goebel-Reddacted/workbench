@@ -1,4 +1,4 @@
-import { NotNullOrEmptyException } from '../exception/notNullOrEmpty';
+import { NotNullOrEmptyException } from '@shared/domain/exception/notNullOrEmpty';
 
 export class Surname {
     private readonly value: string;
