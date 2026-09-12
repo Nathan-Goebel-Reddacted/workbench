@@ -4,11 +4,13 @@ import { IUserRepository } from '../../../domain/repository/iUserRepository';
 import { IUserDeletionListener } from '../../../domain/port/iUserDeletionListener';
 import { UserRole } from '../../../domain/valueObject/role';
 import { LastEditorCannotBeRemovedException } from '../../../domain/exception/lastEditorCannotBeRemoved';
+import { ITransactionRunner } from '@shared/application/port/iTransactionRunner';
 
 export class DeleteUserHandler implements ICommandHandler<DeleteUserCommand> {
     constructor(
         private readonly repository: IUserRepository,
-        private readonly listeners: IUserDeletionListener[] = [],
+        private readonly listeners: IUserDeletionListener[],
+        private readonly transaction: ITransactionRunner,
     ) {}
 
     async handle(command: DeleteUserCommand): Promise<void> {
@@ -21,11 +23,17 @@ export class DeleteUserHandler implements ICommandHandler<DeleteUserCommand> {
 
         // Ce que le compte possédait ailleurs doit tomber avec lui : un jeton d'agent
         // survivant au propriétaire reste une session valide sans utilisateur derrière.
-        for (const listener of this.listeners) {
-            await listener.onUserDeleted(command.userId);
-        }
-
-        await this.repository.deleteById(command.userId);
+        //
+        // Les deux moitiés sont solidaires dans les deux sens : un compte supprimé dont les
+        // jetons survivent laisse des sessions orphelines, et des jetons révoqués pour un
+        // compte finalement conservé privent l'utilisateur de ses agents sans que rien ne
+        // le dise.
+        await this.transaction.run(async () => {
+            for (const listener of this.listeners) {
+                await listener.onUserDeleted(command.userId);
+            }
+            await this.repository.deleteById(command.userId);
+        });
     }
 
     private async isLastEditor(userId: string): Promise<boolean> {
