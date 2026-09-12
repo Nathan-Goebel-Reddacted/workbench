@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CommandBus } from '@shared/application/command/commandBus';
 import { QueryBus } from '@shared/application/query/queryBus';
-import { LanguageEnum } from '@contexts/portfolio/domain/valueObject/language';
+import { LanguageEnum } from '@contexts/portfolio/application/command/addPortfolioLanguage/addPortfolioLanguageCommand';
 import { CreatePortfolioCommand } from '@contexts/portfolio/application/command/createPortfolio/createPortfolioCommand';
 import { AddPortfolioLanguageCommand } from '@contexts/portfolio/application/command/addPortfolioLanguage/addPortfolioLanguageCommand';
 import { RemovePortfolioLanguageCommand } from '@contexts/portfolio/application/command/removePortfolioLanguage/removePortfolioLanguageCommand';

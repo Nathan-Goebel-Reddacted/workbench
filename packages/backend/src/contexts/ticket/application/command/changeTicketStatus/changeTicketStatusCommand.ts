@@ -11,3 +11,5 @@ export class ChangeTicketStatusCommand implements Command {
         this.commandName = ChangeTicketStatusCommand.commandName;
     }
 }
+
+export { TicketStatus } from '@contexts/ticket/domain/valueObject/status';

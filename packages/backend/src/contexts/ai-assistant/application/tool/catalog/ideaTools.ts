@@ -11,7 +11,7 @@ import { ConvertIdeaToProjectCommand } from '@contexts/idea/application/command/
 import { GetProjectByIdQuery } from '@contexts/project/application/query/getProjectById/getProjectByIdQuery';
 import { GetIdeaByIdQuery } from '@contexts/idea/application/query/getIdeaById/getIdeaByIdQuery';
 import { ListIdeasQuery } from '@contexts/idea/application/query/listIdeas/listIdeasQuery';
-import { Category } from '@contexts/idea/domain/valueObject/category';
+import { Category } from '@contexts/idea/application/command/createIdea/createIdeaCommand';
 import { ScopeValue } from '../../../domain/valueObject/scope';
 import { AnyToolDescriptor, defineTool } from '../toolDescriptor';
 import { documentSchema, linkSchema, uuidSchema, withGeneratedIds } from './sharedSchemas';

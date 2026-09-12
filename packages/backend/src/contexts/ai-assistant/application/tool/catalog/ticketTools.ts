@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CommandBus } from '@shared/application/command/commandBus';
 import { QueryBus } from '@shared/application/query/queryBus';
-import { TicketStatus } from '@contexts/ticket/domain/valueObject/status';
+import { TicketStatus } from '@contexts/ticket/application/command/changeTicketStatus/changeTicketStatusCommand';
 import { CreateTicketCommand } from '@contexts/ticket/application/command/createTicket/createTicketCommand';
 import { UpdateTicketCommand } from '@contexts/ticket/application/command/updateTicket/updateTicketCommand';
 import { ChangeTicketStatusCommand } from '@contexts/ticket/application/command/changeTicketStatus/changeTicketStatusCommand';

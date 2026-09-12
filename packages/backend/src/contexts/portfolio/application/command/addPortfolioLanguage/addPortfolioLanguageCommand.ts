@@ -11,3 +11,5 @@ export class AddPortfolioLanguageCommand implements Command {
         this.commandName = AddPortfolioLanguageCommand.commandName;
     }
 }
+
+export { LanguageEnum } from '@contexts/portfolio/domain/valueObject/language';

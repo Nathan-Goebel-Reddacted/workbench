@@ -18,3 +18,5 @@ export class CreateIdeaCommand implements Command {
         this.commandName = CreateIdeaCommand.commandName;
     }
 }
+
+export { Category } from '@contexts/idea/domain/valueObject/category';

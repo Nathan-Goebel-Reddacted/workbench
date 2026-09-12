@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CommandBus } from '@shared/application/command/commandBus';
 import { QueryBus } from '@shared/application/query/queryBus';
-import { Category } from '@contexts/project/domain/valueObject/category';
+import { Category } from '@contexts/project/application/command/createProject/createProjectCommand';
 import { CreateProjectCommand } from '@contexts/project/application/command/createProject/createProjectCommand';
 import { UpdateProjectCommand } from '@contexts/project/application/command/updateProject/updateProjectCommand';
 import { UpdateProjectVisibilityCommand } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityCommand';

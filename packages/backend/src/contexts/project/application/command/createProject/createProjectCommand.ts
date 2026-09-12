@@ -22,3 +22,5 @@ export class CreateProjectCommand implements Command {
         this.commandName = CreateProjectCommand.commandName;
     }
 }
+
+export { Category } from '@contexts/project/domain/valueObject/category';
