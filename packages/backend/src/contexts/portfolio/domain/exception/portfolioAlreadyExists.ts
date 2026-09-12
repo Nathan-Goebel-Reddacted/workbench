@@ -2,8 +2,6 @@ import { DomainException } from '@shared/domain/domainException';
 
 export class PortfolioAlreadyExistsException extends DomainException {
     constructor() {
-        super();
-        this.name = 'PortfolioAlreadyExistsException';
-        this.message = 'A portfolio already exists: the application holds exactly one';
+        super('A portfolio already exists: the application holds exactly one');
     }
 }

@@ -17,8 +17,6 @@ export function parseEnum<T extends Record<string, string>>(value: string, membe
 
 export class InvalidEnumValueException extends DomainException {
     constructor(label: string, value: string, allowed: string[]) {
-        super();
-        this.name = 'InvalidEnumValueException';
-        this.message = `Invalid ${label}: "${value}". Allowed: ${allowed.join(', ')}`;
+        super(`Invalid ${label}: "${value}". Allowed: ${allowed.join(', ')}`);
     }
 }

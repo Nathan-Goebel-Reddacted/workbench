@@ -10,9 +10,7 @@ export const SEGMENT_MAX = 9999;
 
 export class SegmentOutOfRangeException extends DomainException {
     constructor(value: number) {
-        super();
-        this.name = 'SegmentOutOfRangeException';
-        this.message = `A reference segment must be between ${SEGMENT_MIN} and ${SEGMENT_MAX}, got ${value}`;
+        super(`A reference segment must be between ${SEGMENT_MIN} and ${SEGMENT_MAX}, got ${value}`);
     }
 }
 
