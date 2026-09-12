@@ -14,9 +14,9 @@ export class ListContactMessagesHandler implements IQueryHandler<ListContactMess
 
     private toDto(message: ContactMessage): ContactMessageDto {
         return {
-            id: message.getId(),
+            id: message.getId().getValue(),
             fields: message.getFields(),
-            senderEmail: message.getSenderEmail(),
+            senderEmail: message.getSenderEmail()?.getValue() ?? null,
             submittedAt: message.getSubmittedAt().toISOString(),
             mailSent: message.isMailSent(),
         };

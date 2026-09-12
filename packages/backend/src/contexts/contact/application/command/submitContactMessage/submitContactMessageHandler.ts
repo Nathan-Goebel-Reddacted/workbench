@@ -2,12 +2,13 @@ import { ICommandHandler } from '@shared/application/command/iCommandHandler';
 import { SubmitContactMessageCommand } from './submitContactMessageCommand';
 import { IContactMessageRepository } from '../../../domain/repository/iContactMessageRepository';
 import { IMailer } from '../../../domain/port/iMailer';
-import { ContactMessage } from '../../../domain/contactMessageAggregate';
+import { ContactMessageFactory } from '../../../domain/factory/contactMessageFactory';
 import { ILogger } from '@shared/application/port/iLogger';
 
 export class SubmitContactMessageHandler implements ICommandHandler<SubmitContactMessageCommand> {
     constructor(
         private readonly repository: IContactMessageRepository,
+        private readonly factory: ContactMessageFactory,
         private readonly mailer: IMailer,
         /** Owner's inbox, from CONTACT_MAIL_TO: never exposed to the public API. */
         private readonly recipient: string | null,
@@ -15,7 +16,7 @@ export class SubmitContactMessageHandler implements ICommandHandler<SubmitContac
     ) {}
 
     async handle(command: SubmitContactMessageCommand): Promise<void> {
-        const message = ContactMessage.submit(command.id, command.fields, command.senderEmail, new Date());
+        const message = this.factory.submit(command.id, command.fields, new Date());
 
         // Persist first: a message that reached us is never lost to an SMTP outage.
         await this.repository.save(message);
@@ -32,7 +33,7 @@ export class SubmitContactMessageHandler implements ICommandHandler<SubmitContac
                 to: this.recipient,
                 subject: 'Nouveau message depuis votre site',
                 text: message.toMailBody(),
-                replyTo: message.getSenderEmail() ?? undefined,
+                replyTo: message.getSenderEmail()?.getValue(),
             });
             message.markMailSent();
             await this.repository.save(message);
