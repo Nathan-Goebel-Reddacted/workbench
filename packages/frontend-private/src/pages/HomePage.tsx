@@ -27,6 +27,7 @@ export function HomePage() {
   const managementEntries: Entry[] = [
     ...(canViewAdmin ? [{ label: 'User Management', to: '/admin' }] : []),
     ...(canEdit ? [{ label: 'Error Log', to: '/error-log' }] : []),
+    ...(canEdit ? [{ label: 'Contact Messages', to: '/contact-messages' }] : []),
   ]
 
   const sections: Section[] = [

@@ -5,6 +5,7 @@ import { HomePage } from './pages/HomePage'
 import { AccessRequestedPage } from './pages/AccessRequestedPage'
 import { ThemeEditorPage } from './pages/ThemeEditorPage'
 import { ErrorLogPage } from './pages/ErrorLogPage'
+import { ContactMessagesPage } from './pages/ContactMessagesPage'
 import { AdminPage } from './pages/AdminPage'
 import { EditorPage } from './pages/EditorPage'
 import { CvPage } from './pages/CvPage'
@@ -32,6 +33,7 @@ export function App() {
                       <Route index element={<HomePage />} />
                       <Route path="/theme-editor" element={<ThemeEditorPage />} />
                       <Route path="/error-log" element={<ErrorLogPage />} />
+                      <Route path="/contact-messages" element={<ContactMessagesPage />} />
                       <Route path="/projects" element={<ProjectsPage />} />
                       <Route path="/projects/:id" element={<ProjectDetailPage />} />
                       <Route path="/projects/:id/page" element={<ProjectPageEditorPage />} />
