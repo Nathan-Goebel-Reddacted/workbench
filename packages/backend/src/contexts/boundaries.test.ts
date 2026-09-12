@@ -169,3 +169,69 @@ describe('couches à l’intérieur d’un contexte', () => {
         expect(offenders.map(v => `${v.file}:${v.line} → ${v.specifier}`)).toEqual([]);
     });
 });
+
+// ── Ce qu'une couche interne connaît du dehors ─────────────────────────────────────────
+//
+// Les règles précédentes ne lisent que les chemins internes : `localTarget()` rend `null` dès
+// qu'un specifier ne commence ni par un point, ni par `@shared/`, ni par `@contexts/`. Un
+// `import { Entity } from '@mikro-orm/core'` posé dans un agrégat passait donc sous le filet
+// sans rien déclencher — la pureté du domaine ne tenait qu'à la discipline de qui l'écrit.
+
+const SRC_DIR = join(CONTEXTS_DIR, '..');
+const SHARED_DIR = join(SRC_DIR, 'shared');
+
+/**
+ * Les paquets qu'une couche a le droit de nommer.
+ *
+ * Le domaine génère des identités, et rien d'autre ne lui vient du dehors. L'application y
+ * ajoute `zod`, qui n'y est pas une commodité : `ToolDescriptor` type le `execute()` de chaque
+ * outil par inférence (`z.infer`), et le JSON Schema annoncé aux clients MCP en est dérivé
+ * plutôt que réécrit à côté. La dérogation est donc nommée ici plutôt que subie, et tout autre
+ * paquet qui s'inviterait dans une couche interne fait échouer ce test.
+ */
+const ALLOWED_PACKAGES: Record<string, readonly string[]> = {
+    domain: ['node:crypto'],
+    application: ['node:crypto', 'zod'],
+};
+
+/** Ni relatif ni alias interne : le specifier désigne un paquet. `@scope/x/y` → `@scope/x`. */
+function packageOf(specifier: string): string | null {
+    if (specifier.startsWith('.') || specifier.startsWith('@shared/') || specifier.startsWith('@contexts/')) {
+        return null;
+    }
+    const segments = specifier.split('/');
+    return specifier.startsWith('@') ? segments.slice(0, 2).join('/') : segments[0];
+}
+
+/** `contexts/<ctx>/domain/…` et `shared/domain/…` relèvent tous deux de `domain`. */
+function layerOf(file: string): string | null {
+    const parts = relative(SRC_DIR, file).split(sep);
+    if (parts[0] === 'contexts') return parts[2] ?? null;
+    if (parts[0] === 'shared') return parts[1] ?? null;
+    return null;
+}
+
+describe('dépendances externes des couches internes', () => {
+    it.each(Object.keys(ALLOWED_PACKAGES))('garde la couche %s libre de tout paquet non déclaré', layer => {
+        const allowed = ALLOWED_PACKAGES[layer];
+        const offenders: string[] = [];
+
+        for (const file of [...sourceFiles(), ...sourceFiles(SHARED_DIR)]) {
+            if (layerOf(file) !== layer) continue;
+
+            readFileSync(file, 'utf8')
+                .split(/\r?\n/)
+                .forEach((line, index) => {
+                    for (const [, specifier] of line.matchAll(IMPORT_SPECIFIER)) {
+                        const pkg = packageOf(specifier);
+                        if (pkg === null || allowed.includes(pkg)) continue;
+                        offenders.push(`${relative(SRC_DIR, file)}:${index + 1} → ${specifier}`);
+                    }
+                });
+        }
+
+        // Un ORM, un framework HTTP ou un client de chiffrement nommé ici amarre la couche à son
+        // exécution. Si un paquet doit vraiment entrer, il entre par un port — pas par un import.
+        expect(offenders).toEqual([]);
+    });
+});
