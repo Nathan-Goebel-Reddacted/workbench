@@ -15,9 +15,9 @@ export class ListCvsHandler implements IQueryHandler<ListCvsQuery, CvDto[]> {
 
     private toDto(cv: Cv): CvDto {
         return {
-            id: cv.getId(),
-            name: cv.getName(),
-            fileUrl: cv.getFileUrl(),
+            id: cv.getId().getValue(),
+            name: cv.getName().getValue(),
+            fileUrl: cv.getFileUrl().getValue(),
             visible: cv.isVisible(),
             displayOrder: cv.getDisplayOrder(),
             createdAt: cv.getCreatedAt().toISOString(),

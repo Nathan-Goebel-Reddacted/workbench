@@ -1,51 +1,32 @@
-export class CvError extends Error {}
+import { CvId } from './valueObject/cvId';
+import { CvName } from './valueObject/cvName';
+import { CvFileUrl } from './valueObject/cvFileUrl';
 
-const MAX_NAME_LENGTH = 255;
-
+/**
+ * Un CV proposé au téléchargement sur le site public.
+ *
+ * Le fichier ne change pas : remplacer un CV, c'est en déposer un autre. `displayOrder` donne
+ * l'ordre de la page, `visible` dit lesquels le visiteur voit.
+ */
 export class Cv {
-    private constructor(
-        private readonly id: string,
-        private name: string,
-        private readonly fileUrl: string,
+    constructor(
+        private readonly id: CvId,
+        private readonly name: CvName,
+        private readonly fileUrl: CvFileUrl,
         private visible: boolean,
         private displayOrder: number,
         private readonly createdAt: Date,
     ) {}
 
-    static rehydrate(
-        id: string,
-        name: string,
-        fileUrl: string,
-        visible: boolean,
-        displayOrder: number,
-        createdAt: Date,
-    ): Cv {
-        return new Cv(id, name, fileUrl, visible, displayOrder, createdAt);
-    }
-
-    static create(id: string, name: string, fileUrl: string, displayOrder: number, createdAt: Date = new Date()): Cv {
-        const trimmedName = (name ?? '').trim();
-        if (trimmedName === '') throw new CvError('A CV name cannot be empty');
-        if (trimmedName.length > MAX_NAME_LENGTH) {
-            throw new CvError(`A CV name cannot exceed ${MAX_NAME_LENGTH} characters`);
-        }
-
-        const trimmedUrl = (fileUrl ?? '').trim();
-        if (trimmedUrl === '') throw new CvError('A CV must reference a file');
-        if (!isPdfUrl(trimmedUrl)) throw new CvError('A CV must be a PDF file');
-
-        return new Cv(id, trimmedName, trimmedUrl, true, displayOrder, createdAt);
-    }
-
-    getId(): string {
+    getId(): CvId {
         return this.id;
     }
 
-    getName(): string {
+    getName(): CvName {
         return this.name;
     }
 
-    getFileUrl(): string {
+    getFileUrl(): CvFileUrl {
         return this.fileUrl;
     }
 
@@ -61,15 +42,6 @@ export class Cv {
         return this.createdAt;
     }
 
-    rename(name: string): void {
-        const trimmed = (name ?? '').trim();
-        if (trimmed === '') throw new CvError('A CV name cannot be empty');
-        if (trimmed.length > MAX_NAME_LENGTH) {
-            throw new CvError(`A CV name cannot exceed ${MAX_NAME_LENGTH} characters`);
-        }
-        this.name = trimmed;
-    }
-
     setVisible(visible: boolean): void {
         this.visible = visible;
     }
@@ -77,8 +49,4 @@ export class Cv {
     moveTo(displayOrder: number): void {
         this.displayOrder = displayOrder;
     }
-}
-
-function isPdfUrl(url: string): boolean {
-    return url.split('?')[0].toLowerCase().endsWith('.pdf');
 }

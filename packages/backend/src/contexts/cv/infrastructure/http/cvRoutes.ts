@@ -7,7 +7,7 @@ import { DeleteCvCommand } from '@contexts/cv/application/command/deleteCv/delet
 import { SetCvVisibilityCommand } from '@contexts/cv/application/command/setCvVisibility/setCvVisibilityCommand';
 import { ReorderCvsCommand } from '@contexts/cv/application/command/reorderCvs/reorderCvsCommand';
 import { ListCvsQuery } from '@contexts/cv/application/query/listCvs/listCvsQuery';
-import { CvError } from '@contexts/cv/domain/cvAggregate';
+import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
@@ -20,7 +20,7 @@ export const cvRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, quer
     app.post<{ Body: { name: string; fileUrl: string } }>(
         '/cvs',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -34,12 +34,9 @@ export const cvRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, quer
         },
         async (req, reply) => {
             const id = crypto.randomUUID();
-            try {
-                await commandBus.dispatch(new CreateCvCommand(id, req.body.name, req.body.fileUrl));
-            } catch (error) {
-                if (error instanceof CvError) return reply.status(400).send({ error: error.message });
-                throw error;
-            }
+            // Une règle métier refusée remonte en DomainException, que le gestionnaire
+            // d'erreurs rend en 400 avec son message. Plus de rattrapage local à tenir.
+            await commandBus.dispatch(new CreateCvCommand(id, req.body.name, req.body.fileUrl));
             return reply.status(201).send({ id });
         },
     );
@@ -47,7 +44,7 @@ export const cvRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, quer
     app.put<{ Body: { ids: string[] } }>(
         '/cvs/order',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -67,7 +64,7 @@ export const cvRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, quer
     app.patch<{ Params: { id: string }; Body: { visible: boolean } }>(
         '/cvs/:id',
         {
-            preHandler: requireRole('edit'),
+            preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
@@ -84,8 +81,12 @@ export const cvRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, quer
         },
     );
 
-    app.delete<{ Params: { id: string } }>('/cvs/:id', { preHandler: requireRole('edit') }, async (req, reply) => {
-        await commandBus.dispatch(new DeleteCvCommand(req.params.id));
-        return reply.status(204).send();
-    });
+    app.delete<{ Params: { id: string } }>(
+        '/cvs/:id',
+        { preHandler: requireRole(UserRole.EDIT) },
+        async (req, reply) => {
+            await commandBus.dispatch(new DeleteCvCommand(req.params.id));
+            return reply.status(204).send();
+        },
+    );
 };

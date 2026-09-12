@@ -2,6 +2,7 @@ import { ICommandHandler } from '@shared/application/command/iCommandHandler';
 import { DeleteCvCommand } from './deleteCvCommand';
 import { ICvRepository } from '../../../domain/repository/iCvRepository';
 import { IUploadStorage } from '@shared/application/port/iUploadStorage';
+import { CvId } from '../../../domain/valueObject/cvId';
 
 export class DeleteCvHandler implements ICommandHandler<DeleteCvCommand> {
     constructor(
@@ -10,8 +11,9 @@ export class DeleteCvHandler implements ICommandHandler<DeleteCvCommand> {
     ) {}
 
     async handle(command: DeleteCvCommand): Promise<void> {
-        const cv = await this.repository.findById(command.id);
-        await this.repository.delete(command.id);
-        if (cv) await this.uploads.releaseFrom(cv.getFileUrl());
+        const id = new CvId(command.id);
+        const cv = await this.repository.findById(id);
+        await this.repository.delete(id);
+        if (cv) await this.uploads.release([cv.getFileUrl().getValue()]);
     }
 }

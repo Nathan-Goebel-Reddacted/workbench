@@ -10,8 +10,8 @@ export class ReorderCvsHandler implements ICommandHandler<ReorderCvsCommand> {
 
         const rank = new Map(command.orderedIds.map((id, index) => [id, index]));
         const ordered = [...cvs].sort((a, b) => {
-            const rankA = rank.get(a.getId()) ?? Number.MAX_SAFE_INTEGER;
-            const rankB = rank.get(b.getId()) ?? Number.MAX_SAFE_INTEGER;
+            const rankA = rank.get(a.getId().getValue()) ?? Number.MAX_SAFE_INTEGER;
+            const rankB = rank.get(b.getId().getValue()) ?? Number.MAX_SAFE_INTEGER;
             if (rankA !== rankB) return rankA - rankB;
             return a.getDisplayOrder() - b.getDisplayOrder();
         });

@@ -2,8 +2,12 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { ICvRepository } from '../../domain/repository/iCvRepository';
 import { Cv } from '../../domain/cvAggregate';
 import { CvOrmEntity } from '../entity/cvOrmEntity';
+import { CvFactory } from '../../domain/factory/cvFactory';
+import { CvId } from '../../domain/valueObject/cvId';
 
 export class CvRepository implements ICvRepository {
+    private readonly factory = new CvFactory();
+
     constructor(private readonly em: EntityManager) {}
 
     async findAll(): Promise<Cv[]> {
@@ -11,8 +15,8 @@ export class CvRepository implements ICvRepository {
         return entities.map(e => this.toDomain(e));
     }
 
-    async findById(id: string): Promise<Cv | null> {
-        const e = await this.em.findOne(CvOrmEntity, { id });
+    async findById(id: CvId): Promise<Cv | null> {
+        const e = await this.em.findOne(CvOrmEntity, { id: id.getValue() });
         return e ? this.toDomain(e) : null;
     }
 
@@ -32,9 +36,9 @@ export class CvRepository implements ICvRepository {
         });
     }
 
-    async delete(id: string): Promise<void> {
+    async delete(id: CvId): Promise<void> {
         await this.em.transactional(async em => {
-            await em.nativeDelete(CvOrmEntity, { id });
+            await em.nativeDelete(CvOrmEntity, { id: id.getValue() });
         });
     }
 
@@ -44,14 +48,14 @@ export class CvRepository implements ICvRepository {
     }
 
     private toDomain(e: CvOrmEntity): Cv {
-        return Cv.rehydrate(e.id, e.name, e.fileUrl, e.visible, e.displayOrder, e.createdAt);
+        return this.factory.rehydrate(e.id, e.name, e.fileUrl, e.visible, e.displayOrder, e.createdAt);
     }
 
     private toOrm(cv: Cv): CvOrmEntity {
         const e = new CvOrmEntity();
-        e.id = cv.getId();
-        e.name = cv.getName();
-        e.fileUrl = cv.getFileUrl();
+        e.id = cv.getId().getValue();
+        e.name = cv.getName().getValue();
+        e.fileUrl = cv.getFileUrl().getValue();
         e.visible = cv.isVisible();
         e.displayOrder = cv.getDisplayOrder();
         e.createdAt = cv.getCreatedAt();
