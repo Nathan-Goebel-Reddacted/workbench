@@ -171,7 +171,19 @@ import { RevokeAgentToolCommand } from '@contexts/ai-assistant/application/comma
 import { RevokeAgentToolHandler } from '@contexts/ai-assistant/application/command/revokeAgentTool/revokeAgentToolHandler';
 import { RestoreAgentToolCommand } from '@contexts/ai-assistant/application/command/restoreAgentTool/restoreAgentToolCommand';
 import { RestoreAgentToolHandler } from '@contexts/ai-assistant/application/command/restoreAgentTool/restoreAgentToolHandler';
+import { PairingRequestFactory } from '@contexts/ai-assistant/domain/factory/pairingRequestFactory';
 import { BcryptSecretHasher } from '@contexts/ai-assistant/infrastructure/security/bcryptSecretHasher';
+import { PairingRequestRepository } from '@contexts/ai-assistant/infrastructure/repository/pairingRequestRepository';
+import { RequestPairingCommand } from '@contexts/ai-assistant/application/command/requestPairing/requestPairingCommand';
+import { RequestPairingHandler } from '@contexts/ai-assistant/application/command/requestPairing/requestPairingHandler';
+import { ClaimPairingRequestCommand } from '@contexts/ai-assistant/application/command/claimPairingRequest/claimPairingRequestCommand';
+import { ClaimPairingRequestHandler } from '@contexts/ai-assistant/application/command/claimPairingRequest/claimPairingRequestHandler';
+import { ApprovePairingRequestCommand } from '@contexts/ai-assistant/application/command/approvePairingRequest/approvePairingRequestCommand';
+import { ApprovePairingRequestHandler } from '@contexts/ai-assistant/application/command/approvePairingRequest/approvePairingRequestHandler';
+import { RejectPairingRequestCommand } from '@contexts/ai-assistant/application/command/rejectPairingRequest/rejectPairingRequestCommand';
+import { RejectPairingRequestHandler } from '@contexts/ai-assistant/application/command/rejectPairingRequest/rejectPairingRequestHandler';
+import { ListPairingRequestsQuery } from '@contexts/ai-assistant/application/query/listPairingRequests/listPairingRequestsQuery';
+import { ListPairingRequestsHandler } from '@contexts/ai-assistant/application/query/listPairingRequests/listPairingRequestsHandler';
 
 import { ToolRegistry } from '@contexts/ai-assistant/application/tool/toolRegistry';
 import { createToolRegistry } from '@contexts/ai-assistant/application/tool/catalog';
@@ -289,6 +301,7 @@ export function bootstrap(
         idea: new IdeaRepository(em),
         pageLayout: new PageLayoutRepository(em),
         agentTool: new AgentToolRepository(em),
+        pairingRequest: new PairingRequestRepository(em),
         contactMessage: new ContactMessageRepository(em),
         cv: new CvRepository(em),
         allowedEmail: new AllowedEmailRepository(em),
@@ -493,6 +506,22 @@ export function bootstrap(
     queryBus.register(GetAllAgentToolsQuery.queryName, new GetAllAgentToolsHandler(repos.agentTool));
     commandBus.register(RevokeAgentToolCommand.commandName, new RevokeAgentToolHandler(repos.agentTool));
     commandBus.register(RestoreAgentToolCommand.commandName, new RestoreAgentToolHandler(repos.agentTool));
+
+    // Appairage : une demande d'agent, une décision humaine, un secret délivré une seule fois.
+    commandBus.register(
+        RequestPairingCommand.commandName,
+        new RequestPairingHandler(repos.pairingRequest, new PairingRequestFactory(secretHasher)),
+    );
+    commandBus.register(
+        ClaimPairingRequestCommand.commandName,
+        new ClaimPairingRequestHandler(repos.pairingRequest, repos.agentTool, secretHasher),
+    );
+    commandBus.register(
+        ApprovePairingRequestCommand.commandName,
+        new ApprovePairingRequestHandler(repos.pairingRequest, repos.agentTool, agentToolFactory),
+    );
+    commandBus.register(RejectPairingRequestCommand.commandName, new RejectPairingRequestHandler(repos.pairingRequest));
+    queryBus.register(ListPairingRequestsQuery.queryName, new ListPairingRequestsHandler(repos.pairingRequest));
 
     // Contact
     // The owner's inbox lives in the environment only: it must never reach the public API.

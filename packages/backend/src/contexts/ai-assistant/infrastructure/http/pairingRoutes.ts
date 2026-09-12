@@ -1,26 +1,31 @@
 import { FastifyPluginAsync } from 'fastify';
 import { CommandBus } from '@shared/application/command/commandBus';
+import { QueryBus } from '@shared/application/query/queryBus';
 import { requireRole } from '@shared/infrastructure/http/roleGuard';
-import { CreateAgentToolCommand } from '@contexts/ai-assistant/application/command/createAgentTool/createAgentToolCommand';
-import { RotateAgentToolTokenCommand } from '@contexts/ai-assistant/application/command/rotateAgentToolToken/rotateAgentToolTokenCommand';
-import { issueAgentToken } from '@contexts/ai-assistant/application/auth/agentToken';
 import {
-    formatPairingCode,
-    generatePairingCode,
-    normalizePairingCode,
-    PAIRING_TTL_MS,
-} from '@contexts/ai-assistant/application/auth/pairingCode';
+    RequestPairingCommand,
+    IssuedPairing,
+} from '@contexts/ai-assistant/application/command/requestPairing/requestPairingCommand';
 import {
-    AgentPairingRequestRepository,
-    TooManyPendingPairingRequests,
-} from '@contexts/ai-assistant/infrastructure/repository/agentPairingRequestRepository';
+    ClaimPairingRequestCommand,
+    ClaimOutcome,
+} from '@contexts/ai-assistant/application/command/claimPairingRequest/claimPairingRequestCommand';
+import {
+    ApprovePairingRequestCommand,
+    ApprovalOutcome,
+} from '@contexts/ai-assistant/application/command/approvePairingRequest/approvePairingRequestCommand';
+import { RejectPairingRequestCommand } from '@contexts/ai-assistant/application/command/rejectPairingRequest/rejectPairingRequestCommand';
+import { ListPairingRequestsQuery } from '@contexts/ai-assistant/application/query/listPairingRequests/listPairingRequestsQuery';
+import { PairingRequestDto } from '@contexts/ai-assistant/application/query/listPairingRequests/pairingRequestDto';
+import { TooManyPendingPairingRequests } from '@contexts/ai-assistant/domain/exception/tooManyPendingPairingRequests';
+import { formatPairingCode } from '@contexts/ai-assistant/domain/valueObject/pairingCode';
 import { ScopeValue } from '@contexts/ai-assistant/domain/valueObject/scope';
 import { PermissionValue } from '@contexts/ai-assistant/domain/valueObject/permission';
 import { UserRole } from '@shared/domain/valueObject/userRole';
 
-type Opts = { commandBus: CommandBus; pairingRepo: AgentPairingRequestRepository };
+type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
-export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, pairingRepo }) => {
+export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
     // ── Côté agent (public) ────────────────────────────────────────────────────────
 
     app.post<{ Body: { name: string; scopes: string[]; permission: string } }>(
@@ -45,12 +50,14 @@ export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
         },
         async (req, reply) => {
             const { name, scopes, permission } = req.body;
-            const code = generatePairingCode();
-            const expiresAt = new Date(Date.now() + PAIRING_TTL_MS);
 
+            let issued: IssuedPairing;
             try {
-                await pairingRepo.create(name, scopes, permission, code, expiresAt);
+                issued = await commandBus.dispatch<RequestPairingCommand, IssuedPairing>(
+                    new RequestPairingCommand(name, scopes, permission),
+                );
             } catch (err: unknown) {
+                // La file pleine n'est pas un refus métier : la demande était recevable.
                 if (err instanceof TooManyPendingPairingRequests) {
                     return reply.status(429).send({ error: 'Too many pending pairing requests' });
                 }
@@ -59,8 +66,8 @@ export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
 
             // The code is returned once, to the caller only. Approving it is a human decision.
             return reply.status(201).send({
-                code: formatPairingCode(code),
-                expiresAt: expiresAt.toISOString(),
+                code: formatPairingCode(issued.code),
+                expiresAt: issued.expiresAt.toISOString(),
             });
         },
     );
@@ -80,36 +87,27 @@ export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
             },
         },
         async (req, reply) => {
-            const code = normalizePairingCode(req.body.code);
-            const request = await pairingRepo.findByCode(code);
+            const outcome = await commandBus.dispatch<ClaimPairingRequestCommand, ClaimOutcome>(
+                new ClaimPairingRequestCommand(req.body.code),
+            );
 
-            // Unknown, expired and already-claimed codes answer identically: a caller must not be
-            // able to tell a wrong code from one that is merely still waiting for approval.
-            if (!request || request.expiresAt < new Date()) {
+            if (outcome.status === 'unknown') {
                 return reply.status(404).send({ error: 'Unknown or expired pairing code' });
             }
-
-            if (request.status === 'pending') {
+            if (outcome.status === 'pending') {
                 return reply.status(202).send({ status: 'pending' });
             }
 
-            if (request.status !== 'approved' || !request.agentToolId) {
-                return reply.status(404).send({ error: 'Unknown or expired pairing code' });
-            }
-
-            // The secret is minted here, at the only moment it can reach the agent.
-            const { secret, token } = issueAgentToken(request.agentToolId);
-            await commandBus.dispatch(new RotateAgentToolTokenCommand(request.agentToolId, secret));
-            await pairingRepo.setStatus(request.id, 'claimed');
-
-            return reply.send({ status: 'approved', token });
+            return reply.send({ status: 'approved', token: outcome.token });
         },
     );
 
     // ── Côté administration ────────────────────────────────────────────────────────
 
     app.get('/agent-pairing-requests', { preHandler: requireRole(UserRole.EDIT) }, async (_req, reply) => {
-        const requests = await pairingRepo.listPending();
+        const requests = await queryBus.dispatch<ListPairingRequestsQuery, PairingRequestDto[]>(
+            new ListPairingRequestsQuery(),
+        );
         return reply.send({ requests });
     });
 
@@ -130,25 +128,25 @@ export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
             },
         },
         async (req, reply) => {
-            const request = await pairingRepo.findById(req.params.id);
-            if (!request) return reply.status(404).send({ error: 'Pairing request not found' });
-            if (request.status !== 'pending') {
-                return reply.status(409).send({ error: `Request is already ${request.status}` });
+            const outcome = await commandBus.dispatch<ApprovePairingRequestCommand, ApprovalOutcome | null>(
+                new ApprovePairingRequestCommand(
+                    req.params.id,
+                    req.body!.userId,
+                    req.body?.scopes,
+                    req.body?.permission,
+                ),
+            );
+
+            if (!outcome) return reply.status(404).send({ error: 'Pairing request not found' });
+            if (outcome.outcome === 'alreadyDecided') {
+                return reply.status(409).send({ error: `Request is already ${outcome.status}` });
             }
 
-            // What the agent asked for is a suggestion: the granted scopes are the ones chosen here.
-            const scopes = req.body?.scopes ?? request.requestedScopes;
-            const permission = req.body?.permission ?? request.requestedPermission;
-
-            const agentToolId = crypto.randomUUID();
-            // A throwaway secret: the real one is minted when the agent claims it.
-            const { secret } = issueAgentToken(agentToolId);
-            await commandBus.dispatch(
-                new CreateAgentToolCommand(agentToolId, req.body!.userId, request.name, permission, scopes, secret),
-            );
-            await pairingRepo.approve(request.id, agentToolId);
-
-            return reply.status(200).send({ agentToolId, scopes, permission });
+            return reply.status(200).send({
+                agentToolId: outcome.agentToolId,
+                scopes: outcome.scopes,
+                permission: outcome.permission,
+            });
         },
     );
 
@@ -156,10 +154,11 @@ export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
         '/agent-pairing-requests/:id/reject',
         { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
-            const request = await pairingRepo.findById(req.params.id);
-            if (!request) return reply.status(404).send({ error: 'Pairing request not found' });
+            const rejected = await commandBus.dispatch<RejectPairingRequestCommand, boolean>(
+                new RejectPairingRequestCommand(req.params.id),
+            );
 
-            await pairingRepo.setStatus(request.id, 'rejected');
+            if (!rejected) return reply.status(404).send({ error: 'Pairing request not found' });
             return reply.status(204).send();
         },
     );

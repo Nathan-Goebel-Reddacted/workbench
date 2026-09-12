@@ -19,7 +19,6 @@ import { contactRoutes } from './contexts/contact/infrastructure/http/contactRou
 import { cvRoutes } from './contexts/cv/infrastructure/http/cvRoutes.js';
 import { mcpRoutes } from './contexts/ai-assistant/infrastructure/mcp/mcpRoutes.js';
 import { pairingRoutes } from './contexts/ai-assistant/infrastructure/http/pairingRoutes.js';
-import { AgentPairingRequestRepository } from './contexts/ai-assistant/infrastructure/repository/agentPairingRequestRepository.js';
 import { themeRoutes } from './contexts/theme/infrastructure/http/themeRoutes.js';
 import { uploadRoutes } from './shared/infrastructure/http/uploadRoutes.js';
 import { ioRoutes } from './shared/infrastructure/http/ioRoutes.js';
@@ -64,10 +63,7 @@ try {
         registry: buses.toolRegistry,
         authenticator: buses.agentAuthenticator,
     });
-    await app.register(pairingRoutes, {
-        commandBus: buses.commandBus,
-        pairingRepo: new AgentPairingRequestRepository(orm.em),
-    });
+    await app.register(pairingRoutes, buses);
     await app.register(themeRoutes, buses);
     await app.register(uploadRoutes);
     await app.register(ioRoutes, { orm });

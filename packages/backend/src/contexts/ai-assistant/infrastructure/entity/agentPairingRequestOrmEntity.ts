@@ -1,6 +1,5 @@
 import { Entity, Index, PrimaryKey, Property } from '@mikro-orm/core';
-
-export type PairingStatus = 'pending' | 'approved' | 'claimed' | 'rejected';
+import { PairingStatusValue } from '../../domain/valueObject/pairingStatus';
 
 @Entity({ tableName: 'agent_pairing_requests' })
 export class AgentPairingRequestOrmEntity {
@@ -32,7 +31,7 @@ export class AgentPairingRequestOrmEntity {
 
     @Property({ type: 'varchar', default: 'pending' })
     @Index()
-    status!: PairingStatus;
+    status!: PairingStatusValue;
 
     /** Set once approved: the agent this request grants access to. */
     @Property({ type: 'uuid', nullable: true })
