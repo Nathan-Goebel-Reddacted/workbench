@@ -1,4 +1,4 @@
-import { FeatureRow, IReferenceDirectory, OwnerRow, TicketRow } from '../domain/iReferenceDirectory';
+import { FeatureRow, IReferenceDirectory, OwnerRow, TicketRow } from '../../domain/iReferenceDirectory';
 import { IProjectRepository } from '@contexts/project/domain/repository/iProjectRepository';
 import { IIdeaRepository } from '@contexts/idea/domain/repository/iIdeaRepository';
 import { IFeatureRepository } from '@contexts/feature/domain/repository/iFeatureRepository';
