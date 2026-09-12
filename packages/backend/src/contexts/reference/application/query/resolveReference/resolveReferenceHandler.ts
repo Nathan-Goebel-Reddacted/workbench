@@ -2,23 +2,20 @@ import { IQueryHandler } from '@shared/application/query/iQueryHandler';
 import { ResolveReferenceQuery } from './resolveReferenceQuery';
 import { ResolvedReferenceDto } from './resolvedReferenceDto';
 import { IReferenceDirectory } from '../../../domain/iReferenceDirectory';
-import { InvalidReferenceFormatException } from '../../../domain/exception/invalidReferenceFormat';
-import { formatSegment, parseSegment } from '@shared/domain/valueObject/referenceSegment';
+import { formatSegment } from '@shared/domain/valueObject/referenceSegment';
+import { Reference } from '../../../domain/valueObject/reference';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
-
-/** `4`, `4.8` ou `4.8.23`. Les zéros de remplissage restent tolérés en entrée. */
-const REFERENCE_FORMAT = /^\d{1,4}(\.\d{1,4}){0,2}$/;
 
 export class ResolveReferenceHandler implements IQueryHandler<ResolveReferenceQuery, ResolvedReferenceDto> {
     constructor(private readonly directory: IReferenceDirectory) {}
 
     async handle(query: ResolveReferenceQuery): Promise<ResolvedReferenceDto> {
-        const raw = query.reference.trim();
         // Une référence mal formée est une erreur de l'appelant (400), pas une absence (404).
-        if (!REFERENCE_FORMAT.test(raw)) throw new InvalidReferenceFormatException();
-
-        const segments = raw.split('.').map(parseSegment);
-        const [ownerNumber, featureNumber, ticketNumber] = segments;
+        const reference = Reference.parse(query.reference);
+        const raw = reference.getValue();
+        const ownerNumber = reference.getOwnerNumber();
+        const featureNumber = reference.getFeatureNumber();
+        const ticketNumber = reference.getTicketNumber();
 
         const owner = await this.directory.findOwnerByNumber(ownerNumber);
         if (!owner) throw new NotFoundError('Owner', formatSegment(ownerNumber));
