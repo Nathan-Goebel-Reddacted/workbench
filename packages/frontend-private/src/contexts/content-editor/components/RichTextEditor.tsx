@@ -8,6 +8,10 @@ import { API_URL } from '../../../shared/config'
 
 const FONT_SIZES = ['12', '14', '16', '18', '20', '24', '30', '36', '48']
 
+function themeColor(variable: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(variable).trim()
+}
+
 type Props = {
   html: string
   onChange: (html: string) => void
@@ -128,7 +132,7 @@ function Toolbar({ editor }: { editor: Editor }) {
         <input
           type="color"
           style={colorInputStyle}
-          value={(editor.getAttributes('textStyle').color as string) || '#000000'}
+          value={(editor.getAttributes('textStyle').color as string) || themeColor('--color-text')}
           onChange={e => editor.chain().focus().setColor(e.target.value).run()}
         />
       </label>
@@ -140,7 +144,7 @@ function Toolbar({ editor }: { editor: Editor }) {
         <input
           type="color"
           style={colorInputStyle}
-          value={(editor.getAttributes('highlight').color as string) || '#ffff00'}
+          value={(editor.getAttributes('highlight').color as string) || themeColor('--color-primary')}
           onChange={e => editor.chain().focus().setHighlight({ color: e.target.value }).run()}
         />
       </label>
