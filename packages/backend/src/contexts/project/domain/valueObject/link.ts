@@ -11,12 +11,12 @@ export class Link {
     private readonly logo: string;
 
     constructor(url: string, displayText: string, logo: string = '') {
-        this.validateUrl(url);
-        if (logo) this.validateLogo(logo);
+        this.url = url.trim();
+        this.displayText = displayText.trim();
+        this.logo = logo.trim();
 
-        this.url = url;
-        this.displayText = displayText;
-        this.logo = logo;
+        this.validateUrl(this.url);
+        if (this.logo) this.validateLogo(this.logo);
     }
 
     private validateUrl(url: string): void {
