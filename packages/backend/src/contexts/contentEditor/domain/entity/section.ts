@@ -1,27 +1,17 @@
 import { SectionId } from '../valueObject/sectionId';
 import { SectionType } from '../valueObject/sectionType';
-import { ContentRef } from '../valueObject/contentRef';
 import { GridPosition } from '../valueObject/gridPosition';
-
-export type SectionContent = Record<string, unknown>;
+import { SectionContent } from '../valueObject/sectionContent/sectionContent';
 
 export class Section {
     private readonly id: SectionId;
     private readonly type: SectionType;
-    private contentRef: ContentRef | null;
     private content: SectionContent;
     private position: GridPosition;
 
-    constructor(
-        id: SectionId,
-        type: SectionType,
-        contentRef: ContentRef | null,
-        content: SectionContent,
-        position: GridPosition,
-    ) {
+    constructor(id: SectionId, type: SectionType, content: SectionContent, position: GridPosition) {
         this.id = id;
         this.type = type;
-        this.contentRef = contentRef;
         this.content = content;
         this.position = position;
     }
@@ -32,10 +22,6 @@ export class Section {
 
     getType(): SectionType {
         return this.type;
-    }
-
-    getContentRef(): ContentRef | null {
-        return this.contentRef;
     }
 
     getContent(): SectionContent {
@@ -50,8 +36,7 @@ export class Section {
         this.position = position;
     }
 
-    updateContent(content: SectionContent, contentRef: ContentRef | null): void {
-        this.content = content;
-        this.contentRef = contentRef;
+    updateContent(raw: Record<string, unknown>): void {
+        this.content = SectionContent.fromInput(this.type, raw);
     }
 }

@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { CommandBus } from '@shared/application/command/commandBus';
 import { QueryBus } from '@shared/application/query/queryBus';
-import { CreatePageLayoutCommand } from '@contexts/contentEditor/application/command/createPageLayout/createPageLayoutCommand';
+import { EnsurePageLayoutCommand } from '@contexts/contentEditor/application/command/ensurePageLayout/ensurePageLayoutCommand';
 import { AddSectionCommand } from '@contexts/contentEditor/application/command/addSection/addSectionCommand';
 import { RemoveSectionCommand } from '@contexts/contentEditor/application/command/removeSection/removeSectionCommand';
 import { MoveSectionCommand } from '@contexts/contentEditor/application/command/moveSection/moveSectionCommand';
@@ -54,8 +54,8 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
         return reply.send(result);
     });
 
-    app.post<{ Body: { pageType: string; pageRef: string } }>(
-        '/page-layouts',
+    app.put<{ Body: { pageType: string; pageRef: string } }>(
+        '/page-layouts/by-ref',
         {
             preHandler: requireRole(UserRole.EDIT),
             schema: {
@@ -71,9 +71,9 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
         },
         async (req, reply) => {
             const { pageType, pageRef } = req.body;
-            const id = crypto.randomUUID();
-            await commandBus.dispatch(new CreatePageLayoutCommand(id, pageType, pageRef));
-            return reply.status(201).send({ id });
+            await commandBus.dispatch(new EnsurePageLayoutCommand(crypto.randomUUID(), pageType, pageRef));
+            const result = await queryBus.dispatch(new GetPageLayoutByRefQuery(pageType, pageRef));
+            return reply.send(result);
         },
     );
 
@@ -81,12 +81,11 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
         Params: { id: string };
         Body: {
             type: string;
-            contentRef?: string | null;
             content?: Record<string, unknown>;
-            x: number;
-            y: number;
-            w: number;
-            h: number;
+            x?: number;
+            y?: number;
+            w?: number;
+            h?: number;
         };
     }>(
         '/page-layouts/:id/sections',
@@ -95,33 +94,30 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
             schema: {
                 body: {
                     type: 'object',
-                    required: ['type', 'x', 'y', 'w', 'h'],
+                    required: ['type'],
                     properties: {
                         type: { type: 'string', enum: Object.values(SectionType) },
-                        contentRef: { type: ['string', 'null'] },
                         content: { type: 'object', additionalProperties: true },
                         x: { type: 'number' },
                         y: { type: 'number' },
                         w: { type: 'number' },
                         h: { type: 'number' },
                     },
+                    dependencies: {
+                        x: ['y', 'w', 'h'],
+                        y: ['x', 'w', 'h'],
+                        w: ['x', 'y', 'h'],
+                        h: ['x', 'y', 'w'],
+                    },
                 },
             },
         },
         async (req, reply) => {
-            const { type, contentRef, content, x, y, w, h } = req.body;
+            const { type, content, x, y, w, h } = req.body;
+            const placement =
+                x !== undefined && y !== undefined && w !== undefined && h !== undefined ? { x, y, w, h } : null;
             await commandBus.dispatch(
-                new AddSectionCommand(
-                    req.params.id,
-                    crypto.randomUUID(),
-                    type,
-                    contentRef ?? null,
-                    content ?? {},
-                    x,
-                    y,
-                    w,
-                    h,
-                ),
+                new AddSectionCommand(req.params.id, crypto.randomUUID(), type, content ?? {}, placement),
             );
             return reply.status(204).send();
         },
@@ -129,7 +125,7 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
 
     app.patch<{
         Params: { id: string; sectionId: string };
-        Body: { content?: Record<string, unknown>; contentRef?: string | null };
+        Body: { content?: Record<string, unknown> };
     }>(
         '/page-layouts/:id/sections/:sectionId/content',
         {
@@ -139,15 +135,14 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
                     type: 'object',
                     properties: {
                         content: { type: 'object', additionalProperties: true },
-                        contentRef: { type: ['string', 'null'] },
                     },
                 },
             },
         },
         async (req, reply) => {
-            const { content, contentRef } = req.body;
+            const { content } = req.body;
             await commandBus.dispatch(
-                new UpdateSectionContentCommand(req.params.id, req.params.sectionId, content ?? {}, contentRef ?? null),
+                new UpdateSectionContentCommand(req.params.id, req.params.sectionId, content ?? {}),
             );
             return reply.status(204).send();
         },

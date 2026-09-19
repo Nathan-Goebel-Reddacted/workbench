@@ -6,16 +6,17 @@ import { PageRef } from './valueObject/pageRef.js';
 import { Section } from './entity/section.js';
 import { SectionId } from './valueObject/sectionId.js';
 import { SectionType } from './valueObject/sectionType.js';
-import { ContentRef } from './valueObject/contentRef.js';
-import { GridPosition } from './valueObject/gridPosition.js';
+import { SectionContent } from './valueObject/sectionContent/sectionContent.js';
+import { GRID_COLUMNS, GridPosition } from './valueObject/gridPosition.js';
 import { InvalidGridPositionException } from './exception/invalidGridPosition.js';
+import { SectionTypeNotAllowedException } from './exception/sectionTypeNotAllowed.js';
 
 // Un PageLayout est la grille d'une page : des sections posées en x/y/w/h. Ce qui compte ici
 // est qu'une section se retrouve par son identité — la grille se manipule à distance, depuis
 // l'éditeur, et une commande qui vise une section disparue ne doit pas en déplacer une autre.
 
 function section(id: SectionId, position = new GridPosition(0, 0, 2, 2)): Section {
-    return new Section(id, SectionType.TEXT, null, { text: 'bonjour' }, position);
+    return new Section(id, SectionType.TEXT, SectionContent.initial(SectionType.TEXT), position);
 }
 
 function layout(sections: Section[] = []): PageLayout {
@@ -29,19 +30,15 @@ describe('GridPosition', () => {
         expect(() => new GridPosition(0, 0, 1, 0)).toThrow(InvalidGridPositionException);
     });
 
+    it('refuse une section qui dépasse la dernière colonne', () => {
+        expect(() => new GridPosition(GRID_COLUMNS - 2, 0, 3, 1)).toThrow(InvalidGridPositionException);
+        expect(() => new GridPosition(GRID_COLUMNS, 0, 1, 1)).toThrow(InvalidGridPositionException);
+        expect(() => new GridPosition(GRID_COLUMNS - 3, 0, 3, 1)).not.toThrow();
+    });
+
     it('se compare sur ses quatre composantes', () => {
         expect(new GridPosition(1, 2, 3, 4).equals(new GridPosition(1, 2, 3, 4))).toBe(true);
         expect(new GridPosition(1, 2, 3, 4).equals(new GridPosition(1, 2, 3, 5))).toBe(false);
-    });
-});
-
-describe('ContentRef', () => {
-    it('refuse une référence sans segment', () => {
-        expect(() => new ContentRef('projet')).toThrow();
-    });
-
-    it('accepte une référence hiérarchique', () => {
-        expect(new ContentRef('project.3').getValue()).toBe('project.3');
     });
 });
 
@@ -52,6 +49,23 @@ describe('PageLayout — sections', () => {
         page.addSection(section(new SectionId()));
 
         expect(page.getSections()).toHaveLength(1);
+    });
+
+    it('place une nouvelle section sous la plus basse, avec la taille par défaut', () => {
+        const page = layout([
+            section(new SectionId(), new GridPosition(0, 0, 2, 2)),
+            section(new SectionId(), new GridPosition(3, 1, 2, 5)),
+        ]);
+
+        expect(page.nextFreePosition().equals(new GridPosition(0, 6, 4, 3))).toBe(true);
+    });
+
+    it('place la première section en haut de la grille', () => {
+        expect(
+            layout()
+                .nextFreePosition()
+                .equals(new GridPosition(0, 0, 4, 3)),
+        ).toBe(true);
     });
 
     it('retire la section visée, et elle seule', () => {
@@ -91,14 +105,47 @@ describe('PageLayout — sections', () => {
         ).toBe(true);
     });
 
-    it('remplace le contenu et la référence d’une section', () => {
+    it('remplace le contenu d’une section', () => {
         const cible = new SectionId();
-        const page = layout([section(cible)]);
+        const page = layout([
+            new Section(
+                cible,
+                SectionType.LINK,
+                SectionContent.initial(SectionType.LINK),
+                new GridPosition(0, 0, 2, 2),
+            ),
+        ]);
 
-        page.updateSectionContent(cible, { text: 'au revoir' }, new ContentRef('project.3'));
+        page.updateSectionContent(cible, { externalLinks: [] });
 
-        expect(page.getSections()[0].getContent()).toEqual({ text: 'au revoir' });
-        expect(page.getSections()[0].getContentRef()?.getValue()).toBe('project.3');
+        expect(page.getSections()[0].getContent().toRecord()).toEqual({ externalLinks: [] });
+    });
+
+    it('refuse une carte projet sur le portfolio', () => {
+        const page = layout();
+        const card = new Section(
+            new SectionId(),
+            SectionType.PROJECT_CARD,
+            SectionContent.initial(SectionType.PROJECT_CARD),
+            new GridPosition(0, 0, 2, 2),
+        );
+
+        expect(() => page.addSection(card)).toThrow(SectionTypeNotAllowedException);
+        expect(page.getSections()).toHaveLength(0);
+    });
+
+    it('accepte une carte projet sur une page projet', () => {
+        const page = new PageLayout(new PageLayoutId(), PageType.PROJECT, new PageRef());
+        const card = new Section(
+            new SectionId(),
+            SectionType.PROJECT_CARD,
+            SectionContent.initial(SectionType.PROJECT_CARD),
+            new GridPosition(0, 0, 2, 2),
+        );
+
+        page.addSection(card);
+
+        expect(page.getSections()).toHaveLength(1);
     });
 
     it('rend une copie : modifier la liste rendue ne pose rien sur la grille', () => {

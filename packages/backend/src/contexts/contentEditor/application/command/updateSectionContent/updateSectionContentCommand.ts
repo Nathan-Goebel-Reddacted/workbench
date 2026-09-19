@@ -8,7 +8,6 @@ export class UpdateSectionContentCommand implements Command {
         readonly pageLayoutId: string,
         readonly sectionId: string,
         readonly content: Record<string, unknown>,
-        readonly contentRef: string | null,
     ) {
         this.commandName = UpdateSectionContentCommand.commandName;
     }

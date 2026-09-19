@@ -1,5 +1,7 @@
 import { InvalidGridPositionException } from '../exception/invalidGridPosition';
 
+export const GRID_COLUMNS = 12;
+
 export class GridPosition {
     private readonly x: number;
     private readonly y: number;
@@ -7,7 +9,7 @@ export class GridPosition {
     private readonly h: number;
 
     constructor(x: number, y: number, w: number, h: number) {
-        if (x < 0 || y < 0 || w < 1 || h < 1) {
+        if (x < 0 || y < 0 || w < 1 || h < 1 || x + w > GRID_COLUMNS) {
             throw new InvalidGridPositionException();
         }
         this.x = x;

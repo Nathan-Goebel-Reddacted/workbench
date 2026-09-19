@@ -8,8 +8,8 @@ import { PageRef } from '../../domain/valueObject/pageRef';
 import { Section } from '../../domain/entity/section';
 import { SectionId } from '../../domain/valueObject/sectionId';
 import { SectionType } from '../../domain/valueObject/sectionType';
-import { ContentRef } from '../../domain/valueObject/contentRef';
 import { GridPosition } from '../../domain/valueObject/gridPosition';
+import { SectionContent } from '../../domain/valueObject/sectionContent/sectionContent';
 
 export class PageLayoutRepository implements IPageLayoutRepository {
     constructor(private readonly em: EntityManager) {}
@@ -31,16 +31,15 @@ export class PageLayoutRepository implements IPageLayoutRepository {
     }
 
     private toDomain(e: PageLayoutOrmEntity): PageLayout {
-        const sections = e.sections.map(
-            s =>
-                new Section(
-                    new SectionId(s.id),
-                    s.type as SectionType,
-                    s.contentRef ? new ContentRef(s.contentRef) : null,
-                    s.content ?? {},
-                    new GridPosition(s.x, s.y, s.w, s.h),
-                ),
-        );
+        const sections = e.sections.map(s => {
+            const type = s.type as SectionType;
+            return new Section(
+                new SectionId(s.id),
+                type,
+                SectionContent.rehydrate(type, s.content ?? {}),
+                new GridPosition(s.x, s.y, s.w, s.h),
+            );
+        });
         return new PageLayout(new PageLayoutId(e.id), e.pageType as PageType, new PageRef(e.pageRef), sections);
     }
 
@@ -52,8 +51,7 @@ export class PageLayoutRepository implements IPageLayoutRepository {
         e.sections = pageLayout.getSections().map(s => ({
             id: s.getId().getValue(),
             type: s.getType(),
-            contentRef: s.getContentRef()?.getValue() ?? null,
-            content: s.getContent(),
+            content: s.getContent().toRecord(),
             x: s.getPosition().getX(),
             y: s.getPosition().getY(),
             w: s.getPosition().getW(),

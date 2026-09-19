@@ -3,7 +3,6 @@ import { Entity, PrimaryKey, Property, Unique } from '@mikro-orm/core';
 type SectionRow = {
     id: string;
     type: string;
-    contentRef?: string | null;
     content?: Record<string, unknown>;
     x: number;
     y: number;

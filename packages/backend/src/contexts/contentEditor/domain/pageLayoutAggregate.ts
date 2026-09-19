@@ -3,8 +3,29 @@ import { PageType } from './valueObject/pageType';
 import { PageRef } from './valueObject/pageRef';
 import { SectionId } from './valueObject/sectionId';
 import { GridPosition } from './valueObject/gridPosition';
-import { ContentRef } from './valueObject/contentRef';
-import { Section, SectionContent } from './entity/section';
+import { Section } from './entity/section';
+import { SectionType } from './valueObject/sectionType';
+import { SectionTypeNotAllowedException } from './exception/sectionTypeNotAllowed';
+
+const DEFAULT_SECTION_WIDTH = 4;
+const DEFAULT_SECTION_HEIGHT = 3;
+
+const SHARED_SECTION_TYPES: readonly SectionType[] = [
+    SectionType.TEXT,
+    SectionType.DOCUMENT,
+    SectionType.CODE,
+    SectionType.LINK,
+    SectionType.EMBED,
+    SectionType.CAROUSEL,
+    SectionType.BACKGROUND,
+    SectionType.CONTACT_FORM,
+    SectionType.LINK_AREA,
+];
+
+const ALLOWED_SECTION_TYPES: Record<PageType, readonly SectionType[]> = {
+    [PageType.PORTFOLIO]: SHARED_SECTION_TYPES,
+    [PageType.PROJECT]: [...SHARED_SECTION_TYPES, SectionType.PROJECT_CARD],
+};
 
 export class PageLayout {
     private readonly id: PageLayoutId;
@@ -35,8 +56,23 @@ export class PageLayout {
         return [...this.sections];
     }
 
+    allowedSectionTypes(): SectionType[] {
+        return [...ALLOWED_SECTION_TYPES[this.pageType]];
+    }
+
     addSection(section: Section): void {
+        if (!ALLOWED_SECTION_TYPES[this.pageType].includes(section.getType())) {
+            throw new SectionTypeNotAllowedException(section.getType(), this.pageType);
+        }
         this.sections.push(section);
+    }
+
+    nextFreePosition(): GridPosition {
+        const bottom = this.sections.reduce(
+            (max, s) => Math.max(max, s.getPosition().getY() + s.getPosition().getH()),
+            0,
+        );
+        return new GridPosition(0, bottom, DEFAULT_SECTION_WIDTH, DEFAULT_SECTION_HEIGHT);
     }
 
     removeSection(sectionId: SectionId): void {
@@ -50,10 +86,10 @@ export class PageLayout {
         }
     }
 
-    updateSectionContent(sectionId: SectionId, content: SectionContent, contentRef: ContentRef | null): void {
+    updateSectionContent(sectionId: SectionId, content: Record<string, unknown>): void {
         const section = this.sections.find(s => s.getId().equals(sectionId));
         if (section) {
-            section.updateContent(content, contentRef);
+            section.updateContent(content);
         }
     }
 }

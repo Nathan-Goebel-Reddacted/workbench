@@ -130,8 +130,8 @@ import { ListIdeasHandler } from '@contexts/idea/application/query/listIdeas/lis
 
 // --- ContentEditor ---
 import { PageLayoutFactory } from '@contexts/contentEditor/domain/factory/pageLayoutFactory';
-import { CreatePageLayoutCommand } from '@contexts/contentEditor/application/command/createPageLayout/createPageLayoutCommand';
-import { CreatePageLayoutHandler } from '@contexts/contentEditor/application/command/createPageLayout/createPageLayoutHandler';
+import { EnsurePageLayoutCommand } from '@contexts/contentEditor/application/command/ensurePageLayout/ensurePageLayoutCommand';
+import { EnsurePageLayoutHandler } from '@contexts/contentEditor/application/command/ensurePageLayout/ensurePageLayoutHandler';
 import { AddSectionCommand } from '@contexts/contentEditor/application/command/addSection/addSectionCommand';
 import { AddSectionHandler } from '@contexts/contentEditor/application/command/addSection/addSectionHandler';
 import { RemoveSectionCommand } from '@contexts/contentEditor/application/command/removeSection/removeSectionCommand';
@@ -471,8 +471,8 @@ export function bootstrap(
 
     // ContentEditor
     commandBus.register(
-        CreatePageLayoutCommand.commandName,
-        new CreatePageLayoutHandler(repos.pageLayout, pageLayoutFactory),
+        EnsurePageLayoutCommand.commandName,
+        new EnsurePageLayoutHandler(repos.pageLayout, pageLayoutFactory),
     );
     commandBus.register(AddSectionCommand.commandName, new AddSectionHandler(repos.pageLayout));
     commandBus.register(RemoveSectionCommand.commandName, new RemoveSectionHandler(repos.pageLayout, uploads));
