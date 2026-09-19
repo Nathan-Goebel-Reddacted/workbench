@@ -16,6 +16,7 @@ import { RejectAccessRequestCommand } from '../../application/command/rejectAcce
 import { ListAllowedEmailsQuery } from '../../application/query/listAllowedEmails/listAllowedEmailsQuery.js';
 import { ListAccessRequestsQuery } from '../../application/query/listAccessRequests/listAccessRequestsQuery.js';
 import { AccessRequestDto } from '../../application/query/listAccessRequests/accessRequestDto.js';
+import { AccessRequestStatus } from '../../domain/valueObject/accessRequestStatus.js';
 import { env, isOAuthEnabled, oauthCredentials } from '@shared/infrastructure/config/env.js';
 
 // Ce fichier ne décide plus rien. Il échange un code contre un profil chez le fournisseur,
@@ -228,12 +229,24 @@ export const authRoutes: FastifyPluginAsync<AuthOpts> = async (app, { commandBus
 
     // ── Demandes d'accès ───────────────────────────────────────────────────────────
 
-    app.get('/auth/access-requests', { preHandler: requireRole(UserRole.EDIT) }, async (_req, reply) => {
-        const requests = await queryBus.dispatch<ListAccessRequestsQuery, AccessRequestDto[]>(
-            new ListAccessRequestsQuery(),
-        );
-        return reply.send({ requests });
-    });
+    app.get<{ Querystring: { status?: AccessRequestStatus } }>(
+        '/auth/access-requests',
+        {
+            preHandler: requireRole(UserRole.EDIT),
+            schema: {
+                querystring: {
+                    type: 'object',
+                    properties: { status: { type: 'string', enum: Object.values(AccessRequestStatus) } },
+                },
+            },
+        },
+        async (req, reply) => {
+            const requests = await queryBus.dispatch<ListAccessRequestsQuery, AccessRequestDto[]>(
+                new ListAccessRequestsQuery(req.query.status ?? null),
+            );
+            return reply.send({ requests });
+        },
+    );
 
     app.post<{ Params: { email: string } }>(
         '/auth/access-requests/:email/approve',

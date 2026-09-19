@@ -13,8 +13,10 @@ export class AccessRequestRepository implements IAccessRequestRepository {
         return row ? this.toDomain(row) : null;
     }
 
-    async findAll(): Promise<AccessRequest[]> {
-        const rows = await this.em.findAll(AccessRequestOrmEntity, { orderBy: { createdAt: 'desc' } });
+    async findAll(status?: AccessRequestStatus): Promise<AccessRequest[]> {
+        const rows = await this.em.find(AccessRequestOrmEntity, status ? { status: status as OrmStatus } : {}, {
+            orderBy: { createdAt: 'desc' },
+        });
         return rows.map(row => this.toDomain(row));
     }
 

@@ -6,8 +6,8 @@ import { IAccessRequestRepository } from '../../../domain/repository/iAccessRequ
 export class ListAccessRequestsHandler implements IQueryHandler<ListAccessRequestsQuery, AccessRequestDto[]> {
     constructor(private readonly requests: IAccessRequestRepository) {}
 
-    async handle(): Promise<AccessRequestDto[]> {
-        return (await this.requests.findAll()).map(request => ({
+    async handle(query: ListAccessRequestsQuery): Promise<AccessRequestDto[]> {
+        return (await this.requests.findAll(query.status ?? undefined)).map(request => ({
             email: request.getEmail().getValue(),
             displayName: request.getDisplayName(),
             status: request.getStatus(),
