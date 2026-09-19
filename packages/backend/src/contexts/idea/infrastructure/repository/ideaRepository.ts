@@ -9,7 +9,6 @@ import { Name } from '../../domain/valueObject/name';
 import { Link } from '../../domain/valueObject/link';
 import { Document } from '@shared/domain/entity/document';
 import { DocumentId } from '@shared/domain/valueObject/documentId';
-import { DocumentType } from '@shared/domain/valueObject/documentType';
 
 export class IdeaRepository implements IIdeaRepository {
     constructor(private readonly em: EntityManager) {}
@@ -42,7 +41,7 @@ export class IdeaRepository implements IIdeaRepository {
             e.number,
             new Name(e.name),
             new Description(e.description),
-            e.documents.map(d => new Document(new DocumentId(d.id), d.name, d.url, d.type as DocumentType)),
+            e.documents.map(d => new Document(new DocumentId(d.id), d.name, d.url)),
             e.links.map(l => new Link(l.url, l.displayText, l.logo)),
             e.createdAt,
             e.category as Category,

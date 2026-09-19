@@ -16,7 +16,7 @@ import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 type LinkBody = { url: string; displayText: string; logo: string };
-type DocumentBody = { name: string; url: string; type: string };
+type DocumentBody = { name: string; url: string };
 
 export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
     app.get('/projects', async (req, reply) => {
@@ -30,7 +30,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     });
 
     app.post<{
-        Body: { name: string; description: string; links: LinkBody[]; documents: DocumentBody[]; category?: string };
+        Body: { name: string; description?: string; links?: LinkBody[]; documents?: DocumentBody[]; category?: string };
     }>(
         '/projects',
         {
@@ -38,7 +38,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
             schema: {
                 body: {
                     type: 'object',
-                    required: ['name', 'description', 'links', 'documents'],
+                    required: ['name'],
                     properties: {
                         name: { type: 'string', minLength: 1 },
                         description: { type: 'string' },
@@ -59,11 +59,10 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
                             type: 'array',
                             items: {
                                 type: 'object',
-                                required: ['name', 'url', 'type'],
+                                required: ['name', 'url'],
                                 properties: {
                                     name: { type: 'string' },
                                     url: { type: 'string' },
-                                    type: { type: 'string' },
                                 },
                             },
                         },
@@ -72,7 +71,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
             },
         },
         async (req, reply) => {
-            const { name, description, links, documents, category } = req.body;
+            const { name, description = '', links = [], documents = [], category } = req.body;
             const id = crypto.randomUUID();
             const docsWithId = documents.map(d => ({ ...d, id: crypto.randomUUID() }));
             await commandBus.dispatch(new CreateProjectCommand(id, name, description, links, docsWithId, category));
@@ -128,21 +127,19 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
             schema: {
                 body: {
                     type: 'object',
-                    required: ['name', 'url', 'type'],
+                    required: ['name', 'url'],
                     properties: {
                         name: { type: 'string' },
                         url: { type: 'string' },
-                        type: { type: 'string' },
                     },
                 },
             },
         },
         async (req, reply) => {
-            const { name, url, type } = req.body;
-            await commandBus.dispatch(
-                new AddProjectDocumentCommand(req.params.id, crypto.randomUUID(), name, url, type),
-            );
-            return reply.status(204).send();
+            const { name, url } = req.body;
+            const documentId = crypto.randomUUID();
+            await commandBus.dispatch(new AddProjectDocumentCommand(req.params.id, documentId, name, url));
+            return reply.status(201).send({ id: documentId });
         },
     );
 

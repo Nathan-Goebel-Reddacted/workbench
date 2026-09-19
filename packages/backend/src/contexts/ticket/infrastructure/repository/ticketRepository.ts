@@ -12,7 +12,6 @@ import { TicketStatus } from '../../domain/valueObject/status';
 import { Note } from '../../domain/valueObject/note';
 import { Document } from '@shared/domain/entity/document';
 import { DocumentId } from '@shared/domain/valueObject/documentId';
-import { DocumentType } from '@shared/domain/valueObject/documentType';
 import { DuplicateReferenceException } from '../../domain/exception/duplicateReferenceException';
 
 export class TicketRepository implements ITicketRepository {
@@ -93,7 +92,7 @@ export class TicketRepository implements ITicketRepository {
             new Description(e.description),
             e.status as TicketStatus,
             e.notes.map(n => new Note(n)),
-            e.documents.map(d => new Document(new DocumentId(d.id), d.name, d.url, d.type as DocumentType)),
+            e.documents.map(d => new Document(new DocumentId(d.id), d.name, d.url)),
         );
     }
 

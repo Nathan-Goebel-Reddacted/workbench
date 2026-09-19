@@ -1,5 +1,5 @@
 import { DocumentId } from '../valueObject/documentId';
-import { DocumentType } from '../valueObject/documentType';
+import { DocumentType, documentTypeFromUrl } from '../valueObject/documentType';
 import { InvalidDocumentNameException } from '../exception/invalidDocumentName';
 import { InvalidDocumentUrlException } from '../exception/invalidDocumentUrl';
 
@@ -9,7 +9,7 @@ export class Document {
     private readonly url: string;
     private readonly type: DocumentType;
 
-    constructor(id: DocumentId, name: string, url: string, type: DocumentType) {
+    constructor(id: DocumentId, name: string, url: string) {
         if (!name || name.trim() === '') {
             throw new InvalidDocumentNameException();
         }
@@ -18,8 +18,8 @@ export class Document {
         }
         this.id = id;
         this.name = name.trim();
-        this.url = url;
-        this.type = type;
+        this.url = url.trim();
+        this.type = documentTypeFromUrl(this.url);
     }
 
     getId(): DocumentId {

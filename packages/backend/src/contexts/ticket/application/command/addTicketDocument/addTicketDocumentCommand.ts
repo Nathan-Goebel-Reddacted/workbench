@@ -9,7 +9,6 @@ export class AddTicketDocumentCommand implements Command {
         readonly documentId: string,
         readonly name: string,
         readonly url: string,
-        readonly type: string,
     ) {
         this.commandName = AddTicketDocumentCommand.commandName;
     }

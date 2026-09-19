@@ -3,7 +3,6 @@ import { AddIdeaDocumentCommand } from './addIdeaDocumentCommand';
 import { IIdeaRepository } from '../../../domain/repository/iIdeaRepository';
 import { Document } from '@shared/domain/entity/document';
 import { DocumentId } from '@shared/domain/valueObject/documentId';
-import { DocumentType } from '@shared/domain/valueObject/documentType';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
 import { IdeaId } from '../../../domain/valueObject/ideaId';
 
@@ -13,9 +12,7 @@ export class AddIdeaDocumentHandler implements ICommandHandler<AddIdeaDocumentCo
     async handle(command: AddIdeaDocumentCommand): Promise<void> {
         const idea = await this.repository.findById(new IdeaId(command.ideaId));
         if (!idea) throw new NotFoundError('Idea', command.ideaId);
-        idea.addDocument(
-            new Document(new DocumentId(command.documentId), command.name, command.url, command.type as DocumentType),
-        );
+        idea.addDocument(new Document(new DocumentId(command.documentId), command.name, command.url));
         await this.repository.save(idea);
     }
 }

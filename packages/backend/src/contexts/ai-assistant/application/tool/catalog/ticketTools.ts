@@ -163,8 +163,8 @@ export function createTicketTools(commandBus: CommandBus, queryBus: QueryBus): A
             inputSchema: documentSchema.extend({
                 id: uuidSchema.describe('Id of the ticket.'),
             }),
-            execute: async ({ id, name, url, type }) => {
-                await commandBus.dispatch(new AddTicketDocumentCommand(id, crypto.randomUUID(), name, url, type));
+            execute: async ({ id, name, url }) => {
+                await commandBus.dispatch(new AddTicketDocumentCommand(id, crypto.randomUUID(), name, url));
                 return readTicket(id);
             },
         }),

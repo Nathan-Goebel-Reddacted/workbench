@@ -11,7 +11,6 @@ import { StatusForbiddenOnIdeaException } from './exception/statusForbiddenOnIde
 import { NoteNotFoundException } from './exception/noteNotFound.js';
 import { Document } from '@shared/domain/entity/document.js';
 import { DocumentId } from '@shared/domain/valueObject/documentId.js';
-import { DocumentType } from '@shared/domain/valueObject/documentType.js';
 
 function ticket(status: TicketStatus = TicketStatus.Pending, documents: Document[] = []): Ticket {
     return new Ticket(
@@ -27,7 +26,7 @@ function ticket(status: TicketStatus = TicketStatus.Pending, documents: Document
 }
 
 function document(id: string, url = '/uploads/a.png'): Document {
-    return new Document(new DocumentId(id), 'image', url, DocumentType.IMAGE);
+    return new Document(new DocumentId(id), 'image', url);
 }
 
 describe('Ticket — avancement', () => {

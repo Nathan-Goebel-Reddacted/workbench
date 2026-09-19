@@ -10,7 +10,6 @@ import { Description } from '../../domain/valueObject/description';
 import { DuplicateFeatureNumberException } from '../../domain/exception/duplicateFeatureNumber';
 import { Document } from '@shared/domain/entity/document';
 import { DocumentId } from '@shared/domain/valueObject/documentId';
-import { DocumentType } from '@shared/domain/valueObject/documentType';
 
 export class FeatureRepository implements IFeatureRepository {
     constructor(private readonly em: EntityManager) {}
@@ -86,7 +85,7 @@ export class FeatureRepository implements IFeatureRepository {
             e.number,
             new Name(e.name),
             new Description(e.description),
-            e.documents.map(d => new Document(new DocumentId(d.id), d.name, d.url, d.type as DocumentType)),
+            e.documents.map(d => new Document(new DocumentId(d.id), d.name, d.url)),
         );
     }
 

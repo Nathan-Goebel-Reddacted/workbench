@@ -16,7 +16,7 @@ import { TicketStatus } from '@contexts/ticket/domain/valueObject/status';
 import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
-type DocumentBody = { name: string; url: string; type: string };
+type DocumentBody = { name: string; url: string };
 
 export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
     app.get<{ Params: { featureId: string } }>(
@@ -146,21 +146,19 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
             schema: {
                 body: {
                     type: 'object',
-                    required: ['name', 'url', 'type'],
+                    required: ['name', 'url'],
                     properties: {
                         name: { type: 'string' },
                         url: { type: 'string' },
-                        type: { type: 'string' },
                     },
                 },
             },
         },
         async (req, reply) => {
-            const { name, url, type } = req.body;
-            await commandBus.dispatch(
-                new AddTicketDocumentCommand(req.params.id, crypto.randomUUID(), name, url, type),
-            );
-            return reply.status(204).send();
+            const { name, url } = req.body;
+            const documentId = crypto.randomUUID();
+            await commandBus.dispatch(new AddTicketDocumentCommand(req.params.id, documentId, name, url));
+            return reply.status(201).send({ id: documentId });
         },
     );
 

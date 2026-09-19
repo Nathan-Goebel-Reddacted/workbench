@@ -5,11 +5,12 @@ export enum DocumentType {
     // Schéma créé dans l'application elle-même, persisté comme un fichier JSON servi
     // depuis /uploads. Voir ADR-009.
     MINDMAP = 'mindmap',
+    FILE = 'file',
 }
 
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'];
+export const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'];
 
-const VIDEO_EXTENSIONS = [
+export const VIDEO_EXTENSIONS = [
     'mp4',
     'm4v',
     'webm',
@@ -63,4 +64,12 @@ export const MINDMAP_SUFFIX = '.mindmap.json';
 export function isMindmapDocument(type: string, url: string): boolean {
     if (type === DocumentType.MINDMAP) return true;
     return url.split('?')[0].toLowerCase().endsWith(MINDMAP_SUFFIX);
+}
+
+export function documentTypeFromUrl(url: string): DocumentType {
+    if (isMindmapDocument('', url)) return DocumentType.MINDMAP;
+    if (isPdfDocument('', url)) return DocumentType.PDF;
+    if (isImageDocument('', url)) return DocumentType.IMAGE;
+    if (isVideoDocument('', url)) return DocumentType.VIDEO;
+    return DocumentType.FILE;
 }

@@ -9,7 +9,6 @@ import { InvalidLinkUrlException } from './exception/invalidLinkUrl.js';
 import { InvalidLogoException } from './exception/invalidLogo.js';
 import { Document } from '@shared/domain/entity/document.js';
 import { DocumentId } from '@shared/domain/valueObject/documentId.js';
-import { DocumentType } from '@shared/domain/valueObject/documentType.js';
 
 // Un Project est ce que le site public montre. Deux choses s'y jouent : ce qu'il expose
 // (visible ou non — un projet en cours ne doit pas fuiter) et ce qu'il agrège (documents et
@@ -29,7 +28,7 @@ function project(visible = false): Project {
 }
 
 function document(id: string, name = 'schema'): Document {
-    return new Document(new DocumentId(id), name, '/uploads/schema.png', DocumentType.IMAGE);
+    return new Document(new DocumentId(id), name, '/uploads/schema.png');
 }
 
 describe('Project — exposition publique', () => {

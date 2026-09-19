@@ -154,8 +154,8 @@ export function createIdeaTools(commandBus: CommandBus, queryBus: QueryBus): Any
             inputSchema: documentSchema.extend({
                 id: uuidSchema.describe('Id of the idea.'),
             }),
-            execute: async ({ id, name, url, type }) => {
-                await commandBus.dispatch(new AddIdeaDocumentCommand(id, crypto.randomUUID(), name, url, type));
+            execute: async ({ id, name, url }) => {
+                await commandBus.dispatch(new AddIdeaDocumentCommand(id, crypto.randomUUID(), name, url));
                 return readIdea(id);
             },
         }),

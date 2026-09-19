@@ -117,8 +117,8 @@ export function createFeatureTools(commandBus: CommandBus, queryBus: QueryBus): 
             inputSchema: documentSchema.extend({
                 id: uuidSchema.describe('Id of the feature.'),
             }),
-            execute: async ({ id, name, url, type }) => {
-                await commandBus.dispatch(new AddFeatureDocumentCommand(id, crypto.randomUUID(), name, url, type));
+            execute: async ({ id, name, url }) => {
+                await commandBus.dispatch(new AddFeatureDocumentCommand(id, crypto.randomUUID(), name, url));
                 return readFeature(id);
             },
         }),

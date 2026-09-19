@@ -9,7 +9,6 @@ export class AddIdeaDocumentCommand implements Command {
         readonly documentId: string,
         readonly name: string,
         readonly url: string,
-        readonly type: string,
     ) {
         this.commandName = AddIdeaDocumentCommand.commandName;
     }
