@@ -4,6 +4,7 @@ import { IUserRepository } from '../../../domain/repository/iUserRepository';
 import { IUserDeletionListener } from '../../../domain/port/iUserDeletionListener';
 import { UserRole } from '../../../domain/valueObject/role';
 import { LastEditorCannotBeRemovedException } from '../../../domain/exception/lastEditorCannotBeRemoved';
+import { SelfDeletionForbiddenException } from '../../../domain/exception/selfDeletionForbidden';
 import { ITransactionRunner } from '@shared/application/port/iTransactionRunner';
 import { UserId } from '../../../domain/valueObject/userId';
 
@@ -15,6 +16,8 @@ export class DeleteUserHandler implements ICommandHandler<DeleteUserCommand> {
     ) {}
 
     async handle(command: DeleteUserCommand): Promise<void> {
+        if (command.userId === command.requestedBy) throw new SelfDeletionForbiddenException();
+
         const user = await this.repository.findById(new UserId(command.userId));
         if (!user) return;
 

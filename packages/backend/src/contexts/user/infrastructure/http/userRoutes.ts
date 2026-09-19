@@ -6,10 +6,19 @@ import { GetUserByIdQuery } from '@contexts/user/application/query/getUserById/g
 import { GetUserByEmailQuery } from '@contexts/user/application/query/getUserByEmail/getUserByEmailQuery';
 import { GetAllUsersQuery } from '@contexts/user/application/query/getAllUsers/getAllUsersQuery';
 import { DeleteUserCommand } from '@contexts/user/application/command/deleteUser/deleteUserCommand';
-import { UpdateUserRolesCommand } from '@contexts/user/application/command/updateUserRoles/updateUserRolesCommand';
+import { GrantUserRoleCommand } from '@contexts/user/application/command/grantUserRole/grantUserRoleCommand';
+import { RevokeUserRoleCommand } from '@contexts/user/application/command/revokeUserRole/revokeUserRoleCommand';
 import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
+
+const roleParamsSchema = {
+    params: {
+        type: 'object',
+        required: ['id', 'role'],
+        properties: { id: { type: 'string' }, role: { type: 'string', enum: Object.values(UserRole) } },
+    },
+};
 
 export const userRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
     app.get<{ Querystring: { email: string } }>(
@@ -37,25 +46,25 @@ export const userRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
         '/users/:id',
         { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
-            await commandBus.dispatch(new DeleteUserCommand(req.params.id));
+            await commandBus.dispatch(new DeleteUserCommand(req.params.id, req.user.sub));
             return reply.status(204).send();
         },
     );
 
-    app.patch<{ Params: { id: string }; Body: { roles: string[] } }>(
-        '/users/:id/roles',
-        {
-            preHandler: requireRole(UserRole.EDIT),
-            schema: {
-                body: {
-                    type: 'object',
-                    required: ['roles'],
-                    properties: { roles: { type: 'array', items: { type: 'string' } } },
-                },
-            },
-        },
+    app.post<{ Params: { id: string; role: string } }>(
+        '/users/:id/roles/:role',
+        { preHandler: requireRole(UserRole.EDIT), schema: roleParamsSchema },
         async (req, reply) => {
-            await commandBus.dispatch(new UpdateUserRolesCommand(req.params.id, req.body.roles));
+            await commandBus.dispatch(new GrantUserRoleCommand(req.params.id, req.params.role));
+            return reply.status(204).send();
+        },
+    );
+
+    app.delete<{ Params: { id: string; role: string } }>(
+        '/users/:id/roles/:role',
+        { preHandler: requireRole(UserRole.EDIT), schema: roleParamsSchema },
+        async (req, reply) => {
+            await commandBus.dispatch(new RevokeUserRoleCommand(req.params.id, req.params.role));
             return reply.status(204).send();
         },
     );

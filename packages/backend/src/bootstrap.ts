@@ -11,6 +11,10 @@ import { DeleteUserHandler } from '@contexts/user/application/command/deleteUser
 import { RevokeAgentToolsOnUserDeleted } from '@contexts/ai-assistant/application/listener/revokeAgentToolsOnUserDeleted';
 import { UpdateUserRolesCommand } from '@contexts/user/application/command/updateUserRoles/updateUserRolesCommand';
 import { UpdateUserRolesHandler } from '@contexts/user/application/command/updateUserRoles/updateUserRolesHandler';
+import { GrantUserRoleCommand } from '@contexts/user/application/command/grantUserRole/grantUserRoleCommand';
+import { GrantUserRoleHandler } from '@contexts/user/application/command/grantUserRole/grantUserRoleHandler';
+import { RevokeUserRoleCommand } from '@contexts/user/application/command/revokeUserRole/revokeUserRoleCommand';
+import { RevokeUserRoleHandler } from '@contexts/user/application/command/revokeUserRole/revokeUserRoleHandler';
 import { InvalidateUserSessionsCommand } from '@contexts/user/application/command/invalidateUserSessions/invalidateUserSessionsCommand';
 import { InvalidateUserSessionsHandler } from '@contexts/user/application/command/invalidateUserSessions/invalidateUserSessionsHandler';
 import { GetUserByIdQuery } from '@contexts/user/application/query/getUserById/getUserByIdQuery';
@@ -369,7 +373,10 @@ export function bootstrap(
         DeleteUserCommand.commandName,
         new DeleteUserHandler(repos.user, [new RevokeAgentToolsOnUserDeleted(repos.agentTool)], transactions),
     );
-    commandBus.register(UpdateUserRolesCommand.commandName, new UpdateUserRolesHandler(repos.user, userFactory));
+    const updateUserRoles = new UpdateUserRolesHandler(repos.user, userFactory);
+    commandBus.register(UpdateUserRolesCommand.commandName, updateUserRoles);
+    commandBus.register(GrantUserRoleCommand.commandName, new GrantUserRoleHandler(repos.user, updateUserRoles));
+    commandBus.register(RevokeUserRoleCommand.commandName, new RevokeUserRoleHandler(repos.user, updateUserRoles));
     commandBus.register(InvalidateUserSessionsCommand.commandName, new InvalidateUserSessionsHandler(repos.user));
     queryBus.register(GetUserByIdQuery.queryName, new GetUserByIdHandler(repos.user));
     queryBus.register(GetUserByEmailQuery.queryName, new GetUserByEmailHandler(repos.user));
