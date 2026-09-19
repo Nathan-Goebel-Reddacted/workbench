@@ -1,7 +1,7 @@
 import type { BindingSource } from '../contexts/content-editor'
-import { listFeaturesByOwner } from '../contexts/feature'
-import { listProjects } from '../contexts/project'
-import { listTicketsByFeature } from '../contexts/ticket'
+import { listFeaturesByOwner } from '../contexts/feature/queries'
+import { listProjects } from '../contexts/project/queries'
+import { listTicketsByFeature } from '../contexts/ticket/queries'
 
 export const bindingSource: BindingSource = {
   async listProjects(signal) {

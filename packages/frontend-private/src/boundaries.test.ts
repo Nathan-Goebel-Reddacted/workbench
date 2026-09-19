@@ -49,8 +49,17 @@ describe('frontières entre contextes', () => {
     const offenders = imports.filter(({ file, target }) => {
       const targetContext = contextOf(target)
       if (!targetContext || contextOf(file) === targetContext) return false
-      return target !== `contexts/${targetContext}`
+      return target !== `contexts/${targetContext}` && target !== `contexts/${targetContext}/queries`
     })
+
+    expect(offenders.map(describeImport)).toEqual([])
+  })
+
+  it("réserve les requêtes publiques d'un contexte à l'application", () => {
+    const QUERIES = /^contexts\/[^/]+\/queries$/
+    const offenders = imports.filter(
+      ({ file, target }) => QUERIES.test(target) && !file.startsWith('app/') && contextOf(file) !== contextOf(target),
+    )
 
     expect(offenders.map(describeImport)).toEqual([])
   })
@@ -85,7 +94,7 @@ describe('frontières entre contextes', () => {
   })
 
   it('garde le modèle d’un contexte indépendant de son interface', () => {
-    const MODEL = /^contexts\/[^/]+\/(types|status|widgets|api)\.ts$/
+    const MODEL = /^contexts\/[^/]+\/(types|status|widgets|api|queries)\.ts$/
     const UI = /^contexts\/[^/]+\/(components|pages|hooks)\//
     const offenders = imports.filter(({ file, target }) => MODEL.test(file) && UI.test(target))
 
@@ -94,7 +103,7 @@ describe('frontières entre contextes', () => {
 
   it("fait passer l'affichage par les hooks plutôt que par l'API", () => {
     const DISPLAY = /\.tsx$/
-    const API = /^((contexts\/[^/]+|app\/[^/]+)\/api|shared\/api\/.+)$/
+    const API = /^((contexts\/[^/]+|app\/[^/]+)\/(api|queries)|shared\/api\/.+)$/
     const offenders = imports.filter(({ file, target }) => DISPLAY.test(file) && API.test(target))
 
     expect(offenders.map(describeImport)).toEqual([])
