@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { errorDetailOr } from '../../../shared/api/errors'
-import { deleteFeature, updateFeature } from '../api'
-import type { FeatureInfo } from '../types'
+import { deleteFeature, getFeatureDeletionImpact, updateFeature } from '../api'
+import type { FeatureDeletionImpact, FeatureInfo } from '../types'
 
 export function useFeature(featureId: string) {
   const [saving, setSaving] = useState(false)
@@ -22,6 +22,16 @@ export function useFeature(featureId: string) {
     }
   }
 
+  const deletionImpact = async (): Promise<FeatureDeletionImpact | null> => {
+    setError(null)
+    try {
+      return await getFeatureDeletionImpact(featureId)
+    } catch (err) {
+      setError(errorDetailOr(err, 'Could not check what the deletion removes.'))
+      return null
+    }
+  }
+
   const remove = async (): Promise<boolean> => {
     setDeleting(true)
     setError(null)
@@ -36,5 +46,5 @@ export function useFeature(featureId: string) {
     }
   }
 
-  return { saving, deleting, error, save, remove }
+  return { saving, deleting, error, save, deletionImpact, remove }
 }

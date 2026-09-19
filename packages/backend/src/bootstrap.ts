@@ -74,6 +74,8 @@ import { GetFeatureByIdQuery } from '@contexts/feature/application/query/getFeat
 import { GetFeatureByIdHandler } from '@contexts/feature/application/query/getFeatureById/getFeatureByIdHandler';
 import { GetFeaturesByOwnerQuery } from '@contexts/feature/application/query/getFeaturesByOwner/getFeaturesByOwnerQuery';
 import { GetFeaturesByOwnerHandler } from '@contexts/feature/application/query/getFeaturesByOwner/getFeaturesByOwnerHandler';
+import { GetFeatureDeletionImpactQuery } from '@contexts/feature/application/query/getFeatureDeletionImpact/getFeatureDeletionImpactQuery';
+import { GetFeatureDeletionImpactHandler } from '@contexts/feature/application/query/getFeatureDeletionImpact/getFeatureDeletionImpactHandler';
 import { OwnerGateway } from '@contexts/feature/infrastructure/gateway/ownerGateway';
 import { FeatureGateway } from '@contexts/ticket/infrastructure/gateway/featureGateway';
 import { UserDirectory } from '@contexts/ai-assistant/infrastructure/gateway/userDirectory';
@@ -130,6 +132,8 @@ import { RemoveIdeaLinkCommand } from '@contexts/idea/application/command/remove
 import { RemoveIdeaLinkHandler } from '@contexts/idea/application/command/removeIdeaLink/removeIdeaLinkHandler';
 import { GetIdeaByIdQuery } from '@contexts/idea/application/query/getIdeaById/getIdeaByIdQuery';
 import { GetIdeaByIdHandler } from '@contexts/idea/application/query/getIdeaById/getIdeaByIdHandler';
+import { GetIdeaDeletionImpactQuery } from '@contexts/idea/application/query/getIdeaDeletionImpact/getIdeaDeletionImpactQuery';
+import { GetIdeaDeletionImpactHandler } from '@contexts/idea/application/query/getIdeaDeletionImpact/getIdeaDeletionImpactHandler';
 import { ListIdeasQuery } from '@contexts/idea/application/query/listIdeas/listIdeasQuery';
 import { ListIdeasHandler } from '@contexts/idea/application/query/listIdeas/listIdeasHandler';
 
@@ -429,6 +433,10 @@ export function bootstrap(
     );
     queryBus.register(GetFeatureByIdQuery.queryName, new GetFeatureByIdHandler(repos.feature, ownerGateway));
     queryBus.register(GetFeaturesByOwnerQuery.queryName, new GetFeaturesByOwnerHandler(repos.feature, ownerGateway));
+    queryBus.register(
+        GetFeatureDeletionImpactQuery.queryName,
+        new GetFeatureDeletionImpactHandler(repos.feature, featureTicketsGateway),
+    );
     commandBus.register(UpdateFeatureCommand.commandName, new UpdateFeatureHandler(repos.feature));
     commandBus.register(
         DeleteFeatureCommand.commandName,
@@ -471,6 +479,10 @@ export function bootstrap(
     commandBus.register(AddIdeaLinkCommand.commandName, new AddIdeaLinkHandler(repos.idea));
     commandBus.register(RemoveIdeaLinkCommand.commandName, new RemoveIdeaLinkHandler(repos.idea));
     queryBus.register(GetIdeaByIdQuery.queryName, new GetIdeaByIdHandler(repos.idea));
+    queryBus.register(
+        GetIdeaDeletionImpactQuery.queryName,
+        new GetIdeaDeletionImpactHandler(repos.idea, ideaFeaturesGateway),
+    );
     queryBus.register(ListIdeasQuery.queryName, new ListIdeasHandler(repos.idea));
     commandBus.register(
         ConvertIdeaToProjectCommand.commandName,

@@ -14,3 +14,5 @@ export type Feature = {
 }
 
 export type FeatureInfo = { name: string; description: string }
+
+export type FeatureDeletionImpact = { tickets: number }

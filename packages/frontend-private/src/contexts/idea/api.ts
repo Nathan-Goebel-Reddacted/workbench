@@ -3,7 +3,7 @@ import { documentStore } from '../../shared/api/documents'
 import { linkStore } from '../../shared/api/links'
 import type { DocumentStore } from '../../shared/domain/document'
 import type { LinkStore } from '../../shared/domain/link'
-import type { Idea, IdeaInfo, IdeaSummary } from './types'
+import type { Idea, IdeaDeletionImpact, IdeaInfo, IdeaSummary } from './types'
 
 function ideaPath(id: string): string {
   return `/ideas/${id}`
@@ -32,6 +32,10 @@ export async function createIdea(name: string): Promise<string> {
 
 export function updateIdeaInfo(id: string, info: IdeaInfo): Promise<void> {
   return send(ideaPath(id), { method: 'PUT', body: info })
+}
+
+export function getIdeaDeletionImpact(id: string): Promise<IdeaDeletionImpact> {
+  return getJson<IdeaDeletionImpact>(`${ideaPath(id)}/deletion-impact`)
 }
 
 export function deleteIdea(id: string): Promise<void> {

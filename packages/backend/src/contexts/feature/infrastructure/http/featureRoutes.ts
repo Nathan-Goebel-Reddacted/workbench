@@ -8,6 +8,7 @@ import { UpdateFeatureCommand } from '@contexts/feature/application/command/upda
 import { DeleteFeatureCommand } from '@contexts/feature/application/command/deleteFeature/deleteFeatureCommand';
 import { GetFeatureByIdQuery } from '@contexts/feature/application/query/getFeatureById/getFeatureByIdQuery';
 import { GetFeaturesByOwnerQuery } from '@contexts/feature/application/query/getFeaturesByOwner/getFeaturesByOwnerQuery';
+import { GetFeatureDeletionImpactQuery } from '@contexts/feature/application/query/getFeatureDeletionImpact/getFeatureDeletionImpactQuery';
 import { requireRole, requirePrivateRead } from '@shared/infrastructure/http/roleGuard';
 import { UserRole } from '@shared/domain/valueObject/userRole';
 
@@ -42,6 +43,15 @@ export const featureRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
         const result = await queryBus.dispatch(new GetFeatureByIdQuery(req.params.id));
         return reply.send(result);
     });
+
+    app.get<{ Params: { id: string } }>(
+        '/features/:id/deletion-impact',
+        { preHandler: requirePrivateRead },
+        async (req, reply) => {
+            const result = await queryBus.dispatch(new GetFeatureDeletionImpactQuery(req.params.id));
+            return reply.send(result);
+        },
+    );
 
     app.post<{
         Body: {

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@atelier/shared-ui'
 import { useCanEdit } from '../../../shared/auth/EditPermissionContext'
 import { useFeatures } from '../hooks/useFeatures'
@@ -9,18 +9,13 @@ import { FeatureAccordion } from './FeatureAccordion'
 type SectionProps = {
   ownerType: OwnerType
   ownerId: string
-  onCountChange?: (count: number) => void
 }
 
-export function FeaturesSection({ ownerType, ownerId, onCountChange }: SectionProps) {
+export function FeaturesSection({ ownerType, ownerId }: SectionProps) {
   const canEdit = useCanEdit()
   const { features, loading, error, create, forget } = useFeatures(ownerType, ownerId)
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
-
-  useEffect(() => {
-    onCountChange?.(features.length)
-  }, [features.length, onCountChange])
 
   const handleAddFeature = async () => {
     if (await create({ name: newName, description: newDesc })) {

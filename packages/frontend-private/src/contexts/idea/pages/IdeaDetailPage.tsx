@@ -9,23 +9,27 @@ import { FeaturesSection } from '../../feature'
 import { useIdea } from '../hooks/useIdea'
 import { useCanEdit } from '../../../shared/auth/EditPermissionContext'
 
+function plural(count: number, noun: string): string {
+  return `${count} ${noun}${count > 1 ? 's' : ''}`
+}
+
 export function IdeaDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const canEdit = useCanEdit()
-  const { idea, loading, error, stores, remove, convertToProject } = useIdea(id)
+  const { idea, loading, error, stores, deletionImpact, remove, convertToProject } = useIdea(id)
 
-  const [featureCount, setFeatureCount] = useState(0)
   const [converting, setConverting] = useState(false)
   const [renamed, setRenamed] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const title = renamed ?? idea?.name ?? ''
 
   const handleDelete = async () => {
-    if (!idea) return
+    const impact = await deletionImpact()
+    if (!impact) return
     const warning =
-      featureCount > 0
-        ? `Permanently delete the idea “${title}”, its ${featureCount} feature${featureCount > 1 ? 's' : ''} and all their tickets?`
+      impact.features > 0
+        ? `Permanently delete the idea “${title}”, its ${plural(impact.features, 'feature')} and ${plural(impact.tickets, 'ticket')}?`
         : `Permanently delete the idea “${title}”?`
     if (!window.confirm(warning)) return
     setDeleting(true)
@@ -76,7 +80,7 @@ export function IdeaDetailPage() {
       <LinksSection store={stores.links} initialLinks={idea.links} />
       <DocumentsSection store={stores.documents} initialDocuments={idea.documents} />
 
-      <FeaturesSection ownerType="idea" ownerId={idea.id} onCountChange={setFeatureCount} />
+      <FeaturesSection ownerType="idea" ownerId={idea.id} />
 
       <section style={convertSectionStyle}>
         <p style={sectionLabelStyle}>Start</p>

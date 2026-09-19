@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { failureMessage, isAbort } from '../../../shared/api/errors'
-import { convertIdeaToProject, deleteIdea, getIdea, ideaDocuments, ideaLinks } from '../api'
-import type { Idea } from '../types'
+import { errorDetailOr, failureMessage, isAbort } from '../../../shared/api/errors'
+import { convertIdeaToProject, deleteIdea, getIdea, getIdeaDeletionImpact, ideaDocuments, ideaLinks } from '../api'
+import type { Idea, IdeaDeletionImpact } from '../types'
 
 export function useIdea(id: string | undefined) {
   const [idea, setIdea] = useState<Idea | null>(null)
@@ -28,6 +28,16 @@ export function useIdea(id: string | undefined) {
 
   const stores = useMemo(() => (id ? { documents: ideaDocuments(id), links: ideaLinks(id) } : null), [id])
 
+  const deletionImpact = async (): Promise<IdeaDeletionImpact | null> => {
+    if (!idea) return null
+    try {
+      return await getIdeaDeletionImpact(idea.id)
+    } catch (err) {
+      setError(errorDetailOr(err, 'Could not check what the deletion removes.'))
+      return null
+    }
+  }
+
   const remove = async (): Promise<boolean> => {
     if (!idea) return false
     try {
@@ -49,5 +59,5 @@ export function useIdea(id: string | undefined) {
     }
   }
 
-  return { idea, loading, error, stores, remove, convertToProject }
+  return { idea, loading, error, stores, deletionImpact, remove, convertToProject }
 }

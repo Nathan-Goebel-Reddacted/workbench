@@ -11,6 +11,7 @@ import { AddIdeaLinkCommand } from '@contexts/idea/application/command/addIdeaLi
 import { RemoveIdeaLinkCommand } from '@contexts/idea/application/command/removeIdeaLink/removeIdeaLinkCommand';
 import { ConvertIdeaToProjectCommand } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectCommand';
 import { GetIdeaByIdQuery } from '@contexts/idea/application/query/getIdeaById/getIdeaByIdQuery';
+import { GetIdeaDeletionImpactQuery } from '@contexts/idea/application/query/getIdeaDeletionImpact/getIdeaDeletionImpactQuery';
 import { ListIdeasQuery } from '@contexts/idea/application/query/listIdeas/listIdeasQuery';
 import { UserRole } from '@shared/domain/valueObject/userRole';
 
@@ -28,6 +29,15 @@ export const ideaRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
         const result = await queryBus.dispatch(new GetIdeaByIdQuery(req.params.id));
         return reply.send(result);
     });
+
+    app.get<{ Params: { id: string } }>(
+        '/ideas/:id/deletion-impact',
+        { preHandler: requirePrivateRead },
+        async (req, reply) => {
+            const result = await queryBus.dispatch(new GetIdeaDeletionImpactQuery(req.params.id));
+            return reply.send(result);
+        },
+    );
 
     app.post<{
         Body: { name: string; description?: string; links?: LinkBody[]; documents?: DocumentBody[]; category?: string };

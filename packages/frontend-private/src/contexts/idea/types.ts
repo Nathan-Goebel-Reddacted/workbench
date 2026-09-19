@@ -17,4 +17,6 @@ export type Idea = IdeaSummary & {
   documents: Document[]
 }
 
+export type IdeaDeletionImpact = { features: number; tickets: number }
+
 export type IdeaInfo = { name: string; description: string; category: Category }

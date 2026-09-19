@@ -13,12 +13,14 @@ export function FeatureAccordion({ feature, onDelete }: { feature: Feature; onDe
 
   const [name, setName] = useState(feature.name)
   const [description, setDescription] = useState(feature.description)
-  const { saving, deleting, error, save, remove } = useFeature(feature.id)
+  const { saving, deleting, error, save, deletionImpact, remove } = useFeature(feature.id)
 
   const handleDeleteFeature = async () => {
+    const impact = await deletionImpact()
+    if (!impact) return
     const warning =
-      ticketCount > 0
-        ? `Delete the feature “${feature.name}” and its ${ticketCount} ticket${ticketCount > 1 ? 's' : ''}?`
+      impact.tickets > 0
+        ? `Delete the feature “${feature.name}” and its ${impact.tickets} ticket${impact.tickets > 1 ? 's' : ''}?`
         : `Delete the feature “${feature.name}”?`
     if (!window.confirm(warning)) return
     if (await remove()) onDelete(feature.id)
