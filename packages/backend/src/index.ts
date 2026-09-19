@@ -23,6 +23,10 @@ import { themeRoutes } from './contexts/theme/infrastructure/http/themeRoutes.js
 import { uploadRoutes } from './shared/infrastructure/http/uploadRoutes.js';
 import { ioRoutes } from './shared/infrastructure/http/ioRoutes.js';
 import { errorLogRoutes } from './contexts/errorLog/infrastructure/http/errorLogRoutes.js';
+import { PurgeOrphanUploadsCommand } from './shared/application/command/purgeOrphanUploads/purgeOrphanUploadsCommand.js';
+
+const ORPHAN_UPLOAD_AGE_MS = 24 * 60 * 60 * 1000;
+const ORPHAN_UPLOAD_SWEEP_EVERY_MS = 24 * 60 * 60 * 1000;
 
 try {
     // Le logger d'abord : tout le reste peut avoir besoin de journaliser, y compris
@@ -73,6 +77,20 @@ try {
     for (const warning of envWarnings) app.log.warn(warning);
 
     await app.listen({ port: env.PORT, host: env.HOST });
+
+    const sweepOrphanUploads = async () => {
+        try {
+            const purged = await buses.commandBus.dispatch<PurgeOrphanUploadsCommand, string[]>(
+                new PurgeOrphanUploadsCommand(new Date(Date.now() - ORPHAN_UPLOAD_AGE_MS)),
+            );
+            if (purged.length > 0) logger.info('Orphan uploads purged', { purged });
+        } catch (err) {
+            logger.error('Orphan upload sweep failed', { error: String(err) });
+        }
+    };
+    void sweepOrphanUploads();
+    const sweepTimer = setInterval(() => void sweepOrphanUploads(), ORPHAN_UPLOAD_SWEEP_EVERY_MS);
+    sweepTimer.unref();
 
     process.on('SIGTERM', async () => {
         await app.close();

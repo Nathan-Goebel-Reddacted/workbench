@@ -1,8 +1,9 @@
 import { EntityManager } from '@mikro-orm/postgresql';
-import { unlink } from 'node:fs/promises';
+import { readdir, stat, unlink } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { IUploadStorage } from '@shared/application/port/iUploadStorage.js';
+import { IOrphanUploadSweeper } from '@shared/application/port/iOrphanUploadSweeper.js';
 import { UploadReferenceSource } from '@shared/application/port/uploadReferenceSource.js';
 
 const UPLOADS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../../../uploads');
@@ -10,6 +11,8 @@ const UPLOADS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../../../u
 // Le premier caractère est alphanumérique et la classe exclut '/' : aucun '..' ni chemin
 // composé ne peut sortir de cette capture, quel que soit le contenu de la base.
 const UPLOAD_PATH = /\/uploads\/([A-Za-z0-9][A-Za-z0-9._-]*)/g;
+
+const UPLOAD_FILENAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 function collectFilenames(value: unknown, found: Set<string>): void {
     if (typeof value === 'string') {
@@ -35,13 +38,14 @@ function collectFilenames(value: unknown, found: Set<string>): void {
  * se voyait autrefois à ceci près que rien ne cassait — les fichiers encore cités par lui
  * disparaissaient en silence.
  */
-export class UploadStorage implements IUploadStorage {
+export class UploadStorage implements IUploadStorage, IOrphanUploadSweeper {
     private readonly referenceSql: string;
     private readonly patternCount: number;
 
     constructor(
         private readonly em: EntityManager,
         sources: readonly UploadReferenceSource[],
+        private readonly uploadsDir: string = UPLOADS_DIR,
     ) {
         if (sources.length === 0) {
             throw new Error('UploadStorage needs at least one reference source, or it would delete every file');
@@ -64,8 +68,25 @@ export class UploadStorage implements IUploadStorage {
             if (await this.isReferenced(filename)) continue;
             // Best-effort : un fichier déjà absent, ou un disque en lecture seule, ne doit pas
             // faire échouer la suppression métier qui vient d'aboutir.
-            await unlink(join(UPLOADS_DIR, filename)).catch(() => undefined);
+            await unlink(join(this.uploadsDir, filename)).catch(() => undefined);
         }
+    }
+
+    async purgeUnreferenced(olderThan: Date): Promise<string[]> {
+        const filenames = await readdir(this.uploadsDir).catch(() => [] as string[]);
+        const purged: string[] = [];
+
+        for (const filename of filenames) {
+            if (!UPLOAD_FILENAME.test(filename)) continue;
+            const path = join(this.uploadsDir, filename);
+            const stats = await stat(path).catch(() => null);
+            if (!stats?.isFile() || stats.mtime >= olderThan) continue;
+            if (await this.isReferenced(filename)) continue;
+            await unlink(path).catch(() => undefined);
+            purged.push(filename);
+        }
+
+        return purged;
     }
 
     // Le nom est un UUID généré par le serveur : la recherche par sous-chaîne est exacte en

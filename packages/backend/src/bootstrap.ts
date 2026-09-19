@@ -217,6 +217,8 @@ import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRep
 import { PageLayoutRepository } from '@contexts/contentEditor/infrastructure/repository/pageLayoutRepository';
 import { AgentToolRepository } from '@contexts/ai-assistant/infrastructure/repository/agentToolRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
+import { PurgeOrphanUploadsCommand } from '@shared/application/command/purgeOrphanUploads/purgeOrphanUploadsCommand';
+import { PurgeOrphanUploadsHandler } from '@shared/application/command/purgeOrphanUploads/purgeOrphanUploadsHandler';
 import { ContactMessageRepository } from '@contexts/contact/infrastructure/repository/contactMessageRepository';
 import { CvRepository } from '@contexts/cv/infrastructure/repository/cvRepository';
 import { createMailer } from '@contexts/contact/infrastructure/mailer/createMailer';
@@ -368,6 +370,7 @@ export function bootstrap(
     const cvFactory = new CvFactory();
 
     // User
+    commandBus.register(PurgeOrphanUploadsCommand.commandName, new PurgeOrphanUploadsHandler(uploads));
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
     commandBus.register(
         DeleteUserCommand.commandName,

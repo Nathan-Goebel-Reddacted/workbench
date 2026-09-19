@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+import { mkdtemp, readdir, utimes, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { EntityManager } from '@mikro-orm/postgresql';
 import { UploadStorage } from './uploadStorage.js';
 import type { UploadReferenceSource } from '@shared/application/port/uploadReferenceSource.js';
@@ -76,5 +79,54 @@ describe('UploadStorage', () => {
         await uploads.release([]);
 
         expect(execute).not.toHaveBeenCalled();
+    });
+});
+
+describe('UploadStorage — balayage des orphelins', () => {
+    const HOUR = 60 * 60 * 1000;
+
+    async function uploadsDir(files: Record<string, number>): Promise<string> {
+        const dir = await mkdtemp(join(tmpdir(), 'uploads-'));
+        for (const [name, ageInHours] of Object.entries(files)) {
+            const path = join(dir, name);
+            await writeFile(path, 'x');
+            const time = new Date(Date.now() - ageInHours * HOUR);
+            await utimes(path, time, time);
+        }
+        return dir;
+    }
+
+    function sweeper(dir: string, referenced: Set<string>) {
+        const execute = vi.fn(async (_sql: string, params: string[]) => [
+            { referenced: [...referenced].some(name => params[0] === `%${name}%`) },
+        ]);
+        const em = { getConnection: () => ({ execute }) } as unknown as EntityManager;
+        return new UploadStorage(em, SOURCES, dir);
+    }
+
+    it('supprime un fichier ancien que plus rien ne cite', async () => {
+        const dir = await uploadsDir({ 'orphelin.png': 48 });
+
+        const purged = await sweeper(dir, new Set()).purgeUnreferenced(new Date(Date.now() - 24 * HOUR));
+
+        expect(purged).toEqual(['orphelin.png']);
+        expect(await readdir(dir)).toEqual([]);
+    });
+
+    it('épargne un fichier encore cité, et un fichier trop récent pour être jugé', async () => {
+        const dir = await uploadsDir({ 'cite.png': 48, 'recent.png': 1 });
+
+        const purged = await sweeper(dir, new Set(['cite.png'])).purgeUnreferenced(new Date(Date.now() - 24 * HOUR));
+
+        expect(purged).toEqual([]);
+        expect((await readdir(dir)).sort()).toEqual(['cite.png', 'recent.png']);
+    });
+
+    it('ignore les fichiers cachés et tolère un dossier absent', async () => {
+        const dir = await uploadsDir({ '.gitkeep': 48 });
+
+        expect(await sweeper(dir, new Set()).purgeUnreferenced(new Date())).toEqual([]);
+        expect(await readdir(dir)).toEqual(['.gitkeep']);
+        expect(await sweeper(join(dir, 'absent'), new Set()).purgeUnreferenced(new Date())).toEqual([]);
     });
 });
