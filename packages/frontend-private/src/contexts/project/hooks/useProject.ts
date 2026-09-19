@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { isAbort } from '../../../shared/api/http'
+import { isAbort } from '../../../shared/api/errors'
 import { getProject, projectDocuments, projectLinks } from '../api'
 import type { Project } from '../types'
 

@@ -56,11 +56,3 @@ export async function sendJson<T>(path: string, options: RequestOptions): Promis
 export async function send(path: string, options: RequestOptions): Promise<void> {
   await request(path, options)
 }
-
-export function isAbort(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'AbortError'
-}
-
-export function errorDetailOr(error: unknown, fallback: string): string {
-  return error instanceof HttpError ? (error.detail ?? fallback) : fallback
-}

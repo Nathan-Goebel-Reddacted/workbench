@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { isAbort } from '../../../shared/api/http'
+import { isAbort } from '../../../shared/api/errors'
 import { getPortfolio } from '../api'
 import type { Portfolio } from '../types'
 

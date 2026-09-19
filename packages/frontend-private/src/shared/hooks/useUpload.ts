@@ -1,11 +1,6 @@
 import { useState } from 'react'
-import { HttpError } from '../api/http'
+import { failureMessage } from '../api/errors'
 import { uploadFile } from '../api/uploads'
-
-function uploadError(err: unknown): string {
-  if (!(err instanceof HttpError)) return 'Network error.'
-  return err.detail ?? 'Upload failed.'
-}
 
 export function useUpload() {
   const [uploading, setUploading] = useState(false)
@@ -17,7 +12,7 @@ export function useUpload() {
     try {
       return await uploadFile(file)
     } catch (err) {
-      setError(uploadError(err))
+      setError(failureMessage(err, 'Upload failed.', 'Network error.'))
       return null
     } finally {
       setUploading(false)

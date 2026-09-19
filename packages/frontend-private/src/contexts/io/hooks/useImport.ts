@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { HttpError } from '../../../shared/api/http'
+import { failureMessage } from '../../../shared/api/errors'
 import { importDump, importFile, listDumps } from '../api'
 import type { ImportReport } from '../types'
 
@@ -27,7 +27,7 @@ export function useImport() {
       setReport(source.kind === 'ioport' ? await importDump(source.dump) : await importFile(source.file))
       return true
     } catch (err) {
-      setError(err instanceof HttpError ? (err.detail ?? `Import refused (${err.status})`) : (err as Error).message)
+      setError(failureMessage(err, 'Import refused.', 'Network error.'))
       return false
     } finally {
       setBusy(false)

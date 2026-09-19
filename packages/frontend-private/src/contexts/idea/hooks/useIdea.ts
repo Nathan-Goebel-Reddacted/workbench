@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { HttpError, isAbort } from '../../../shared/api/http'
+import { failureMessage, isAbort } from '../../../shared/api/errors'
 import { convertIdeaToProject, deleteIdea, getIdea, ideaDocuments, ideaLinks } from '../api'
 import type { Idea } from '../types'
 
@@ -34,7 +34,7 @@ export function useIdea(id: string | undefined) {
       await deleteIdea(idea.id)
       return true
     } catch (err) {
-      setError(err instanceof HttpError ? 'Could not delete.' : 'Network error.')
+      setError(failureMessage(err, 'Could not delete.', 'Network error.'))
       return false
     }
   }
@@ -44,7 +44,7 @@ export function useIdea(id: string | undefined) {
     try {
       return await convertIdeaToProject(idea.id)
     } catch (err) {
-      setError(err instanceof HttpError ? 'Could not convert.' : 'Network error.')
+      setError(failureMessage(err, 'Could not convert.', 'Network error.'))
       return null
     }
   }

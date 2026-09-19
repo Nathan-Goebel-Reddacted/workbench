@@ -109,6 +109,13 @@ describe('frontières entre contextes', () => {
     expect(offenders.map(describeImport)).toEqual([])
   })
 
+  it('laisse le transport HTTP aux seuls adaptateurs', () => {
+    const ADAPTER = /^(contexts\/[^/]+\/api\.ts|shared\/api\/.+)$/
+    const offenders = imports.filter(({ file, target }) => target === 'shared/api/http' && !ADAPTER.test(file))
+
+    expect(offenders.map(describeImport)).toEqual([])
+  })
+
   it("ne fait pas dépendre un contexte de l'application", () => {
     const offenders = imports.filter(
       ({ file, target }) => file.startsWith('contexts/') && (target.startsWith('app/') || target === 'App'),

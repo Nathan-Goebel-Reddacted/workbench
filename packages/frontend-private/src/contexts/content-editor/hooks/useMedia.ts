@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { isAbort } from '../../../shared/api/http'
+import { isAbort } from '../../../shared/api/errors'
 import { listMedia } from '../api'
 import type { MediaKind, ProjectMedia } from '../types'
 

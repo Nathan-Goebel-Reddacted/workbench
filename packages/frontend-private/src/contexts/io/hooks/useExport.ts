@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { HttpError } from '../../../shared/api/http'
+import { failureMessage } from '../../../shared/api/errors'
 import { exportData } from '../api'
 import type { ExportResult, ExportTarget } from '../types'
 
@@ -37,7 +37,7 @@ export function useExport() {
         setResult((await res.json()) as ExportResult)
       }
     } catch (err) {
-      setError(err instanceof HttpError ? (err.detail ?? `Export refused (${err.status})`) : (err as Error).message)
+      setError(failureMessage(err, 'Export refused.', 'Network error.'))
     } finally {
       setBusy(false)
     }

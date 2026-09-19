@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { errorDetailOr, isAbort } from '../../../shared/api/http'
+import { errorDetailOr, isAbort } from '../../../shared/api/errors'
 import { createFeature, listFeaturesByOwner } from '../api'
 import type { Feature, FeatureInfo, OwnerType } from '../types'
 

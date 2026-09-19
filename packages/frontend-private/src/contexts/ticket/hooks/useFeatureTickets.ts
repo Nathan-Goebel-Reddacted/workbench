@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { errorDetailOr } from '../../../shared/api/http'
+import { errorDetailOr } from '../../../shared/api/errors'
 import { createTicket, listTicketsByFeature } from '../api'
 import type { Ticket, TicketInfo } from '../types'
 

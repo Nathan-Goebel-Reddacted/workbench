@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { errorDetailOr } from '../../../shared/api/http'
+import { errorDetailOr } from '../../../shared/api/errors'
 import { rotateAgentToolToken } from '../api'
 
 export function useTokenRotation(toolId: string) {

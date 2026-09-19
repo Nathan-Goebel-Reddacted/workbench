@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { errorDetailOr } from '../../../shared/api/http'
+import { errorDetailOr } from '../../../shared/api/errors'
 import { decidePairingRequest, listPendingPairingRequests } from '../api'
 import type { Decision } from '../../../shared/domain/decision'
 import type { PairingRequest } from '../types'

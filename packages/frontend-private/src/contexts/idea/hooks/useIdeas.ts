@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { errorDetailOr, isAbort } from '../../../shared/api/http'
+import { errorDetailOr, isAbort } from '../../../shared/api/errors'
 import { createIdea, listIdeas } from '../api'
 import type { IdeaSummary } from '../types'
 

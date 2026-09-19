@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { errorDetailOr, isAbort } from '../../../shared/api/http'
+import { errorDetailOr, isAbort } from '../../../shared/api/errors'
 import { createProject, listProjects, setProjectVisibility } from '../api'
 import type { Category } from '../../../shared/domain/category'
 import type { ProjectSummary } from '../types'

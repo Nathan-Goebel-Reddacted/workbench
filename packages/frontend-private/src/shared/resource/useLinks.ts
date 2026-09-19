@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { errorDetailOr } from '../api/http'
+import { errorDetailOr } from '../api/errors'
 import type { Link, LinkStore } from '../domain/link'
 
 export function useLinks(store: LinkStore, initialLinks: Link[]) {

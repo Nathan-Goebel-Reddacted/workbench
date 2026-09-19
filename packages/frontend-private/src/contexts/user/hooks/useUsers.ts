@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { errorDetailOr } from '../../../shared/api/http'
+import { errorDetailOr } from '../../../shared/api/errors'
 import type { Role } from '../../../shared/domain/role'
 import { deleteUser, grantUserRole, listUsers, revokeUserRole } from '../api'
 import type { User } from '../types'

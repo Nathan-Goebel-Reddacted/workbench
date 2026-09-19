@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { errorDetailOr } from '../../../shared/api/http'
+import { errorDetailOr } from '../../../shared/api/errors'
 import { addTicketNote, changeTicketStatus, deleteTicket, editTicketNote, ticketDocuments, updateTicket } from '../api'
 import type { TicketStatus } from '../status'
 import type { Ticket, TicketInfo } from '../types'

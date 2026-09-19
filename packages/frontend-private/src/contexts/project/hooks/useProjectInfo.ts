@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { errorDetailOr } from '../../../shared/api/http'
+import { errorDetailOr } from '../../../shared/api/errors'
 import { updateProjectInfo } from '../api'
 import type { ProjectInfo } from '../types'
 

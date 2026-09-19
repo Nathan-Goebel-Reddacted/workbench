@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { PageLayoutDto, SectionPosition } from '@atelier/content-renderer'
-import { errorDetailOr } from '../../../shared/api/http'
+import { errorDetailOr } from '../../../shared/api/errors'
 import { addSection, ensurePageLayout, moveSection, removeSection, updateSectionContent } from '../api'
 import type { PageType, SectionContent, Widget } from '../widgets'
 

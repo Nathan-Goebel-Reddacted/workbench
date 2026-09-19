@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { arrayMove } from '@dnd-kit/sortable'
-import { errorDetailOr } from '../../../shared/api/http'
+import { errorDetailOr } from '../../../shared/api/errors'
 import { createCv, deleteCv, listCvs, reorderCvs, setCvVisibility } from '../api'
 import type { Cv } from '../types'
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { errorDetailOr } from '../api/http'
+import { errorDetailOr } from '../api/errors'
 import type { Document, DocumentStore } from '../domain/document'
 
 export function useDocuments(

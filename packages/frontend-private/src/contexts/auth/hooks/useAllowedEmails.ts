@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { errorDetailOr } from '../../../shared/api/http'
+import { errorDetailOr } from '../../../shared/api/errors'
 import { allowEmail, disallowEmail, listAllowedEmails } from '../api'
 
 export function useAllowedEmails(reloadKey: number) {
