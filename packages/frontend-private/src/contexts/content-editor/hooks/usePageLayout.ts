@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { PageLayoutDto, SectionPosition } from '@atelier/content-renderer'
 import { errorDetailOr } from '../../../shared/api/errors'
 import { addSection, ensurePageLayout, moveSection, removeSection, updateSectionContent } from '../api'
-import type { PageType, SectionContent, Widget } from '../widgets'
+import type { PageType, SectionContent, SectionType } from '../widgets'
 
 export function usePageLayout(pageType: PageType, pageRef: string) {
   const [layout, setLayout] = useState<PageLayoutDto | null>(null)
@@ -25,10 +25,10 @@ export function usePageLayout(pageType: PageType, pageRef: string) {
     load()
   }, [load])
 
-  const add = async (widget: Widget): Promise<void> => {
+  const add = async (type: SectionType): Promise<void> => {
     if (!layout) return
     try {
-      await addSection(layout.id, { type: widget.type })
+      await addSection(layout.id, { type })
       await load()
     } catch {
       setError('Could not add the component.')

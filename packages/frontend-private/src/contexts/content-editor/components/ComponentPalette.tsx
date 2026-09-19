@@ -1,10 +1,11 @@
 import { useState, type CSSProperties } from 'react'
 import { useCanEdit } from '../../../shared/auth/EditPermissionContext'
-import { getWidgetsByCategory, type SectionType, type Widget } from '../widgets'
+import type { SectionType } from '../widgets'
+import { getWidgetsByCategory } from './widgetCatalog'
 
 type ComponentPaletteProps = {
   allowedTypes: readonly SectionType[]
-  onAdd: (widget: Widget) => void
+  onAdd: (type: SectionType) => void
 }
 
 export function ComponentPalette({ allowedTypes, onAdd }: ComponentPaletteProps) {
@@ -26,7 +27,7 @@ export function ComponentPalette({ allowedTypes, onAdd }: ComponentPaletteProps)
             <div key={group.category} style={groupStyle}>
               <span style={groupTitleStyle}>{group.category}</span>
               {group.widgets.map(widget => (
-                <button key={widget.type} style={itemStyle} disabled={!canEdit} onClick={() => onAdd(widget)}>
+                <button key={widget.type} style={itemStyle} disabled={!canEdit} onClick={() => onAdd(widget.type)}>
                   {widget.icon} {widget.label}
                 </button>
               ))}
