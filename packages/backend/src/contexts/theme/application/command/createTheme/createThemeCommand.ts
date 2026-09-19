@@ -7,8 +7,8 @@ export class CreateThemeCommand implements Command {
 
     constructor(
         readonly id: string,
-        readonly name: string,
-        readonly visible: boolean,
+        readonly name: string | null,
+        readonly visible: boolean | null,
         readonly colors: ColorMap,
     ) {}
 }

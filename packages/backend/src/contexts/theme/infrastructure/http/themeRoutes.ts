@@ -14,6 +14,7 @@ import { ThemeCatalogDto, ThemeDto } from '../../application/query/listThemes/th
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
 type ThemeDraft = { name: string; visible: boolean; colors: Record<string, string> };
+type NewTheme = { name?: string; visible?: boolean; colors: Record<string, string> };
 
 const draftSchema = {
     type: 'object',
@@ -24,6 +25,8 @@ const draftSchema = {
         colors: { type: 'object', additionalProperties: { type: 'string' } },
     },
 } as const;
+
+const newThemeSchema = { ...draftSchema, required: ['colors'] } as const;
 
 export const themeRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
     // Ouverte : le site public a besoin du thème par défaut et de ceux que le visiteur
@@ -38,12 +41,13 @@ export const themeRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, q
         return reply.send(catalog);
     });
 
-    app.post<{ Body: ThemeDraft }>(
+    app.post<{ Body: NewTheme }>(
         '/themes',
-        { preHandler: requireRole(UserRole.EDIT), schema: { body: draftSchema } },
+        { preHandler: requireRole(UserRole.EDIT), schema: { body: newThemeSchema } },
         async (req, reply) => {
+            const { name, visible, colors } = req.body;
             const created = await commandBus.dispatch<CreateThemeCommand, ThemeDto>(
-                new CreateThemeCommand(randomUUID(), req.body.name, req.body.visible, req.body.colors),
+                new CreateThemeCommand(randomUUID(), name ?? null, visible ?? null, colors),
             );
             return reply.status(201).send(created);
         },
