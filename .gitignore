@@ -36,3 +36,6 @@ backup/*
 packages/backend/theme-config.json
 packages/backend/theme-config.legacy.json
 packages/backend/theme-config.migrated.json
+
+# Cache incrémental de tsc
+*.tsbuildinfo
