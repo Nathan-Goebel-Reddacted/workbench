@@ -63,16 +63,39 @@ describe('Theme', () => {
     it('refuse de masquer le thème par défaut', () => {
         const current = theme({ first: true });
 
-        expect(() => current.update(name('sable'), palette(), false)).toThrow(DefaultThemeMustBeVisibleException);
+        expect(() => current.hide()).toThrow(DefaultThemeMustBeVisibleException);
         expect(current.isVisible()).toBe(true);
     });
 
-    it('laisse masquer un thème ordinaire', () => {
+    it('laisse masquer puis réafficher un thème ordinaire', () => {
         const other = theme();
 
-        other.update(name('forêt'), palette(), false);
-
+        other.hide();
         expect(other.isVisible()).toBe(false);
+
+        other.show();
+        expect(other.isVisible()).toBe(true);
+    });
+
+    it('renomme sans toucher à la palette ni à la visibilité', () => {
+        const other = theme({ visible: false });
+
+        other.rename(name('forêt'));
+
+        expect(other.getName().getValue()).toBe('forêt');
+        expect(other.getColors()).toEqual(palette());
+        expect(other.isVisible()).toBe(false);
+    });
+
+    it('change la palette sans toucher au nom ni à la visibilité', () => {
+        const current = theme({ first: true });
+        const colors = new ThemeColors({ '--color-bg': '#111' });
+
+        current.recolor(colors);
+
+        expect(current.getColors()).toBe(colors);
+        expect(current.getName().getValue()).toBe('sable');
+        expect(current.isVisible()).toBe(true);
     });
 
     it('refuse de désigner un thème masqué comme défaut', () => {

@@ -76,12 +76,21 @@ export class Theme {
         return this.createdAt;
     }
 
-    /** Le Design Lab enregistre le thème entier à chaque édition : nom, palette et visibilité. */
-    update(name: ThemeName, colors: ThemeColors, visible: boolean): void {
-        if (this.isDefaultTheme && !visible) throw new DefaultThemeMustBeVisibleException();
+    rename(name: ThemeName): void {
         this.name = name;
+    }
+
+    recolor(colors: ThemeColors): void {
         this.colors = colors;
-        this.visible = visible;
+    }
+
+    show(): void {
+        this.visible = true;
+    }
+
+    hide(): void {
+        if (this.isDefaultTheme) throw new DefaultThemeMustBeVisibleException();
+        this.visible = false;
     }
 
     /** Devenir le thème par défaut impose d'être visible — on ne sert pas ce qu'on cache. */

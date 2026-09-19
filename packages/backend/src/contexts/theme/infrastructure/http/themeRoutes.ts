@@ -5,7 +5,9 @@ import { UserRole } from '@shared/domain/valueObject/userRole.js';
 import { CommandBus } from '@shared/application/command/commandBus.js';
 import { QueryBus } from '@shared/application/query/queryBus.js';
 import { CreateThemeCommand } from '../../application/command/createTheme/createThemeCommand.js';
-import { UpdateThemeCommand } from '../../application/command/updateTheme/updateThemeCommand.js';
+import { RenameThemeCommand } from '../../application/command/renameTheme/renameThemeCommand.js';
+import { RecolorThemeCommand } from '../../application/command/recolorTheme/recolorThemeCommand.js';
+import { ChangeThemeVisibilityCommand } from '../../application/command/changeThemeVisibility/changeThemeVisibilityCommand.js';
 import { SetDefaultThemeCommand } from '../../application/command/setDefaultTheme/setDefaultThemeCommand.js';
 import { ListThemesQuery } from '../../application/query/listThemes/listThemesQuery.js';
 import { ListVisibleThemesQuery } from '../../application/query/listVisibleThemes/listVisibleThemesQuery.js';
@@ -13,20 +15,17 @@ import { ThemeCatalogDto, ThemeDto } from '../../application/query/listThemes/th
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
-type ThemeDraft = { name: string; visible: boolean; colors: Record<string, string> };
 type NewTheme = { name?: string; visible?: boolean; colors: Record<string, string> };
 
-const draftSchema = {
-    type: 'object',
-    required: ['name', 'visible', 'colors'],
-    properties: {
-        name: { type: 'string', minLength: 1, maxLength: 60 },
-        visible: { type: 'boolean' },
-        colors: { type: 'object', additionalProperties: { type: 'string' } },
-    },
-} as const;
+const nameProperty = { type: 'string', minLength: 1, maxLength: 60 } as const;
+const visibleProperty = { type: 'boolean' } as const;
+const colorsProperty = { type: 'object', additionalProperties: { type: 'string' } } as const;
 
-const newThemeSchema = { ...draftSchema, required: ['colors'] } as const;
+const newThemeSchema = {
+    type: 'object',
+    required: ['colors'],
+    properties: { name: nameProperty, visible: visibleProperty, colors: colorsProperty },
+} as const;
 
 export const themeRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
     // Ouverte : le site public a besoin du thème par défaut et de ceux que le visiteur
@@ -53,13 +52,38 @@ export const themeRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, q
         },
     );
 
-    app.put<{ Params: { id: string }; Body: ThemeDraft }>(
-        '/themes/:id',
-        { preHandler: requireRole(UserRole.EDIT), schema: { body: draftSchema } },
+    app.patch<{ Params: { id: string }; Body: { name: string } }>(
+        '/themes/:id/name',
+        {
+            preHandler: requireRole(UserRole.EDIT),
+            schema: { body: { type: 'object', required: ['name'], properties: { name: nameProperty } } },
+        },
         async (req, reply) => {
-            await commandBus.dispatch(
-                new UpdateThemeCommand(req.params.id, req.body.name, req.body.visible, req.body.colors),
-            );
+            await commandBus.dispatch(new RenameThemeCommand(req.params.id, req.body.name));
+            return reply.status(204).send();
+        },
+    );
+
+    app.patch<{ Params: { id: string }; Body: { colors: Record<string, string> } }>(
+        '/themes/:id/colors',
+        {
+            preHandler: requireRole(UserRole.EDIT),
+            schema: { body: { type: 'object', required: ['colors'], properties: { colors: colorsProperty } } },
+        },
+        async (req, reply) => {
+            await commandBus.dispatch(new RecolorThemeCommand(req.params.id, req.body.colors));
+            return reply.status(204).send();
+        },
+    );
+
+    app.patch<{ Params: { id: string }; Body: { visible: boolean } }>(
+        '/themes/:id/visibility',
+        {
+            preHandler: requireRole(UserRole.EDIT),
+            schema: { body: { type: 'object', required: ['visible'], properties: { visible: visibleProperty } } },
+        },
+        async (req, reply) => {
+            await commandBus.dispatch(new ChangeThemeVisibilityCommand(req.params.id, req.body.visible));
             return reply.status(204).send();
         },
     );

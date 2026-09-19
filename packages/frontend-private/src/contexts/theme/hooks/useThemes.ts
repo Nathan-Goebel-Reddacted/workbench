@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTheme } from '@atelier/shared-ui'
-import { createTheme, listAllThemes, setDefaultTheme, updateTheme } from '../api'
+import { errorDetailOr } from '../../../shared/api/errors'
+import { createTheme, listAllThemes, recolorTheme, renameTheme, setDefaultTheme, setThemeVisibility } from '../api'
 import type { Theme, ThemeColors } from '../types'
 
 export function useThemes(onDefaultLoaded: (theme: Theme) => void) {
@@ -41,8 +42,8 @@ export function useThemes(onDefaultLoaded: (theme: Theme) => void) {
       const result = await action()
       await refresh()
       return result
-    } catch {
-      setError(fallback)
+    } catch (err) {
+      setError(errorDetailOr(err, fallback))
       return null
     }
   }
@@ -53,25 +54,19 @@ export function useThemes(onDefaultLoaded: (theme: Theme) => void) {
   }
 
   const overwrite = (theme: Theme, colors: ThemeColors) =>
-    attempt(
-      () => updateTheme(theme.id, { name: theme.name, visible: theme.visible, colors }),
-      'Could not save the theme.',
-    )
+    attempt(() => recolorTheme(theme.id, colors), 'Could not save the theme.')
 
   const rename = async (theme: Theme, name: string): Promise<boolean> => {
     if (name === theme.name) return true
     const renamed = await attempt(async () => {
-      await updateTheme(theme.id, { name, visible: theme.visible, colors: theme.colors })
+      await renameTheme(theme.id, name)
       return true
     }, 'Could not rename the theme.')
     return renamed ?? false
   }
 
   const toggleVisible = (theme: Theme) =>
-    attempt(
-      () => updateTheme(theme.id, { name: theme.name, visible: !theme.visible, colors: theme.colors }),
-      'Could not change the visibility.',
-    )
+    attempt(() => setThemeVisibility(theme.id, !theme.visible), 'Could not change the visibility.')
 
   const setDefault = (theme: Theme) => attempt(() => setDefaultTheme(theme.id), 'Could not set the default theme.')
 

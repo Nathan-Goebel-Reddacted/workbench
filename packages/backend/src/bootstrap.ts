@@ -265,8 +265,12 @@ import { ThemeRepository } from '@contexts/theme/infrastructure/repository/theme
 import { ThemeFactory } from '@contexts/theme/domain/factory/themeFactory';
 import { CreateThemeCommand } from '@contexts/theme/application/command/createTheme/createThemeCommand';
 import { CreateThemeHandler } from '@contexts/theme/application/command/createTheme/createThemeHandler';
-import { UpdateThemeCommand } from '@contexts/theme/application/command/updateTheme/updateThemeCommand';
-import { UpdateThemeHandler } from '@contexts/theme/application/command/updateTheme/updateThemeHandler';
+import { RenameThemeCommand } from '@contexts/theme/application/command/renameTheme/renameThemeCommand';
+import { RenameThemeHandler } from '@contexts/theme/application/command/renameTheme/renameThemeHandler';
+import { RecolorThemeCommand } from '@contexts/theme/application/command/recolorTheme/recolorThemeCommand';
+import { RecolorThemeHandler } from '@contexts/theme/application/command/recolorTheme/recolorThemeHandler';
+import { ChangeThemeVisibilityCommand } from '@contexts/theme/application/command/changeThemeVisibility/changeThemeVisibilityCommand';
+import { ChangeThemeVisibilityHandler } from '@contexts/theme/application/command/changeThemeVisibility/changeThemeVisibilityHandler';
 import { SetDefaultThemeCommand } from '@contexts/theme/application/command/setDefaultTheme/setDefaultThemeCommand';
 import { SetDefaultThemeHandler } from '@contexts/theme/application/command/setDefaultTheme/setDefaultThemeHandler';
 import { ListThemesQuery } from '@contexts/theme/application/query/listThemes/listThemesQuery';
@@ -595,7 +599,9 @@ export function bootstrap(
     // Theme
     const themeFactory = new ThemeFactory();
     commandBus.register(CreateThemeCommand.commandName, new CreateThemeHandler(repos.theme, themeFactory));
-    commandBus.register(UpdateThemeCommand.commandName, new UpdateThemeHandler(repos.theme));
+    commandBus.register(RenameThemeCommand.commandName, new RenameThemeHandler(repos.theme));
+    commandBus.register(RecolorThemeCommand.commandName, new RecolorThemeHandler(repos.theme));
+    commandBus.register(ChangeThemeVisibilityCommand.commandName, new ChangeThemeVisibilityHandler(repos.theme));
     commandBus.register(SetDefaultThemeCommand.commandName, new SetDefaultThemeHandler(repos.theme, transactions));
     queryBus.register(ListThemesQuery.queryName, new ListThemesHandler(repos.theme));
     queryBus.register(ListVisibleThemesQuery.queryName, new ListVisibleThemesHandler(repos.theme));

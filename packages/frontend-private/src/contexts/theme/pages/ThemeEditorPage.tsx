@@ -15,6 +15,9 @@ const EDITABLE_VARS: Array<{ key: string; label: string }> = [
   { key: '--color-primary-hover', label: 'Primary (hover)' },
 ]
 
+const DEFAULT_STAYS_VISIBLE = 'The default theme stays visible'
+const HIDDEN_CANNOT_BE_DEFAULT = 'A hidden theme cannot be the default'
+
 const EDITABLE_KEYS = EDITABLE_VARS.map(({ key }) => key)
 
 function pickEditable(colors: ThemeColors): ThemeColors {
@@ -166,23 +169,26 @@ export function ThemeEditorPage() {
               </div>
 
               <div style={rowActionsStyle}>
-                <label style={toggleStyle}>
+                <label
+                  style={toggleStyle}
+                  title={editGuard ?? (defaultId === theme.id ? DEFAULT_STAYS_VISIBLE : undefined)}
+                >
                   <input
                     type="checkbox"
                     checked={theme.visible}
                     onChange={() => void toggleVisible(theme)}
-                    disabled={!canEdit}
+                    disabled={!canEdit || defaultId === theme.id}
                   />
                   Visible
                 </label>
 
-                <label style={toggleStyle}>
+                <label style={toggleStyle} title={editGuard ?? (theme.visible ? undefined : HIDDEN_CANNOT_BE_DEFAULT)}>
                   <input
                     type="radio"
                     name="default-theme"
                     checked={defaultId === theme.id}
                     onChange={() => void setDefault(theme)}
-                    disabled={!canEdit}
+                    disabled={!canEdit || !theme.visible}
                   />
                   Default
                 </label>
