@@ -65,6 +65,16 @@ Ces variables sont injectées sur `:root` par `ThemeProvider` (shared-ui) et peu
 | `Button` | Bouton générique (variants : `primary`, `secondary`, `ghost`) |
 | `ColorPicker` | Picker couleur simple (hex + swatch) |
 
+### Couches d'un contexte (frontend-private)
+
+- `types.ts` / `status.ts` / `api.ts` : modèle et accès HTTP — n'importent jamais `components/`, `pages/` ni `hooks/` (vérifié par `boundaries.test.ts`)
+- `hooks/` : cas d'usage — un hook par intention (`useAccessRequests`, `usePairingRequests`)
+- `components/` / `pages/` : affichage — **pour tout nouveau code**, passer par un hook du contexte plutôt qu'appeler `api.ts` directement (l'existant n'est pas encore migré)
+- Composition entre contextes : un contexte peut afficher le composant public d'un autre via son `index.ts` (sans cycle, vérifié par `boundaries.test.ts`) ; quand il a besoin de ses **données**, il déclare un port que `app/` branche (ex. `BindingSource` de content-editor, implémenté par `app/bindingSource.ts`)
+- Concept partagé par plusieurs contextes (ex. `Category`) : `shared/domain/`, libellés dans `shared/components/`
+- Aucune règle métier côté front : placement, valeurs initiales, attribution, invariants → backend. Le front peut refléter une règle pour le confort (bouton désactivé), jamais la porter seul
+- Libellés de l'interface en **anglais**
+
 ### Styles
 
 - Styles en **inline CSS** (`CSSProperties`) — pas de framework CSS externe

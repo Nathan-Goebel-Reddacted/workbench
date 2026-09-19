@@ -5,7 +5,6 @@ export type SectionPosition = { x: number; y: number; w: number; h: number }
 export type SectionDto = {
   id: string
   type: SectionType
-  contentRef: string | null
   content: SectionContent
 } & SectionPosition
 
@@ -13,6 +12,8 @@ export type PageLayoutDto = {
   id: string
   pageType: string
   pageRef: string
+  allowedSectionTypes: SectionType[]
+  gridColumns: number
   sections: SectionDto[]
 }
 
@@ -135,8 +136,7 @@ export function isEmbeddableUrl(url: string): boolean {
 }
 
 // --- Contenu du widget lien ---
-// Le widget reste lié aux liens du projet/portfolio via son contentRef ; les liens
-// externes saisis à la main s'y ajoutent et vivent dans le content de la section.
+// Les liens externes saisis à la main vivent dans le content de la section.
 export type ExternalLink = { url: string; displayText: string; logo: string }
 
 export function readLinkContent(content: Record<string, unknown>): { externalLinks: ExternalLink[] } {
@@ -240,7 +240,7 @@ export function readContactFormContent(content: Record<string, unknown>): Contac
     })
 
   return {
-    title: typeof content.title === 'string' ? content.title : '',
+    title: typeof content.title === 'string' ? content.title : 'Me contacter',
     fields: fields.length > 0 ? fields : DEFAULT_FORM_FIELDS.map(f => ({ ...f })),
     submitLabel:
       typeof content.submitLabel === 'string' && content.submitLabel !== '' ? content.submitLabel : 'Envoyer',

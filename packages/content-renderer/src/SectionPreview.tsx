@@ -44,7 +44,7 @@ function firstImage(documents?: Array<{ url: string }>): string | null {
 }
 
 export function SectionPreview({ section, apiUrl, backgroundDepth = 0, mode = 'edit' }: Props) {
-  const { type, content, contentRef } = section
+  const { type, content } = section
 
   // Aplat décoratif : aucun contenu, la couleur vient de la profondeur d'empilement.
   if (type === 'background') {
@@ -63,18 +63,17 @@ export function SectionPreview({ section, apiUrl, backgroundDepth = 0, mode = 'e
     )
   }
 
-  // Le widget texte unifié encode sa source dans content (traité avant le fallback contentRef).
+  // Le widget texte unifié encode sa source dans content.
   if (type === 'text') {
     return <TextPreview content={content} apiUrl={apiUrl} mode={mode} />
   }
 
-  // Le widget lien reste lié aux liens du projet, mais porte en plus ses liens
-  // externes : traité avant le fallback contentRef.
+  // Le widget lien porte ses liens externes dans son content.
   if (type === 'link') {
     return <LinkPreview content={content} apiUrl={apiUrl} mode={mode} />
   }
 
-  // Le formulaire porte tout son contenu : traité avant le fallback contentRef.
+  // Le formulaire porte tout son contenu.
   if (type === 'contactForm') {
     return <ContactForm content={content} apiUrl={apiUrl} mode={mode} />
   }
@@ -93,13 +92,6 @@ export function SectionPreview({ section, apiUrl, backgroundDepth = 0, mode = 'e
   // Iframe tierce : idem, et l'URL est filtrée avant rendu.
   if (type === 'embed') {
     return <EmbedPreview content={content} mode={mode} />
-  }
-
-  // Composant lié à une donnée existante : le contenu réel vit ailleurs (portfolio/projet).
-  // Tant que la résolution n'est pas implémentée, l'identifiant brut sert de repère à
-  // l'éditeur — il n'a rien à faire sur le site public.
-  if (contentRef) {
-    return mode === 'public' ? null : <span style={refStyle}>{contentRef}</span>
   }
 
   // Widget document : image, vidéo, PDF et mindmap partagent un seul type de section,
@@ -430,13 +422,6 @@ function Empty({ label = 'Vide — cliquer sur ✎ pour éditer', mode }: { labe
   return <span style={emptyStyle}>{label}</span>
 }
 
-const refStyle: CSSProperties = {
-  fontSize: '0.8125rem',
-  color: 'var(--color-text)',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-}
 const mediaStyle: CSSProperties = {
   width: '100%',
   flex: 1,
