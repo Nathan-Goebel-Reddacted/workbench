@@ -6,10 +6,10 @@ import { useCanEdit } from '../auth/EditPermissionContext'
 import { MindmapModal } from '../mindmap/MindmapModal'
 import { PreviewTooltip, isPreviewable, previewKind, usePreview } from './documentPreview'
 import { useDocuments } from './useDocuments'
-import type { Document, DocumentStore } from '../domain/document'
+import type { Document, MindmapDocumentStore } from '../domain/document'
 
 type Props = {
-  store: DocumentStore
+  store: MindmapDocumentStore
   initialDocuments: Document[]
 }
 
@@ -91,7 +91,7 @@ export function DocumentsSection({ store, initialDocuments }: Props) {
 
       <div style={mindmapActionStyle}>
         <Button variant="secondary" onClick={() => setEditing({})} disabled={!canEdit}>
-          🧠 Nouveau mindmap
+          🧠 New mindmap
         </Button>
       </div>
 

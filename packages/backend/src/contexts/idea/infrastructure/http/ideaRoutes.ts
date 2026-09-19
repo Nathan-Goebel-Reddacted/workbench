@@ -6,6 +6,8 @@ import { CreateIdeaCommand } from '@contexts/idea/application/command/createIdea
 import { UpdateIdeaCommand } from '@contexts/idea/application/command/updateIdea/updateIdeaCommand';
 import { DeleteIdeaCommand } from '@contexts/idea/application/command/deleteIdea/deleteIdeaCommand';
 import { AddIdeaDocumentCommand } from '@contexts/idea/application/command/addIdeaDocument/addIdeaDocumentCommand';
+import { CreateIdeaMindmapCommand } from '@contexts/idea/application/command/createIdeaMindmap/createIdeaMindmapCommand';
+import { MAX_MINDMAP_BYTES, mindmapSchema } from '@shared/infrastructure/http/uploadRoutes';
 import { RemoveIdeaDocumentCommand } from '@contexts/idea/application/command/removeIdeaDocument/removeIdeaDocumentCommand';
 import { AddIdeaLinkCommand } from '@contexts/idea/application/command/addIdeaLink/addIdeaLinkCommand';
 import { RemoveIdeaLinkCommand } from '@contexts/idea/application/command/removeIdeaLink/removeIdeaLinkCommand';
@@ -162,6 +164,28 @@ export const ideaRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
             const documentId = crypto.randomUUID();
             await commandBus.dispatch(new AddIdeaDocumentCommand(req.params.id, documentId, name, url));
             return reply.status(201).send({ id: documentId });
+        },
+    );
+
+    app.post<{ Params: { id: string }; Body: { name: string; content: unknown } }>(
+        '/ideas/:id/mindmaps',
+        {
+            preHandler: requireRole(UserRole.EDIT),
+            bodyLimit: MAX_MINDMAP_BYTES,
+            schema: {
+                body: {
+                    type: 'object',
+                    required: ['name', 'content'],
+                    properties: { name: { type: 'string', minLength: 1 }, content: mindmapSchema },
+                },
+            },
+        },
+        async (req, reply) => {
+            const documentId = crypto.randomUUID();
+            const url = await commandBus.dispatch<CreateIdeaMindmapCommand, string>(
+                new CreateIdeaMindmapCommand(req.params.id, documentId, req.body.name, req.body.content),
+            );
+            return reply.status(201).send({ id: documentId, url });
         },
     );
 

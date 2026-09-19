@@ -1,7 +1,7 @@
 import { getJson, send, sendJson } from '../../shared/api/http'
-import { documentStore } from '../../shared/api/documents'
+import { mindmapDocumentStore } from '../../shared/api/documents'
 import { linkStore } from '../../shared/api/links'
-import type { DocumentStore } from '../../shared/domain/document'
+import type { MindmapDocumentStore } from '../../shared/domain/document'
 import type { LinkStore } from '../../shared/domain/link'
 import type { Idea, IdeaDeletionImpact, IdeaInfo, IdeaSummary } from './types'
 
@@ -9,8 +9,8 @@ function ideaPath(id: string): string {
   return `/ideas/${id}`
 }
 
-export function ideaDocuments(id: string): DocumentStore {
-  return documentStore(ideaPath(id))
+export function ideaDocuments(id: string): MindmapDocumentStore {
+  return mindmapDocumentStore(ideaPath(id))
 }
 
 export function ideaLinks(id: string): LinkStore {

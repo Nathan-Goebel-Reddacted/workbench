@@ -1,20 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { MINDMAP_SUFFIX, emptyMindmap, readMindmap, type Mindmap } from '@atelier/content-renderer'
-import { readUpload, rewriteUpload, uploadFile } from '../api/uploads'
-import type { Document, DocumentStore } from '../domain/document'
-
-function slug(name: string): string {
-  return (
-    name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') || 'mindmap'
-  )
-}
+import { emptyMindmap, readMindmap, type Mindmap } from '@atelier/content-renderer'
+import { readUpload, rewriteUpload } from '../api/uploads'
+import type { Document, MindmapDocumentStore } from '../domain/document'
 
 export function useMindmapFile(
-  store: DocumentStore,
+  store: MindmapDocumentStore,
   existing: Document | undefined,
   onCreated?: (document: Document) => void,
 ) {
@@ -56,9 +46,7 @@ export function useMindmapFile(
       if (existing) {
         await rewriteUpload(existing.url, current.current)
       } else {
-        const blob = new Blob([JSON.stringify(current.current)], { type: 'application/json' })
-        const url = await uploadFile(blob, `${slug(name)}${MINDMAP_SUFFIX}`)
-        onCreated?.(await store.attach({ name, url }))
+        onCreated?.(await store.createMindmap(name, current.current))
       }
       return true
     } catch {

@@ -14,7 +14,17 @@ const MAX_UPLOAD_BYTES = 200 * 1024 * 1024;
 
 // Un mindmap réécrit est un document JSON, pas un média : le plafond des vidéos n'a
 // aucune raison de s'appliquer ici.
-const MAX_MINDMAP_BYTES = 5 * 1024 * 1024;
+export const MAX_MINDMAP_BYTES = 5 * 1024 * 1024;
+
+export const mindmapSchema = {
+    type: 'object',
+    required: ['version', 'nodes', 'edges'],
+    properties: {
+        version: { type: 'number' },
+        nodes: { type: 'array' },
+        edges: { type: 'array' },
+    },
+} as const;
 
 // Seuls les fichiers produits par POST /uploads sont réécrivables, et leur nom est un
 // UUID généré par le serveur. Ce motif est ce qui interdit à un client de désigner un
@@ -112,17 +122,7 @@ export const uploadRoutes: FastifyPluginAsync = async app => {
         {
             preHandler: requireRole(UserRole.EDIT),
             bodyLimit: MAX_MINDMAP_BYTES,
-            schema: {
-                body: {
-                    type: 'object',
-                    required: ['version', 'nodes', 'edges'],
-                    properties: {
-                        version: { type: 'number' },
-                        nodes: { type: 'array' },
-                        edges: { type: 'array' },
-                    },
-                },
-            },
+            schema: { body: mindmapSchema },
         },
         async (req, reply) => {
             const { filename } = req.params;

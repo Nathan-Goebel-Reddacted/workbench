@@ -3,6 +3,8 @@ import { CommandBus } from '@shared/application/command/commandBus';
 import { QueryBus } from '@shared/application/query/queryBus';
 import { CreateProjectCommand } from '@contexts/project/application/command/createProject/createProjectCommand';
 import { AddProjectDocumentCommand } from '@contexts/project/application/command/addProjectDocument/addProjectDocumentCommand';
+import { CreateProjectMindmapCommand } from '@contexts/project/application/command/createProjectMindmap/createProjectMindmapCommand';
+import { MAX_MINDMAP_BYTES, mindmapSchema } from '@shared/infrastructure/http/uploadRoutes';
 import { RemoveProjectDocumentCommand } from '@contexts/project/application/command/removeProjectDocument/removeProjectDocumentCommand';
 import { AddProjectLinkCommand } from '@contexts/project/application/command/addProjectLink/addProjectLinkCommand';
 import { RemoveProjectLinkCommand } from '@contexts/project/application/command/removeProjectLink/removeProjectLinkCommand';
@@ -140,6 +142,28 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
             const documentId = crypto.randomUUID();
             await commandBus.dispatch(new AddProjectDocumentCommand(req.params.id, documentId, name, url));
             return reply.status(201).send({ id: documentId });
+        },
+    );
+
+    app.post<{ Params: { id: string }; Body: { name: string; content: unknown } }>(
+        '/projects/:id/mindmaps',
+        {
+            preHandler: requireRole(UserRole.EDIT),
+            bodyLimit: MAX_MINDMAP_BYTES,
+            schema: {
+                body: {
+                    type: 'object',
+                    required: ['name', 'content'],
+                    properties: { name: { type: 'string', minLength: 1 }, content: mindmapSchema },
+                },
+            },
+        },
+        async (req, reply) => {
+            const documentId = crypto.randomUUID();
+            const url = await commandBus.dispatch<CreateProjectMindmapCommand, string>(
+                new CreateProjectMindmapCommand(req.params.id, documentId, req.body.name, req.body.content),
+            );
+            return reply.status(201).send({ id: documentId, url });
         },
     );
 

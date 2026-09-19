@@ -43,6 +43,8 @@ import { CreateProjectCommand } from '@contexts/project/application/command/crea
 import { CreateProjectHandler } from '@contexts/project/application/command/createProject/createProjectHandler';
 import { AddProjectDocumentCommand } from '@contexts/project/application/command/addProjectDocument/addProjectDocumentCommand';
 import { AddProjectDocumentHandler } from '@contexts/project/application/command/addProjectDocument/addProjectDocumentHandler';
+import { CreateProjectMindmapCommand } from '@contexts/project/application/command/createProjectMindmap/createProjectMindmapCommand';
+import { CreateProjectMindmapHandler } from '@contexts/project/application/command/createProjectMindmap/createProjectMindmapHandler';
 import { RemoveProjectDocumentCommand } from '@contexts/project/application/command/removeProjectDocument/removeProjectDocumentCommand';
 import { RemoveProjectDocumentHandler } from '@contexts/project/application/command/removeProjectDocument/removeProjectDocumentHandler';
 import { AddProjectLinkCommand } from '@contexts/project/application/command/addProjectLink/addProjectLinkCommand';
@@ -124,6 +126,8 @@ import { DeleteIdeaCommand } from '@contexts/idea/application/command/deleteIdea
 import { DeleteIdeaHandler } from '@contexts/idea/application/command/deleteIdea/deleteIdeaHandler';
 import { AddIdeaDocumentCommand } from '@contexts/idea/application/command/addIdeaDocument/addIdeaDocumentCommand';
 import { AddIdeaDocumentHandler } from '@contexts/idea/application/command/addIdeaDocument/addIdeaDocumentHandler';
+import { CreateIdeaMindmapCommand } from '@contexts/idea/application/command/createIdeaMindmap/createIdeaMindmapCommand';
+import { CreateIdeaMindmapHandler } from '@contexts/idea/application/command/createIdeaMindmap/createIdeaMindmapHandler';
 import { RemoveIdeaDocumentCommand } from '@contexts/idea/application/command/removeIdeaDocument/removeIdeaDocumentCommand';
 import { RemoveIdeaDocumentHandler } from '@contexts/idea/application/command/removeIdeaDocument/removeIdeaDocumentHandler';
 import { AddIdeaLinkCommand } from '@contexts/idea/application/command/addIdeaLink/addIdeaLinkCommand';
@@ -222,6 +226,7 @@ import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRep
 import { PageLayoutRepository } from '@contexts/contentEditor/infrastructure/repository/pageLayoutRepository';
 import { AgentToolRepository } from '@contexts/ai-assistant/infrastructure/repository/agentToolRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
+import { MindmapFileStorage } from '@shared/infrastructure/upload/mindmapFileStorage';
 import { PurgeOrphanUploadsCommand } from '@shared/application/command/purgeOrphanUploads/purgeOrphanUploadsCommand';
 import { PurgeOrphanUploadsHandler } from '@shared/application/command/purgeOrphanUploads/purgeOrphanUploadsHandler';
 import { ContactMessageRepository } from '@contexts/contact/infrastructure/repository/contactMessageRepository';
@@ -333,6 +338,7 @@ export function bootstrap(
     // Chaque contexte déclare où il cite des uploads ; c'est ici qu'on les rassemble. Un
     // contexte manquant à cette liste verrait ses fichiers effacés alors qu'il les cite encore,
     // sans la moindre erreur — d'où la déclaration chez soi plutôt qu'une liste enfouie.
+    const mindmaps = new MindmapFileStorage();
     const uploads = new UploadStorage(em, [
         ...projectUploadReferences,
         ...ideaUploadReferences,
@@ -415,6 +421,10 @@ export function bootstrap(
     );
     commandBus.register(AddProjectDocumentCommand.commandName, new AddProjectDocumentHandler(repos.project));
     commandBus.register(
+        CreateProjectMindmapCommand.commandName,
+        new CreateProjectMindmapHandler(repos.project, mindmaps, uploads),
+    );
+    commandBus.register(
         RemoveProjectDocumentCommand.commandName,
         new RemoveProjectDocumentHandler(repos.project, uploads),
     );
@@ -479,6 +489,10 @@ export function bootstrap(
         new DeleteIdeaHandler(repos.idea, ideaFeaturesGateway, uploads, transactions),
     );
     commandBus.register(AddIdeaDocumentCommand.commandName, new AddIdeaDocumentHandler(repos.idea));
+    commandBus.register(
+        CreateIdeaMindmapCommand.commandName,
+        new CreateIdeaMindmapHandler(repos.idea, mindmaps, uploads),
+    );
     commandBus.register(RemoveIdeaDocumentCommand.commandName, new RemoveIdeaDocumentHandler(repos.idea, uploads));
     commandBus.register(AddIdeaLinkCommand.commandName, new AddIdeaLinkHandler(repos.idea));
     commandBus.register(RemoveIdeaLinkCommand.commandName, new RemoveIdeaLinkHandler(repos.idea));

@@ -1,8 +1,8 @@
 import { getJson, send, sendJson } from '../../shared/api/http'
-import { documentStore } from '../../shared/api/documents'
+import { mindmapDocumentStore } from '../../shared/api/documents'
 import { linkStore } from '../../shared/api/links'
 import type { Category } from '../../shared/domain/category'
-import type { DocumentStore } from '../../shared/domain/document'
+import type { MindmapDocumentStore } from '../../shared/domain/document'
 import type { LinkStore } from '../../shared/domain/link'
 import type { Project, ProjectInfo, ProjectSummary } from './types'
 
@@ -10,8 +10,8 @@ function projectPath(id: string): string {
   return `/projects/${id}`
 }
 
-export function projectDocuments(id: string): DocumentStore {
-  return documentStore(projectPath(id))
+export function projectDocuments(id: string): MindmapDocumentStore {
+  return mindmapDocumentStore(projectPath(id))
 }
 
 export function projectLinks(id: string): LinkStore {

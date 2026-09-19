@@ -1,10 +1,9 @@
 import { uploadUrl } from '../config'
 import { HttpError, send, sendJson } from './http'
 
-export async function uploadFile(file: Blob, filename?: string): Promise<string> {
+export async function uploadFile(file: File): Promise<string> {
   const form = new FormData()
-  if (filename) form.append('file', file, filename)
-  else form.append('file', file)
+  form.append('file', file)
   const { url } = await sendJson<{ url: string }>('/uploads', { method: 'POST', body: form })
   return url
 }

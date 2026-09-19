@@ -4,10 +4,10 @@ import { createPortal } from 'react-dom'
 import { Button } from '@atelier/shared-ui'
 import { MindmapEditor } from './MindmapEditor'
 import { useMindmapFile } from './useMindmapFile'
-import type { Document, DocumentStore } from '../domain/document'
+import type { Document, MindmapDocumentStore } from '../domain/document'
 
 type Props = {
-  store: DocumentStore
+  store: MindmapDocumentStore
   document?: Document
   onClose: () => void
   onCreated?: (document: Document) => void
