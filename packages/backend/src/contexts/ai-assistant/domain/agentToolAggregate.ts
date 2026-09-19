@@ -5,6 +5,7 @@ import { Permission } from './valueObject/permission';
 import { Scope } from './valueObject/scope';
 import { Token } from './valueObject/token';
 import { AgentToolMustKeepScopeException } from './exception/agentToolMustKeepScope';
+import { AgentToolRevokedException } from './exception/agentToolRevoked';
 import { ISecretHasher } from './port/iSecretHasher';
 
 export class AgentTool {
@@ -53,6 +54,7 @@ export class AgentTool {
     }
 
     rename(name: Name): void {
+        this.assertActive();
         this.name = name;
     }
 
@@ -61,6 +63,7 @@ export class AgentTool {
     }
 
     changePermission(permission: Permission): void {
+        this.assertActive();
         this.permission = permission;
     }
 
@@ -69,12 +72,14 @@ export class AgentTool {
     }
 
     addScope(scope: Scope): void {
+        this.assertActive();
         const alreadyExists = this.scopes.some(s => s.equals(scope));
         if (alreadyExists) return;
         this.scopes.push(scope);
     }
 
     removeScope(scope: Scope): void {
+        this.assertActive();
         if (this.scopes.length === 1 && this.scopes[0].equals(scope)) {
             throw new AgentToolMustKeepScopeException();
         }
@@ -91,6 +96,7 @@ export class AgentTool {
     }
 
     rotateToken(newToken: Token): void {
+        this.assertActive();
         this.token = newToken;
     }
 
@@ -114,5 +120,9 @@ export class AgentTool {
 
     restore(): void {
         this.revokedAt = null;
+    }
+
+    private assertActive(): void {
+        if (this.revokedAt !== null) throw new AgentToolRevokedException();
     }
 }

@@ -1,5 +1,6 @@
 import { PairingRequest } from '../pairingRequestAggregate';
 import { PairingRequestId } from '../valueObject/pairingRequestId';
+import { PairingStatusValue } from '../valueObject/pairingStatus';
 
 export interface IPairingRequestRepository {
     findById(id: PairingRequestId): Promise<PairingRequest | null>;
@@ -8,7 +9,7 @@ export interface IPairingRequestRepository {
     findByCodePrefix(prefix: string): Promise<PairingRequest[]>;
 
     /** Les demandes encore vivantes — en attente ou approuvées —, la plus récente en tête. */
-    findOpen(): Promise<PairingRequest[]>;
+    findOpen(status?: PairingStatusValue): Promise<PairingRequest[]>;
 
     countPending(): Promise<number>;
 

@@ -19,6 +19,7 @@ import { ListPairingRequestsQuery } from '@contexts/ai-assistant/application/que
 import { PairingRequestDto } from '@contexts/ai-assistant/application/query/listPairingRequests/pairingRequestDto';
 import { TooManyPendingPairingRequests } from '@contexts/ai-assistant/domain/exception/tooManyPendingPairingRequests';
 import { formatPairingCode } from '@contexts/ai-assistant/domain/valueObject/pairingCode';
+import { PairingStatusValue } from '@contexts/ai-assistant/domain/valueObject/pairingStatus';
 import { ScopeValue } from '@contexts/ai-assistant/domain/valueObject/scope';
 import { PermissionValue } from '@contexts/ai-assistant/domain/valueObject/permission';
 import { UserRole } from '@shared/domain/valueObject/userRole';
@@ -104,21 +105,34 @@ export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
 
     // ── Côté administration ────────────────────────────────────────────────────────
 
-    app.get('/agent-pairing-requests', { preHandler: requireRole(UserRole.EDIT) }, async (_req, reply) => {
-        const requests = await queryBus.dispatch<ListPairingRequestsQuery, PairingRequestDto[]>(
-            new ListPairingRequestsQuery(),
-        );
-        return reply.send({ requests });
-    });
+    app.get<{ Querystring: { status?: PairingStatusValue } }>(
+        '/agent-pairing-requests',
+        {
+            preHandler: requireRole(UserRole.EDIT),
+            schema: {
+                querystring: {
+                    type: 'object',
+                    properties: {
+                        status: { type: 'string', enum: [PairingStatusValue.PENDING, PairingStatusValue.APPROVED] },
+                    },
+                },
+            },
+        },
+        async (req, reply) => {
+            const requests = await queryBus.dispatch<ListPairingRequestsQuery, PairingRequestDto[]>(
+                new ListPairingRequestsQuery(req.query.status ?? null),
+            );
+            return reply.send({ requests });
+        },
+    );
 
-    app.post<{ Params: { id: string }; Body?: { userId: string; scopes?: string[]; permission?: string } }>(
+    app.post<{ Params: { id: string }; Body?: { userId?: string; scopes?: string[]; permission?: string } }>(
         '/agent-pairing-requests/:id/approve',
         {
             preHandler: requireRole(UserRole.EDIT),
             schema: {
                 body: {
                     type: 'object',
-                    required: ['userId'],
                     properties: {
                         userId: { type: 'string' },
                         scopes: { type: 'array', items: { type: 'string', enum: Object.values(ScopeValue) } },
@@ -131,7 +145,7 @@ export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
             const outcome = await commandBus.dispatch<ApprovePairingRequestCommand, ApprovalOutcome | null>(
                 new ApprovePairingRequestCommand(
                     req.params.id,
-                    req.body!.userId,
+                    req.body?.userId ?? req.user.sub,
                     req.body?.scopes,
                     req.body?.permission,
                 ),

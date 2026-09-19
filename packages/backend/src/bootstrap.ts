@@ -76,6 +76,7 @@ import { GetFeaturesByOwnerQuery } from '@contexts/feature/application/query/get
 import { GetFeaturesByOwnerHandler } from '@contexts/feature/application/query/getFeaturesByOwner/getFeaturesByOwnerHandler';
 import { OwnerGateway } from '@contexts/feature/infrastructure/gateway/ownerGateway';
 import { FeatureGateway } from '@contexts/ticket/infrastructure/gateway/featureGateway';
+import { UserDirectory } from '@contexts/ai-assistant/infrastructure/gateway/userDirectory';
 import { FeatureTicketsGateway } from '@contexts/feature/infrastructure/gateway/featureTicketsGateway';
 import { IdeaFeaturesGateway } from '@contexts/idea/infrastructure/gateway/ideaFeaturesGateway';
 import { ProjectCreationGateway } from '@contexts/idea/infrastructure/gateway/projectCreationGateway';
@@ -347,6 +348,7 @@ export function bootstrap(
     // Le contexte Ticket interroge le contexte Feature par son contrat public — la query — et
     // c'est Feature qui remonte jusqu'au porteur. Ticket ne connaît ni Project ni Idea.
     const featureGateway = new FeatureGateway(queryBus);
+    const userDirectory = new UserDirectory(queryBus);
 
     // Cascades : chaque contexte annonce sa disparition au suivant, personne ne supprime chez
     // le voisin. Feature -> Ticket, puis Idea -> Feature.
@@ -513,7 +515,7 @@ export function bootstrap(
     );
     queryBus.register(GetAgentToolByIdQuery.queryName, new GetAgentToolByIdHandler(repos.agentTool));
     queryBus.register(GetAgentToolsByUserIdQuery.queryName, new GetAgentToolsByUserIdHandler(repos.agentTool));
-    queryBus.register(GetAllAgentToolsQuery.queryName, new GetAllAgentToolsHandler(repos.agentTool));
+    queryBus.register(GetAllAgentToolsQuery.queryName, new GetAllAgentToolsHandler(repos.agentTool, userDirectory));
     commandBus.register(RevokeAgentToolCommand.commandName, new RevokeAgentToolHandler(repos.agentTool));
     commandBus.register(RestoreAgentToolCommand.commandName, new RestoreAgentToolHandler(repos.agentTool));
 

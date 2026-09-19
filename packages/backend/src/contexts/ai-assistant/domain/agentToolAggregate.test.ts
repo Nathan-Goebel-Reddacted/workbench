@@ -7,6 +7,7 @@ import { Permission, PermissionValue } from './valueObject/permission.js';
 import { Scope, ScopeValue } from './valueObject/scope.js';
 import { Token } from './valueObject/token.js';
 import { AgentToolMustKeepScopeException } from './exception/agentToolMustKeepScope.js';
+import { AgentToolRevokedException } from './exception/agentToolRevoked.js';
 import { InvalidScopeException } from './exception/invalidScope.js';
 import { InvalidPermissionException } from './exception/invalidPermission.js';
 
@@ -116,6 +117,29 @@ describe('AgentTool — révocation', () => {
 
         expect(agent.isRevoked()).toBe(false);
         expect(agent.getRevokedAt()).toBeNull();
+    });
+
+    it('se fige une fois révoqué : rien ne change avant la restauration', () => {
+        const agent = tool([ScopeValue.PROJECT, ScopeValue.TICKET]);
+        agent.revoke();
+
+        expect(() => agent.rename(new Name('autre'))).toThrow(AgentToolRevokedException);
+        expect(() => agent.changePermission(new Permission(PermissionValue.WRITE))).toThrow(AgentToolRevokedException);
+        expect(() => agent.addScope(new Scope(ScopeValue.IDEA))).toThrow(AgentToolRevokedException);
+        expect(() => agent.removeScope(new Scope(ScopeValue.TICKET))).toThrow(AgentToolRevokedException);
+        expect(() => agent.rotateToken(new Token('nouveau-hash'))).toThrow(AgentToolRevokedException);
+        expect(agent.getScopes()).toHaveLength(2);
+        expect(agent.getToken().getValue()).toBe('hash');
+    });
+
+    it('redevient modifiable une fois restauré', () => {
+        const agent = tool();
+        agent.revoke();
+        agent.restore();
+
+        agent.changePermission(new Permission(PermissionValue.WRITE));
+
+        expect(agent.getPermission().getValue()).toBe(PermissionValue.WRITE);
     });
 });
 

@@ -24,10 +24,10 @@ export class PairingRequestRepository implements IPairingRequestRepository {
         return entities.map(entity => this.toDomain(entity));
     }
 
-    async findOpen(): Promise<PairingRequest[]> {
+    async findOpen(status?: PairingStatusValue): Promise<PairingRequest[]> {
         const entities = await this.em.find(
             AgentPairingRequestOrmEntity,
-            { status: { $in: [PairingStatusValue.PENDING, PairingStatusValue.APPROVED] } },
+            { status: status ?? { $in: [PairingStatusValue.PENDING, PairingStatusValue.APPROVED] } },
             { orderBy: { createdAt: 'desc' } },
         );
         return entities.map(entity => this.toDomain(entity));
