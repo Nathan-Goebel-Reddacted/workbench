@@ -6,7 +6,8 @@ import { FeatureId } from './valueObject/featureId.js';
 import { Title } from './valueObject/title.js';
 import { Description } from './valueObject/description.js';
 import { TicketStatus } from './valueObject/status.js';
-import { Note } from './valueObject/note.js';
+import { Note } from './entity/note.js';
+import { NoteId } from './valueObject/noteId.js';
 import { StatusForbiddenOnIdeaException } from './exception/statusForbiddenOnIdea.js';
 import { NoteNotFoundException } from './exception/noteNotFound.js';
 import { Document } from '@shared/domain/entity/document.js';
@@ -57,37 +58,57 @@ describe('Ticket — avancement', () => {
 });
 
 describe('Ticket — notes', () => {
+    const note = (text: string, id?: string) => new Note(new NoteId(id), text);
+
     it('ajoute les notes dans l’ordre', () => {
         const subject = ticket();
 
-        subject.addNote(new Note('première'));
-        subject.addNote(new Note('deuxième'));
+        subject.addNote(note('première'));
+        subject.addNote(note('deuxième'));
 
-        expect(subject.getNotes().map(n => n.getValue())).toEqual(['première', 'deuxième']);
+        expect(subject.getNotes().map(n => n.getText())).toEqual(['première', 'deuxième']);
     });
 
-    it('remplace une note existante', () => {
+    it('réécrit une note désignée par son identifiant, pas par sa position', () => {
         const subject = ticket();
-        subject.addNote(new Note('avant'));
+        subject.addNote(note('garde', 'n1'));
+        subject.addNote(note('avant', 'n2'));
 
-        subject.replaceNote(0, new Note('après'));
+        subject.rewriteNote(new NoteId('n2'), 'après');
 
-        expect(subject.getNotes().map(n => n.getValue())).toEqual(['après']);
+        expect(subject.getNotes().map(n => n.getText())).toEqual(['garde', 'après']);
     });
 
-    it('refuse une position hors bornes plutôt que d’écrire à côté', () => {
+    it('refuse une note inconnue plutôt que d’écrire à côté', () => {
         const subject = ticket();
-        subject.addNote(new Note('seule'));
+        subject.addNote(note('seule', 'n1'));
 
-        expect(() => subject.replaceNote(1, new Note('x'))).toThrow(NoteNotFoundException);
-        expect(() => subject.replaceNote(-1, new Note('x'))).toThrow(NoteNotFoundException);
+        expect(() => subject.rewriteNote(new NoteId('absente'), 'x')).toThrow(NoteNotFoundException);
+    });
+
+    it('refuse un texte vide, à la création comme à la réécriture', () => {
+        const subject = ticket();
+        subject.addNote(note('seule', 'n1'));
+
+        expect(() => note('   ')).toThrow();
+        expect(() => subject.rewriteNote(new NoteId('n1'), '  ')).toThrow();
+        expect(subject.getNotes()[0].getText()).toBe('seule');
+    });
+
+    it('ignore une note déjà présente plutôt que de la dupliquer', () => {
+        const subject = ticket();
+        subject.addNote(note('a', 'n1'));
+
+        subject.addNote(note('a', 'n1'));
+
+        expect(subject.getNotes()).toHaveLength(1);
     });
 
     it('rend une copie : modifier la liste rendue ne touche pas le ticket', () => {
         const subject = ticket();
-        subject.addNote(new Note('a'));
+        subject.addNote(note('a'));
 
-        subject.getNotes().push(new Note('intrus'));
+        subject.getNotes().push(note('intrus'));
 
         expect(subject.getNotes()).toHaveLength(1);
     });

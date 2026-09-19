@@ -6,7 +6,7 @@ export class UpdateTicketNoteCommand implements Command {
 
     constructor(
         readonly id: string,
-        readonly index: number,
+        readonly noteId: string,
         readonly note: string,
     ) {}
 }

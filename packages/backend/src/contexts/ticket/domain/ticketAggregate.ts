@@ -1,6 +1,7 @@
 import { Description } from './valueObject/description';
 import { FeatureId } from './valueObject/featureId';
-import { Note } from './valueObject/note';
+import { Note } from './entity/note';
+import { NoteId } from './valueObject/noteId';
 import { TicketReference } from './valueObject/reference';
 import { TicketStatus } from './valueObject/status';
 import { StatusForbiddenOnIdeaException } from './exception/statusForbiddenOnIdea';
@@ -89,12 +90,16 @@ export class Ticket {
     }
 
     addNote(note: Note): void {
+        const alreadyExists = this.notes.some(n => n.getId().equals(note.getId()));
+        if (alreadyExists) return;
         this.notes.push(note);
     }
 
-    replaceNote(index: number, note: Note): void {
-        if (index < 0 || index >= this.notes.length) throw new NoteNotFoundException(index);
-        this.notes[index] = note;
+    rewriteNote(noteId: NoteId, text: string): Note {
+        const note = this.notes.find(n => n.getId().equals(noteId));
+        if (!note) throw new NoteNotFoundException(noteId.getValue());
+        note.rewrite(text);
+        return note;
     }
 
     getDocuments(): Document[] {

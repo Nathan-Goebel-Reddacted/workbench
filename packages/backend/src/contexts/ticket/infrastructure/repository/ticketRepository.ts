@@ -9,7 +9,8 @@ import { FeatureId } from '../../domain/valueObject/featureId';
 import { Title } from '../../domain/valueObject/title';
 import { Description } from '../../domain/valueObject/description';
 import { TicketStatus } from '../../domain/valueObject/status';
-import { Note } from '../../domain/valueObject/note';
+import { Note } from '../../domain/entity/note';
+import { NoteId } from '../../domain/valueObject/noteId';
 import { Document } from '@shared/domain/entity/document';
 import { DocumentId } from '@shared/domain/valueObject/documentId';
 import { DuplicateReferenceException } from '../../domain/exception/duplicateReferenceException';
@@ -91,7 +92,7 @@ export class TicketRepository implements ITicketRepository {
             new Title(e.title),
             new Description(e.description),
             e.status as TicketStatus,
-            e.notes.map(n => new Note(n)),
+            e.notes.map(n => new Note(new NoteId(n.id), n.text)),
             e.documents.map(d => new Document(new DocumentId(d.id), d.name, d.url)),
         );
     }
@@ -105,7 +106,7 @@ export class TicketRepository implements ITicketRepository {
         e.title = ticket.getTitle().getValue();
         e.description = ticket.getDescription().getValue();
         e.status = ticket.getStatus();
-        e.notes = ticket.getNotes().map(n => n.getValue());
+        e.notes = ticket.getNotes().map(n => ({ id: n.getId().getValue(), text: n.getText() }));
         e.documents = ticket.getDocuments().map(d => ({
             id: d.getId().getValue(),
             name: d.getName(),

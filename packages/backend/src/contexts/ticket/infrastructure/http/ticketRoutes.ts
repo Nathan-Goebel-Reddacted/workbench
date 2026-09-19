@@ -7,6 +7,7 @@ import { UpdateTicketCommand } from '@contexts/ticket/application/command/update
 import { UpdateTicketNoteCommand } from '@contexts/ticket/application/command/updateTicketNote/updateTicketNoteCommand';
 import { DeleteTicketCommand } from '@contexts/ticket/application/command/deleteTicket/deleteTicketCommand';
 import { AddTicketNoteCommand } from '@contexts/ticket/application/command/addTicketNote/addTicketNoteCommand';
+import { TicketNoteDto } from '@contexts/ticket/application/command/ticketNoteDto';
 import { AddTicketDocumentCommand } from '@contexts/ticket/application/command/addTicketDocument/addTicketDocumentCommand';
 import { RemoveTicketDocumentCommand } from '@contexts/ticket/application/command/removeTicketDocument/removeTicketDocumentCommand';
 import { GetTicketByIdQuery } from '@contexts/ticket/application/query/getTicketById/getTicketByIdQuery';
@@ -101,8 +102,8 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
         },
     );
 
-    app.patch<{ Params: { id: string; index: string }; Body: { note: string } }>(
-        '/tickets/:id/notes/:index',
+    app.patch<{ Params: { id: string; noteId: string }; Body: { note: string } }>(
+        '/tickets/:id/notes/:noteId',
         {
             preHandler: requireRole(UserRole.EDIT),
             schema: {
@@ -114,10 +115,10 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
             },
         },
         async (req, reply) => {
-            const index = parseInt(req.params.index, 10);
-            if (isNaN(index)) return reply.status(400).send({ error: 'Note index must be a number' });
-            await commandBus.dispatch(new UpdateTicketNoteCommand(req.params.id, index, req.body.note));
-            return reply.status(204).send();
+            const note = await commandBus.dispatch<UpdateTicketNoteCommand, TicketNoteDto>(
+                new UpdateTicketNoteCommand(req.params.id, req.params.noteId, req.body.note),
+            );
+            return reply.send(note);
         },
     );
 
@@ -134,8 +135,11 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
             },
         },
         async (req, reply) => {
-            await commandBus.dispatch(new AddTicketNoteCommand(req.params.id, req.body.note));
-            return reply.status(204).send();
+            const noteId = crypto.randomUUID();
+            const note = await commandBus.dispatch<AddTicketNoteCommand, TicketNoteDto>(
+                new AddTicketNoteCommand(req.params.id, noteId, req.body.note),
+            );
+            return reply.status(201).send(note);
         },
     );
 

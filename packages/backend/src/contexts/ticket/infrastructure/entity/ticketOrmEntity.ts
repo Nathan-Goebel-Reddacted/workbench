@@ -1,6 +1,7 @@
 import { Entity, Index, PrimaryKey, Property, Unique } from '@mikro-orm/core';
 
 type DocumentRow = { id: string; name: string; url: string; type: string };
+type NoteRow = { id: string; text: string };
 
 @Entity({ tableName: 'tickets' })
 // Le numéro d'un ticket est relatif à sa feature : chaque feature a son numéro 1. Cette contrainte
@@ -32,7 +33,7 @@ export class TicketOrmEntity {
     status!: string;
 
     @Property({ type: 'json' })
-    notes!: string[];
+    notes!: NoteRow[];
 
     @Property({ type: 'json' })
     documents!: DocumentRow[];

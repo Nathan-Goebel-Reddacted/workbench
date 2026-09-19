@@ -11,6 +11,6 @@ export type TicketDto = Readonly<{
      * Exposé pour que l'interface grise le contrôle au lieu de laisser tenter puis échouer.
      */
     statusLocked: boolean;
-    notes: string[];
+    notes: Array<{ id: string; text: string }>;
     documents: Array<{ id: string; name: string; url: string; type: string }>;
 }>;

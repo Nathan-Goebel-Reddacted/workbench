@@ -6,6 +6,7 @@ export class AddTicketNoteCommand implements Command {
 
     constructor(
         readonly ticketId: string,
+        readonly noteId: string,
         readonly note: string,
     ) {
         this.commandName = AddTicketNoteCommand.commandName;

@@ -126,7 +126,7 @@ export function createTicketTools(commandBus: CommandBus, queryBus: QueryBus): A
                 note: z.string().min(1).describe('Text of the note to append.'),
             }),
             execute: async ({ id, note }) => {
-                await commandBus.dispatch(new AddTicketNoteCommand(id, note));
+                await commandBus.dispatch(new AddTicketNoteCommand(id, crypto.randomUUID(), note));
                 return readTicket(id);
             },
         }),
@@ -134,21 +134,17 @@ export function createTicketTools(commandBus: CommandBus, queryBus: QueryBus): A
         defineTool({
             name: 'update_ticket_note',
             description:
-                'Replace the text of one existing note, identified by its position in the notes array. ' +
-                'Read the ticket first to know the index you want.',
+                'Replace the text of one existing note, identified by its id. ' +
+                'Read the ticket first to know the id of the note you want.',
             scope: ScopeValue.TICKET,
             access: 'write',
             inputSchema: z.object({
                 id: uuidSchema.describe('Id of the ticket.'),
-                index: z
-                    .number()
-                    .int()
-                    .min(0)
-                    .describe('Zero-based position of the note in the notes array returned by get_ticket.'),
+                noteId: uuidSchema.describe('Id of the note, as returned by get_ticket.'),
                 note: z.string().min(1).describe('New text replacing that note.'),
             }),
-            execute: async ({ id, index, note }) => {
-                await commandBus.dispatch(new UpdateTicketNoteCommand(id, index, note));
+            execute: async ({ id, noteId, note }) => {
+                await commandBus.dispatch(new UpdateTicketNoteCommand(id, noteId, note));
                 return readTicket(id);
             },
         }),

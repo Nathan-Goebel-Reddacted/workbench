@@ -11,7 +11,7 @@ export function toTicketDto(ticket: Ticket, ownedByIdea: boolean): TicketDto {
         description: ticket.getDescription().getValue(),
         status: ticket.getStatus(),
         statusLocked: ownedByIdea,
-        notes: ticket.getNotes().map(n => n.getValue()),
+        notes: ticket.getNotes().map(n => ({ id: n.getId().getValue(), text: n.getText() })),
         documents: ticket.getDocuments().map(d => ({
             id: d.getId().getValue(),
             name: d.getName(),
