@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { MindmapView, resolveDocumentKind, type DocumentKind } from '@atelier/content-renderer'
+import { MindmapView, resolveDocumentKind, type DocumentKind } from '@content'
 import { API_URL, uploadUrl } from '../config'
 
 export type PreviewState = { url: string; kind: DocumentKind; x: number; y: number } | null

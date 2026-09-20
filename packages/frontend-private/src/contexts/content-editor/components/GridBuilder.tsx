@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { ComponentPalette } from './ComponentPalette'
 import { GridCanvas } from './GridCanvas'
-import { LayoutPreview } from '@atelier/content-renderer'
+import { LayoutPreview } from '@content'
 import type { PageType } from '../widgets'
 import { usePageLayout } from '../hooks/usePageLayout'
 import { API_URL } from '../../../shared/config'

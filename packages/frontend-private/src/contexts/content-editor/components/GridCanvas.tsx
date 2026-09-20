@@ -14,7 +14,7 @@ import {
   zIndexFor,
   type SectionDto,
   type SectionPosition,
-} from '@atelier/content-renderer'
+} from '@content'
 import type { SectionContent } from '../widgets'
 
 const MIN_W = 1

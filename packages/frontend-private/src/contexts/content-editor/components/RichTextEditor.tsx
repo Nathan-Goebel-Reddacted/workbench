@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useCallback, useState } from 'react'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
-import { buildRichTextExtensions } from '@atelier/content-renderer'
+import { buildRichTextExtensions } from '@content'
 import { DataBindingPicker } from './DataBindingPicker'
 import { FileUpload } from '../../../shared/components/FileUpload'
 import { API_URL } from '../../../shared/config'

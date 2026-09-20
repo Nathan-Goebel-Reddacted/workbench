@@ -34,7 +34,7 @@ import {
   type FormFieldType,
   type SectionDto,
   type TextContent,
-} from '@atelier/content-renderer'
+} from '@content'
 import type { SectionContent } from '../widgets'
 import { useBindableProjects } from '../hooks/useBindables'
 import { API_URL, uploadUrl } from '../../../shared/config'

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { emptyMindmap, readMindmap, type Mindmap } from '@atelier/content-renderer'
+import { emptyMindmap, readMindmap, type Mindmap } from '@content'
 import { readUpload, rewriteUpload } from '../api/uploads'
 import type { Document, MindmapDocumentStore } from '../domain/document'
 

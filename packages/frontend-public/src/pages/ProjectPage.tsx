@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { LayoutPreview, type PageLayoutDto } from '@atelier/content-renderer'
+import { LayoutPreview, type PageLayoutDto } from '@content'
 import { ErrorMessage, LoadingMessage } from '../components/PageStatus'
 import { fetchJson, useAsync } from '@atelier/shared-ui'
 import { useDocumentTitle } from '../lib/useDocumentTitle'

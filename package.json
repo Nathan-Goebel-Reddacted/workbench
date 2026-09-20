@@ -5,7 +5,6 @@
   "workspaces": [
     "packages/backend",
     "packages/shared-ui",
-    "packages/content-renderer",
     "packages/frontend-public",
     "packages/frontend-private"
   ],

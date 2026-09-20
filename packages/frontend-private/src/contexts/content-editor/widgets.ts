@@ -1,3 +1,3 @@
-import type { PageType, SectionType, SectionContent } from '@atelier/content-renderer'
+import type { PageType, SectionType, SectionContent } from '@content'
 
 export type { PageType, SectionType, SectionContent }

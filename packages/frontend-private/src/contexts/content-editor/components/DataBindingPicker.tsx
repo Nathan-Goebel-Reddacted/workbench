@@ -8,7 +8,7 @@ import {
   type BindingEntity,
   type BindingField,
   type DataBindingAttrs,
-} from '@atelier/content-renderer'
+} from '@content'
 import { useBindableFeatures, useBindableProjects, useBindableTickets } from '../hooks/useBindables'
 
 type Props = {

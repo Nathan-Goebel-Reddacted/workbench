@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { useState } from 'react'
 import { useCanEdit } from '../../../shared/auth/EditPermissionContext'
 import { WidgetEditorModal } from './WidgetEditorModal'
-import { readBackgroundContent, backgroundColorForDepth, type SectionDto } from '@atelier/content-renderer'
+import { readBackgroundContent, backgroundColorForDepth, type SectionDto } from '@content'
 import type { SectionContent } from '../widgets'
 
 type SectionBlockProps = {

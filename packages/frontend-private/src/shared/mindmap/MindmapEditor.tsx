@@ -34,7 +34,7 @@ import {
   type MindmapEdgeStroke,
   type MindmapFill,
   type MindmapShape,
-} from '@atelier/content-renderer'
+} from '@content'
 import { MINDMAP_NODE_TYPES, MindmapEditProvider } from './nodes'
 import {
   defaultEdgeData,

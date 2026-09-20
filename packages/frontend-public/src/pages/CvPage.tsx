@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useMemo, useState } from 'react'
 import { Button } from '@atelier/shared-ui'
-import { resolveUploadUrl } from '@atelier/content-renderer'
+import { resolveUploadUrl } from '@content'
 import { ErrorMessage, LoadingMessage } from '../components/PageStatus'
 import { fetchJson, useAsync } from '@atelier/shared-ui'
 import { useDocumentTitle } from '../lib/useDocumentTitle'

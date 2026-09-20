@@ -1,4 +1,4 @@
-import { resolveUploadUrl } from '@atelier/content-renderer'
+import { resolveUploadUrl } from '@content'
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 

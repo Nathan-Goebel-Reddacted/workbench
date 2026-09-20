@@ -1,4 +1,4 @@
-import type { PageLayoutDto, PageType, SectionContent, SectionPosition } from '@atelier/content-renderer'
+import type { PageLayoutDto, PageType, SectionContent, SectionPosition } from '@content'
 import { getJson, send, sendJson } from '../../shared/api/http'
 import type { MediaKind, NewSection, ProjectMedia } from './types'
 

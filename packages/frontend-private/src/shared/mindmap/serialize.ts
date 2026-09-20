@@ -13,7 +13,7 @@ import {
   type MindmapNode,
   type MindmapNodeKind,
   type MindmapShape,
-} from '@atelier/content-renderer'
+} from '@content'
 
 export type MindmapNodeData = {
   text: string
