@@ -15,7 +15,8 @@ export class GetTicketByIdHandler implements IQueryHandler<GetTicketByIdQuery, T
     async handle(query: GetTicketByIdQuery): Promise<TicketDto | null> {
         const ticket = await this.repository.findById(new TicketId(query.id));
         if (!ticket) return null;
-        const feature = await this.features.describe(ticket.getFeatureId().getValue());
+        const feature = await this.features.describe(ticket.getFeatureId().getValue(), query.includeHidden);
+        if (!query.includeHidden && !feature) return null;
         return toTicketDto(ticket, feature?.ownerType === 'idea');
     }
 }

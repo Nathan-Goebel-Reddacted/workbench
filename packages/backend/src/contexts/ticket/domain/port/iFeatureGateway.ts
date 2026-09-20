@@ -11,5 +11,5 @@ export type FeatureContext = Readonly<{
  * interroge lui-même le porteur. La chaîne est Ticket → Feature → (Project | Idea).
  */
 export interface IFeatureGateway {
-    describe(featureId: string): Promise<FeatureContext | null>;
+    describe(featureId: string, includeHidden?: boolean): Promise<FeatureContext | null>;
 }

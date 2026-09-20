@@ -9,7 +9,8 @@ import { DeleteFeatureCommand } from '@contexts/feature/application/command/dele
 import { GetFeatureByIdQuery } from '@contexts/feature/application/query/getFeatureById/getFeatureByIdQuery';
 import { GetFeaturesByOwnerQuery } from '@contexts/feature/application/query/getFeaturesByOwner/getFeaturesByOwnerQuery';
 import { GetFeatureDeletionImpactQuery } from '@contexts/feature/application/query/getFeatureDeletionImpact/getFeatureDeletionImpactQuery';
-import { requireRole, requirePrivateRead } from '@shared/infrastructure/http/roleGuard';
+import { requireRole, requirePrivateRead, hasPrivateRead } from '@shared/infrastructure/http/roleGuard';
+import { uuidParamsSchema } from '@shared/infrastructure/http/routeSchemas';
 import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
@@ -36,11 +37,11 @@ export const featureRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
         },
     );
 
-    // Volontairement ouverte : le site public la lit via les jetons de liaison des widgets
-    // texte (shared-ui/src/content/richText/dataBinding.tsx). Dette assumée — n'importe quel id est
-    // lisible, y compris sous un projet non `visible`.
-    app.get<{ Params: { id: string } }>('/features/:id', async (req, reply) => {
-        const result = await queryBus.dispatch(new GetFeatureByIdQuery(req.params.id));
+    // Ouverte : le site public la lit via les jetons de liaison des widgets texte
+    // (shared-ui/src/content/richText/dataBinding.tsx). Une feature ne sort d'ici que si son
+    // porteur est publiquement visible.
+    app.get<{ Params: { id: string } }>('/features/:id', { schema: uuidParamsSchema }, async (req, reply) => {
+        const result = await queryBus.dispatch(new GetFeatureByIdQuery(req.params.id, hasPrivateRead(req)));
         return reply.send(result);
     });
 
