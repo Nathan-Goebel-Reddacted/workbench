@@ -8,7 +8,6 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/backend/package.json          ./packages/backend/
 COPY packages/shared-ui/package.json        ./packages/shared-ui/
-COPY packages/content-renderer/package.json ./packages/content-renderer/
 COPY packages/frontend-public/package.json  ./packages/frontend-public/
 COPY packages/frontend-private/package.json ./packages/frontend-private/
 RUN npm ci
@@ -29,7 +28,6 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/backend/package.json          ./packages/backend/
 COPY packages/shared-ui/package.json        ./packages/shared-ui/
-COPY packages/content-renderer/package.json ./packages/content-renderer/
 COPY packages/frontend-public/package.json  ./packages/frontend-public/
 COPY packages/frontend-private/package.json ./packages/frontend-private/
 # @mikro-orm/reflection lit les métadonnées au démarrage : ts-morph reste requis en prod.
