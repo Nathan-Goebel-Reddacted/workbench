@@ -4,6 +4,7 @@ import { PageShell } from '../../../shared/components/PageShell'
 import { Async } from '../../../shared/components/PageStatus'
 import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
 import { groupByCategory, type Section } from '../sections'
+import type { ProjectSummary } from '../types'
 import { usePublishedProjects } from '../hooks/usePublishedProjects'
 
 export function ProjectsPage() {
@@ -32,10 +33,7 @@ function Sections({ sections }: { sections: Section[] }) {
               <ul style={listStyle}>
                 {section.projects.map(p => (
                   <li key={p.id} style={itemStyle}>
-                    <Link to={`/projects/${p.id}`} style={itemLinkStyle}>
-                      <span style={itemNameStyle}>{p.name}</span>
-                      {p.description && <span style={itemDescStyle}>{p.description}</span>}
-                    </Link>
+                    <ProjectEntry project={p} />
                   </li>
                 ))}
               </ul>
@@ -44,6 +42,31 @@ function Sections({ sections }: { sections: Section[] }) {
         ))}
       </div>
     </PageShell>
+  )
+}
+
+function ProjectEntry({ project }: { project: ProjectSummary }) {
+  const body = (
+    <>
+      <span style={itemNameStyle}>{project.name}</span>
+      {project.description && <span style={itemDescStyle}>{project.description}</span>}
+    </>
+  )
+
+  if (project.destination.kind === 'external') {
+    return (
+      <a href={project.destination.url} target="_blank" rel="noreferrer" style={itemLinkStyle}>
+        {body}
+      </a>
+    )
+  }
+
+  if (project.destination.kind === 'none') return <span style={itemUnlinkedStyle}>{body}</span>
+
+  return (
+    <Link to={`/projects/${project.id}`} style={itemLinkStyle}>
+      {body}
+    </Link>
   )
 }
 
@@ -85,5 +108,6 @@ const itemLinkStyle: CSSProperties = {
   padding: '0.625rem 0',
   textDecoration: 'none',
 }
+const itemUnlinkedStyle: CSSProperties = { ...itemLinkStyle, cursor: 'default' }
 const itemNameStyle: CSSProperties = { fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-text)' }
 const itemDescStyle: CSSProperties = { fontSize: '0.75rem', color: 'var(--color-text-muted)' }

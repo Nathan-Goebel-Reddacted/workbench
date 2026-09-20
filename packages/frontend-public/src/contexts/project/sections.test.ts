@@ -3,7 +3,7 @@ import { groupByCategory } from './sections'
 import type { ProjectSummary } from './types'
 
 function project(id: string, category: ProjectSummary['category']): ProjectSummary {
-  return { id, name: id, description: '', category }
+  return { id, name: id, description: '', category, destination: { kind: 'page' } }
 }
 
 describe('regroupement des projets publiés', () => {

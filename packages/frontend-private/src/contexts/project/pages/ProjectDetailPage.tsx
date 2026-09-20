@@ -6,6 +6,7 @@ import { LinksSection } from '../../../shared/resource/LinksSection'
 import { DocumentsSection } from '../../../shared/resource/DocumentsSection'
 import { FeaturesSection } from '../../feature'
 import { useProject } from '../hooks/useProject'
+import { useProjectPageReplacement } from '../hooks/useProjectPageReplacement'
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -49,11 +50,25 @@ export function ProjectDetailPage() {
         initialDescription={project.description}
         initialCategory={project.category}
       />
-      <LinksSection store={stores.links} initialLinks={project.links} />
+      <ProjectLinks projectId={project.id} store={stores.links} initialLinks={project.links} />
       <DocumentsSection store={stores.documents} initialDocuments={project.documents} />
       <FeaturesSection ownerType="project" ownerId={project.id} />
     </div>
   )
+}
+
+function ProjectLinks({
+  projectId,
+  store,
+  initialLinks,
+}: {
+  projectId: string
+  store: Parameters<typeof LinksSection>[0]['store']
+  initialLinks: Parameters<typeof LinksSection>[0]['initialLinks']
+}) {
+  const { replacingUrl, change } = useProjectPageReplacement(projectId, initialLinks)
+
+  return <LinksSection store={store} initialLinks={initialLinks} pageReplacement={{ replacingUrl, onChange: change }} />
 }
 
 function PencilIcon() {

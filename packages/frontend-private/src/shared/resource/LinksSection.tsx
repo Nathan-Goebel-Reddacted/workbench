@@ -6,12 +6,18 @@ import { useCanEdit } from '../auth/EditPermissionContext'
 import type { Link, LinkStore } from '../domain/link'
 import { useLinks } from './useLinks'
 
+type PageReplacement = {
+  replacingUrl: string | null
+  onChange(url: string | null): void
+}
+
 type Props = {
   store: LinkStore
   initialLinks: Link[]
+  pageReplacement?: PageReplacement
 }
 
-export function LinksSection({ store, initialLinks }: Props) {
+export function LinksSection({ store, initialLinks, pageReplacement }: Props) {
   const canEdit = useCanEdit()
   const { links, error, add, remove } = useLinks(store, initialLinks)
   const [url, setUrl] = useState('')
@@ -34,7 +40,18 @@ export function LinksSection({ store, initialLinks }: Props) {
           <Fragment key={l.url}>
             <span style={cellStyle}>{l.displayText}</span>
             <span style={{ ...cellStyle, color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>{l.url}</span>
-            <div style={cellStyle} />
+            <div style={cellStyle}>
+              {pageReplacement && (
+                <Button
+                  variant={pageReplacement.replacingUrl === l.url ? 'primary' : 'ghost'}
+                  onClick={() => pageReplacement.onChange(pageReplacement.replacingUrl === l.url ? null : l.url)}
+                  disabled={!canEdit}
+                  title="Visitors reach this link instead of the project page"
+                >
+                  {pageReplacement.replacingUrl === l.url ? 'Replaces page' : 'Use as page'}
+                </Button>
+              )}
+            </div>
             <div style={{ ...cellStyle, display: 'flex', justifyContent: 'flex-end' }}>
               <Button variant="ghost" onClick={() => remove(l)} disabled={!canEdit}>
                 Remove
