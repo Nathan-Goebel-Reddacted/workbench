@@ -10,10 +10,13 @@ export class Link {
 
     private readonly logo: string;
 
-    constructor(url: string, displayText: string, logo: string = '') {
+    private readonly replacesPage: boolean;
+
+    constructor(url: string, displayText: string, logo: string = '', replacesPage: boolean = false) {
         this.url = url.trim();
         this.displayText = displayText.trim();
         this.logo = logo.trim();
+        this.replacesPage = replacesPage;
 
         this.validateUrl(this.url);
         if (this.logo) this.validateLogo(this.logo);
@@ -45,5 +48,13 @@ export class Link {
 
     getLogo(): string {
         return this.logo;
+    }
+
+    isReplacingPage(): boolean {
+        return this.replacesPage;
+    }
+
+    replacingPage(replaces: boolean): Link {
+        return new Link(this.url, this.displayText, this.logo, replaces);
     }
 }

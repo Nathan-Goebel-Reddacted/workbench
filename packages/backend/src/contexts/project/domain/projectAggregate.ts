@@ -1,5 +1,7 @@
 import { Description } from './valueObject/description';
 import { Link } from './valueObject/link';
+import { MultipleReplacingLinksException } from './exception/multipleReplacingLinks';
+import { UnknownProjectLinkException } from './exception/unknownProjectLink';
 import { Name } from './valueObject/name';
 import { ProjectId } from './valueObject/projectId';
 import { Category } from './valueObject/category';
@@ -104,9 +106,27 @@ export class Project {
 
     addLink(link: Link): void {
         this.links.push(link);
+        this.guardSingleReplacingLink();
     }
 
     removeLink(link: Link): void {
         this.links = this.links.filter(l => l.getUrl() !== link.getUrl());
+    }
+
+    replacePageWith(url: string): void {
+        this.links = this.links.map(l => l.replacingPage(l.getUrl() === url));
+        if (!this.links.some(l => l.isReplacingPage())) throw new UnknownProjectLinkException();
+    }
+
+    keepOwnPage(): void {
+        this.links = this.links.map(l => l.replacingPage(false));
+    }
+
+    getReplacingLink(): Link | null {
+        return this.links.find(l => l.isReplacingPage()) ?? null;
+    }
+
+    private guardSingleReplacingLink(): void {
+        if (this.links.filter(l => l.isReplacingPage()).length > 1) throw new MultipleReplacingLinksException();
     }
 }

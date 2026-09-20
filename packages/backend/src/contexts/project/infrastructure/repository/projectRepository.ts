@@ -36,7 +36,7 @@ export class ProjectRepository implements IProjectRepository {
             new Name(e.name),
             new Description(e.description),
             e.documents.map(d => new Document(new DocumentId(d.id), d.name, d.url)),
-            e.links.map(l => new Link(l.url, l.displayText, l.logo)),
+            e.links.map(l => new Link(l.url, l.displayText, l.logo, l.replacesPage ?? false)),
             e.visible,
             e.category as Category,
         );
@@ -60,6 +60,7 @@ export class ProjectRepository implements IProjectRepository {
             url: l.getUrl(),
             displayText: l.getDisplayText(),
             logo: l.getLogo(),
+            replacesPage: l.isReplacingPage(),
         }));
         return e;
     }

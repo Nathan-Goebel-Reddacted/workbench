@@ -1,6 +1,6 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 
-type LinkRow = { url: string; displayText: string; logo: string };
+type LinkRow = { url: string; displayText: string; logo: string; replacesPage?: boolean };
 type DocumentRow = { id: string; name: string; url: string; type: string };
 
 @Entity({ tableName: 'projects' })

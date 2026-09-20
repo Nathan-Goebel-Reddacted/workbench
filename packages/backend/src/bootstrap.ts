@@ -55,6 +55,8 @@ import { GetProjectByIdQuery } from '@contexts/project/application/query/getProj
 import { GetProjectByIdHandler } from '@contexts/project/application/query/getProjectById/getProjectByIdHandler';
 import { ListProjectsQuery } from '@contexts/project/application/query/listProjects/listProjectsQuery';
 import { ListProjectsHandler } from '@contexts/project/application/query/listProjects/listProjectsHandler';
+import { SetProjectPageReplacementCommand } from '@contexts/project/application/command/setProjectPageReplacement/setProjectPageReplacementCommand';
+import { SetProjectPageReplacementHandler } from '@contexts/project/application/command/setProjectPageReplacement/setProjectPageReplacementHandler';
 import { UpdateProjectCommand } from '@contexts/project/application/command/updateProject/updateProjectCommand';
 import { UpdateProjectHandler } from '@contexts/project/application/command/updateProject/updateProjectHandler';
 import { UpdateProjectVisibilityCommand } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityCommand';
@@ -295,6 +297,7 @@ import { SearchErrorLogHandler } from '@contexts/errorLog/application/query/sear
 
 import { MediaLibrary } from '@contexts/contentEditor/infrastructure/gateway/mediaLibrary';
 import { PageVisibility } from '@contexts/contentEditor/infrastructure/gateway/pageVisibility';
+import { ProjectPageGateway } from '@contexts/project/infrastructure/gateway/projectPageGateway';
 
 // --- Registre des fichiers uploadés ---
 import { projectUploadReferences } from '@contexts/project/infrastructure/uploadReferences';
@@ -431,8 +434,13 @@ export function bootstrap(
     );
     commandBus.register(AddProjectLinkCommand.commandName, new AddProjectLinkHandler(repos.project));
     commandBus.register(RemoveProjectLinkCommand.commandName, new RemoveProjectLinkHandler(repos.project));
-    queryBus.register(GetProjectByIdQuery.queryName, new GetProjectByIdHandler(repos.project));
-    queryBus.register(ListProjectsQuery.queryName, new ListProjectsHandler(repos.project));
+    commandBus.register(
+        SetProjectPageReplacementCommand.commandName,
+        new SetProjectPageReplacementHandler(repos.project),
+    );
+    const projectPages = new ProjectPageGateway(queryBus);
+    queryBus.register(GetProjectByIdQuery.queryName, new GetProjectByIdHandler(repos.project, projectPages));
+    queryBus.register(ListProjectsQuery.queryName, new ListProjectsHandler(repos.project, projectPages));
     commandBus.register(UpdateProjectCommand.commandName, new UpdateProjectHandler(repos.project));
     commandBus.register(UpdateProjectVisibilityCommand.commandName, new UpdateProjectVisibilityHandler(repos.project));
 
