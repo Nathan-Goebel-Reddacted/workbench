@@ -1,16 +1,16 @@
 // Rendu d'un layout composé dans l'Editor. Partagé par l'aperçu de l'éditeur
 // (frontend-private) et les pages publiques (frontend-public) : une seule
 // implémentation de la géométrie et du rendu des widgets, donc un rendu identique
-// des deux côtés. Les styles du texte riche vivent dans ./richText.css, à importer
+// des deux côtés. Les styles du texte riche vivent dans ./richText/richText.css, à importer
 // séparément par l'application hôte.
 
-export { LayoutPreview } from './LayoutPreview'
-export type { RenderMode } from './renderMode'
-export { SectionPreview } from './SectionPreview'
-export { MindmapView } from './MindmapView'
-export { RichTextRenderer } from './RichTextRenderer'
-export { ContactForm } from './ContactForm'
-export { buildRichTextExtensions } from './richTextExtensions'
+export { LayoutPreview } from './grid/LayoutPreview'
+export type { RenderMode } from './section/renderMode'
+export { SectionPreview } from './section/SectionPreview'
+export { MindmapView } from './mindmap/MindmapView'
+export { RichTextRenderer } from './richText/RichTextRenderer'
+export { ContactForm } from './section/ContactForm'
+export { buildRichTextExtensions } from './richText/richTextExtensions'
 
 export {
   COLS,
@@ -26,8 +26,8 @@ export {
   BACKGROUND_OUTSET,
   sectionBox,
   growForType,
-} from './gridGeometry'
-export { useRowHeight } from './useRowHeight'
+} from './grid/gridGeometry'
+export { useRowHeight } from './grid/useRowHeight'
 export {
   BACKGROUND_TYPE,
   LINK_AREA_TYPE,
@@ -37,7 +37,7 @@ export {
   computeBackgroundDepths,
   backgroundColorForDepth,
   zIndexFor,
-} from './backgroundStacking'
+} from './grid/backgroundStacking'
 export {
   VIDEO_EXTENSIONS,
   IMAGE_EXTENSIONS,
@@ -47,8 +47,14 @@ export {
   isVideoUrl,
   type VideoSource,
   type VideoSourceKind,
-} from './videoSource'
-export { MINDMAP_SUFFIX, isMindmapUrl, resolveDocumentKind, resolveUploadUrl, type DocumentKind } from './documentKind'
+} from './media/videoSource'
+export {
+  MINDMAP_SUFFIX,
+  isMindmapUrl,
+  resolveDocumentKind,
+  resolveUploadUrl,
+  type DocumentKind,
+} from './media/documentKind'
 export {
   MINDMAP_VERSION,
   MINDMAP_COLORS,
@@ -74,10 +80,10 @@ export {
   type MindmapFill,
   type MindmapEdgePath,
   type MindmapEdgeStroke,
-} from './mindmap'
-export { mindmapStroke, mindmapText, mindmapFill } from './mindmapTheme'
+} from './mindmap/mindmap'
+export { mindmapStroke, mindmapText, mindmapFill } from './mindmap/mindmapTheme'
 
-export type { PageType, SectionType, SectionContent } from './sectionTypes'
+export type { PageType, SectionType, SectionContent } from './section/sectionTypes'
 export type {
   SectionDto,
   SectionPosition,
@@ -101,7 +107,7 @@ export type {
   FeatureField,
   TicketField,
   DataBindingAttrs,
-} from './types'
+} from './section/types'
 export {
   readTextContent,
   readImageContent,
@@ -120,4 +126,4 @@ export {
   IMAGE_POSITION_OPTIONS,
   BINDING_FIELDS,
   BINDING_ENTITY_LABELS,
-} from './types'
+} from './section/types'

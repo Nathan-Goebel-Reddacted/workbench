@@ -20,7 +20,7 @@ import {
   type MindmapNode,
 } from './mindmap'
 import { mindmapFill, mindmapStroke, mindmapText } from './mindmapTheme'
-import { resolveUploadUrl } from './documentKind'
+import { resolveUploadUrl } from '../media/documentKind'
 import { useElementSize } from '@-reddacted-/react-hooks'
 
 type Props = {

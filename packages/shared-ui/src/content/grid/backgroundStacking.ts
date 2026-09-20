@@ -1,4 +1,4 @@
-import type { SectionDto, SectionPosition } from './types'
+import type { SectionDto, SectionPosition } from '../section/types'
 
 export const BACKGROUND_TYPE = 'background'
 export const LINK_AREA_TYPE = 'linkArea'

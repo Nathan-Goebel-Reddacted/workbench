@@ -11,12 +11,12 @@ import {
   readTextContent,
   type SectionDto,
 } from './types'
-import { backgroundColorForDepth } from './backgroundStacking'
-import { RichTextRenderer } from './RichTextRenderer'
+import { backgroundColorForDepth } from '../grid/backgroundStacking'
+import { RichTextRenderer } from '../richText/RichTextRenderer'
 import { ContactForm } from './ContactForm'
-import { isEmbeddedVideo, isUnplayableFile, resolveVideoSource } from './videoSource'
-import { resolveDocumentKind, resolveUploadUrl } from './documentKind'
-import { MindmapView } from './MindmapView'
+import { isEmbeddedVideo, isUnplayableFile, resolveVideoSource } from '../media/videoSource'
+import { resolveDocumentKind, resolveUploadUrl } from '../media/documentKind'
+import { MindmapView } from '../mindmap/MindmapView'
 import type { RenderMode } from './renderMode'
 
 const PUBLIC_URL = import.meta.env.VITE_PUBLIC_URL ?? 'http://localhost:5173'

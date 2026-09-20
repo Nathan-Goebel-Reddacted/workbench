@@ -1,10 +1,10 @@
 import { useRef, type CSSProperties } from 'react'
-import { SectionPreview } from './SectionPreview'
+import { SectionPreview } from '../section/SectionPreview'
 import { gridHeightFor, sectionBox, growForType } from './gridGeometry'
 import { useRowHeight } from './useRowHeight'
 import { computeBackgroundDepths, zIndexFor } from './backgroundStacking'
-import type { SectionDto } from './types'
-import type { RenderMode } from './renderMode'
+import type { SectionDto } from '../section/types'
+import type { RenderMode } from '../section/renderMode'
 
 type LayoutPreviewProps = {
   apiUrl: string

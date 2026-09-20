@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 import { useEffect, useState, type CSSProperties } from 'react'
-import type { BindingEntity, BindingField, DataBindingAttrs } from './types'
+import type { BindingEntity, BindingField, DataBindingAttrs } from '../section/types'
 
 type DataBindingOptions = { apiUrl: string }
 
