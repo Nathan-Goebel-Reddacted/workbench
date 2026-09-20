@@ -5,6 +5,11 @@
 # les deux fronts sous une origine unique.
 
 services:
+  # Docker écrit ses propres règles iptables : un port publié ici est joignable depuis
+  # Internet, quoi qu'en dise ufw. La base ne parle qu'au backend, par le réseau compose.
+  postgres:
+    ports: !reset []
+
   backend:
     build:
       target: prod
@@ -16,6 +21,9 @@ services:
       - uploads_data:/app/packages/backend/uploads
     environment:
       NODE_ENV: production
+      # Les maps `environment` fusionnent d'un fichier à l'autre : sans cette ligne, le
+      # `'true'` du fichier de base survit ici et le cookie de session part sans `Secure`.
+      ALLOW_INSECURE_COOKIE: 'false'
       # Le .env porte la valeur de développement (localhost) ; dans le réseau compose la
       # base répond sur le nom du service.
       POSTGRES_HOST: postgres
@@ -44,12 +52,35 @@ services:
         # réelle, pas un nom de service compose.
         VITE_API_URL: ${VITE_API_URL}
         VITE_PUBLIC_URL: ${VITE_PUBLIC_URL}
-    ports:
-      - '${WEB_PORT:-8080}:80'
+    # Caddy est désormais la seule porte d'entrée : nginx ne se joint que par le
+    # réseau compose.
+    ports: !reset []
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
 
+  # Terminaison TLS. Sans elle le cookie de session, `secure` en production, ne
+  # s'établit jamais : l'espace privé reste inaccessible.
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Les certificats vivent ici : sans ce volume, chaque redémarrage en redemande un
+      # à Let's Encrypt et finit par heurter ses quotas.
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-localhost}
+    depends_on:
+      - web
+    restart: unless-stopped
+
 volumes:
   uploads_data:
+  caddy_data:
+  caddy_config:

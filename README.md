@@ -96,6 +96,7 @@ packages/
                        l'éditeur et le site public
 
 docker/web/            image nginx qui sert les deux fronts en production
+docker/caddy/          terminaison TLS de production (Let's Encrypt)
 ioPort/                dépôt des dumps pour l'import/export manuel
 backup/                sauvegardes automatiques prises avant chaque import
 ```
@@ -169,7 +170,9 @@ requête n'a pas de nom, donc pas d'archive à apparier.
 
 ## Déploiement
 
-Toute la pile passe derrière un nginx, sous **une seule origine** :
+Caddy est la seule brique publiée sur l'hôte (80 et 443) : il obtient et renouvelle le
+certificat Let's Encrypt, redirige HTTP vers HTTPS, et passe le trafic au nginx interne.
+Celui-ci répartit la pile sous **une seule origine** :
 
 | Chemin | Sert |
 | --- | --- |
@@ -191,17 +194,25 @@ FRONTEND_PRIVATE_URL=https://domaine.tld/admin
 VITE_API_URL=https://domaine.tld/api
 VITE_PUBLIC_URL=https://domaine.tld
 ALLOW_INSECURE_COOKIE=
-WEB_PORT=8080
+PUBLIC_DOMAIN=domaine.tld
 ```
 
 Les URLs de callback OAuth doivent alors pointer sur `${APP_URL}/auth/<fournisseur>/callback`.
 
-Deux points à ne pas manquer :
+Points à ne pas manquer :
 
 - `VITE_API_URL` et `VITE_PUBLIC_URL` sont **figées dans le bundle au moment du build** : les
   changer impose de reconstruire l'image `web`.
 - Le port du backend n'est pas publié sur l'hôte ; seul nginx l'atteint, par le réseau compose. Son
   healthcheck interroge `/health`, qui vérifie aussi la base.
+- Ni Postgres ni le nginx interne ne sont publiés non plus. Docker écrit ses propres règles
+  iptables : un port publié est joignable depuis Internet quoi qu'en dise `ufw`.
+- Le cookie de session est `secure` en production, sans dérogation possible : **sans HTTPS, aucune
+  session ne s'établit et `/admin/` reste inaccessible**. C'est ce que Caddy fournit.
+- Les certificats vivent dans le volume `caddy_data`. Le supprimer redemande un certificat à
+  Let's Encrypt à chaque redémarrage, jusqu'à heurter ses quotas.
+- `PUBLIC_DOMAIN` doit pointer sur le serveur (enregistrement A/AAAA) **avant** le premier
+  démarrage : Let's Encrypt valide le domaine en frappant le port 80.
 
 Les uploads vivent dans le volume `uploads_data` — c'est ce qui les fait survivre à un rebuild.
 

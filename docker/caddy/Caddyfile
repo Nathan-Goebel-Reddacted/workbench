@@ -1,0 +1,19 @@
+# Terminaison TLS de la pile de production.
+#
+# Caddy est la seule brique exposée sur l'hôte : il obtient et renouvelle seul le
+# certificat Let's Encrypt, puis passe le trafic au nginx interne, qui garde la
+# répartition entre le site public, l'espace privé et l'API.
+#
+# PUBLIC_DOMAIN sans valeur retombe sur `localhost`, pour qui Caddy délivre un
+# certificat interne : la pile de production reste ainsi essayable hors domaine.
+
+{$PUBLIC_DOMAIN:localhost} {
+	# Un import de base ou une vidéo de 200 Mo dépasse largement les délais usuels ;
+	# alignés sur proxy_read_timeout / proxy_send_timeout du nginx interne.
+	reverse_proxy web:80 {
+		transport http {
+			read_timeout 300s
+			write_timeout 300s
+		}
+	}
+}
