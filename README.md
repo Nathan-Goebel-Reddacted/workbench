@@ -91,8 +91,9 @@ packages/
 ├── backend/           Fastify + MikroORM + serveur MCP  (port 3000)
 ├── frontend-public/   React — site public               (port 5173)
 ├── frontend-private/  React — espace privé              (port 5174)
-├── shared-ui/         thème, authentification, composants partagés
-└── content-renderer/  rendu des grilles, partagé par l'éditeur et le site public
+└── shared-ui/         thème, authentification, composants partagés,
+                       et content/ : rendu des grilles partagé par
+                       l'éditeur et le site public
 
 docker/web/            image nginx qui sert les deux fronts en production
 ioPort/                dépôt des dumps pour l'import/export manuel

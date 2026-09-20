@@ -37,7 +37,7 @@ export const featureRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     );
 
     // Volontairement ouverte : le site public la lit via les jetons de liaison des widgets
-    // texte (content-renderer/dataBinding.tsx). Dette assumée — n'importe quel id est
+    // texte (shared-ui/src/content/richText/dataBinding.tsx). Dette assumée — n'importe quel id est
     // lisible, y compris sous un projet non `visible`.
     app.get<{ Params: { id: string } }>('/features/:id', async (req, reply) => {
         const result = await queryBus.dispatch(new GetFeatureByIdQuery(req.params.id));
