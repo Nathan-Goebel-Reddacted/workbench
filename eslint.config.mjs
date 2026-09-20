@@ -22,7 +22,7 @@ export default tseslint.config(
   },
 
   {
-    files: ['packages/{frontend-public,frontend-private,shared-ui,content-renderer}/**/*.{ts,tsx}'],
+    files: ['packages/{frontend-public,frontend-private,shared-ui}/**/*.{ts,tsx}'],
     languageOptions: {
       globals: { ...globals.browser },
     },
