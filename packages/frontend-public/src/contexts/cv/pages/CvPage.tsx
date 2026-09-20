@@ -1,48 +1,35 @@
 import type { CSSProperties } from 'react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@atelier/shared-ui'
-import { resolveUploadUrl } from '@content'
-import { ErrorMessage, LoadingMessage } from '../components/PageStatus'
-import { fetchJson, useAsync } from '@atelier/shared-ui'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
-
-type CvDto = {
-  id: string
-  name: string
-  fileUrl: string
-  visible: boolean
-  displayOrder: number
-}
+import { PageShell } from '../../../shared/components/PageShell'
+import { Async } from '../../../shared/components/PageStatus'
+import { useDocumentTitle } from '../../../shared/hooks/useDocumentTitle'
+import { usePublishedCvs } from '../hooks/usePublishedCvs'
+import type { Cv } from '../types'
 
 export function CvPage() {
   useDocumentTitle('CV')
-  const [index, setIndex] = useState(0)
-  const { data, status, retry } = useAsync(signal => fetchJson<CvDto[]>(`${API_URL}/cvs`, signal))
+  const { cvs, status, retry } = usePublishedCvs()
 
-  const cvs = useMemo(
-    () => (data ?? []).filter(cv => cv.visible).sort((a, b) => a.displayOrder - b.displayOrder),
-    [data],
+  return (
+    <Async status={status} onRetry={retry}>
+      {() => (
+        <PageShell fill>
+          {cvs.length === 0 ? <p style={emptyStyle}>Aucun CV disponible pour le moment.</p> : <Viewer cvs={cvs} />}
+        </PageShell>
+      )}
+    </Async>
   )
+}
 
-  if (status === 'loading') return <LoadingMessage />
-  if (status === 'error') return <ErrorMessage onRetry={retry} />
-
-  if (cvs.length === 0) {
-    return (
-      <div style={pageStyle}>
-        <p style={emptyStyle}>Aucun CV disponible pour le moment.</p>
-      </div>
-    )
-  }
-
+function Viewer({ cvs }: { cvs: Cv[] }) {
+  const [index, setIndex] = useState(0)
   const current = cvs[Math.min(index, cvs.length - 1)]
   const move = (step: number) => setIndex(prev => (prev + step + cvs.length) % cvs.length)
   const hasSeveral = cvs.length > 1
 
   return (
-    <div style={pageStyle}>
+    <>
       <div style={selectorStyle}>
         {hasSeveral && (
           <Button variant="secondary" onClick={() => move(-1)} aria-label="CV précédent" style={arrowStyle}>
@@ -60,19 +47,19 @@ export function CvPage() {
       <div style={viewerStyle}>
         <iframe
           key={current.id}
-          src={`${resolveUploadUrl(current.fileUrl, API_URL)}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&view=Fit`}
+          src={`${current.fileUrl}#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&view=Fit`}
           title={current.name}
           style={frameStyle}
         />
         <a
-          href={resolveUploadUrl(current.fileUrl, API_URL)}
+          href={current.fileUrl}
           target="_blank"
           rel="noopener noreferrer"
           title={`Ouvrir ${current.name} dans un nouvel onglet`}
           style={frameOverlayStyle}
         />
       </div>
-    </div>
+    </>
   )
 }
 
@@ -92,16 +79,6 @@ function Chevron({ direction }: { direction: 'left' | 'right' }) {
       <polyline points={direction === 'left' ? '15 18 9 12 15 6' : '9 18 15 12 9 6'} />
     </svg>
   )
-}
-
-const pageStyle: CSSProperties = {
-  minHeight: 'calc(100vh - 56px)',
-  padding: '2rem 1.5rem',
-  backgroundColor: 'var(--color-bg)',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '1.25rem',
 }
 
 const emptyStyle: CSSProperties = {
@@ -132,9 +109,11 @@ const currentNameStyle: CSSProperties = {
   color: 'var(--color-text)',
 }
 
+// Le visionneur prend la hauteur qui reste ; le rapport A4 en déduit sa largeur.
 const viewerStyle: CSSProperties = {
   position: 'relative',
-  height: 'calc(100vh - 200px)',
+  flex: 1,
+  minHeight: 0,
   aspectRatio: '1 / 1.414',
   maxWidth: '100%',
   borderRadius: '10px',

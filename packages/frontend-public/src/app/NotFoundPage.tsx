@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useDocumentTitle } from '../shared/hooks/useDocumentTitle'
 
 export function NotFoundPage() {
   useDocumentTitle('Page introuvable')
@@ -31,7 +31,7 @@ const pageStyle: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   gap: '0.75rem',
-  padding: '2rem',
+  padding: 'clamp(1rem, 4vw, 2rem)',
   textAlign: 'center',
   backgroundColor: 'var(--color-bg)',
 }
@@ -44,5 +44,11 @@ const codeStyle: CSSProperties = {
 }
 const titleStyle: CSSProperties = { margin: 0, fontSize: '1.5rem', fontWeight: 600, color: 'var(--color-text)' }
 const mutedStyle: CSSProperties = { margin: 0, fontSize: '0.9375rem', color: 'var(--color-text-muted)' }
-const linksStyle: CSSProperties = { display: 'flex', gap: '1.5rem', marginTop: '0.75rem' }
+const linksStyle: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'center',
+  gap: '1.5rem',
+  marginTop: '0.75rem',
+}
 const linkStyle: CSSProperties = { fontSize: '0.875rem', color: 'var(--color-primary)' }
