@@ -1,10 +1,10 @@
 import { useRef, useState, type CSSProperties, type FormEvent } from 'react'
+import { useApiUrl } from '../../config/ApiUrlContext'
 import { readContactFormContent, type FormField } from './types'
 import type { RenderMode } from './renderMode'
 
 type Props = {
   content: Record<string, unknown>
-  apiUrl: string
   mode: RenderMode
 }
 
@@ -14,7 +14,8 @@ type Status = 'idle' | 'sending' | 'sent' | 'error'
  * Seul widget interactif du catalogue. Dans l'éditeur (`mode === 'edit'`) le formulaire est un
  * aperçu inerte : sans cela, chaque essai dans le Design Lab enverrait un vrai mail.
  */
-export function ContactForm({ content, apiUrl, mode }: Props) {
+export function ContactForm({ content, mode }: Props) {
+  const apiUrl = useApiUrl()
   const { title, fields, submitLabel, successMessage } = readContactFormContent(content)
   const isEditing = mode === 'edit'
 

@@ -7,7 +7,6 @@ import type { SectionDto } from '../section/types'
 import type { RenderMode } from '../section/renderMode'
 
 type LayoutPreviewProps = {
-  apiUrl: string
   sections: SectionDto[]
   mode?: RenderMode
 }
@@ -15,7 +14,7 @@ type LayoutPreviewProps = {
 // Rendu final assemblé, en lecture seule. Positionne chaque section aux mêmes
 // coordonnées que la zone d'édition (géométrie partagée) et délègue le rendu du
 // contenu à SectionPreview. Aucune interaction : ni drag, ni resize, ni actions.
-export function LayoutPreview({ apiUrl, sections, mode = 'edit' }: LayoutPreviewProps) {
+export function LayoutPreview({ sections, mode = 'edit' }: LayoutPreviewProps) {
   const surfaceRef = useRef<HTMLDivElement>(null)
   // La hauteur d'une ligne suit la largeur du conteneur : le panneau d'aperçu est étroit,
   // la page publique large, et les deux doivent rendre le même bloc au même rapport.
@@ -31,7 +30,7 @@ export function LayoutPreview({ apiUrl, sections, mode = 'edit' }: LayoutPreview
       {mode === 'edit' && sections.length === 0 && <p style={emptyStyle}>L'aperçu s'affichera ici.</p>}
       {sections.map(section => (
         <div key={section.id} style={sectionStyle(section, zIndexFor(section, depths), rowHeight)}>
-          <SectionPreview section={section} apiUrl={apiUrl} backgroundDepth={depths.get(section.id)} mode={mode} />
+          <SectionPreview section={section} backgroundDepth={depths.get(section.id)} mode={mode} />
         </div>
       ))}
     </div>

@@ -20,6 +20,7 @@ import {
   type MindmapNode,
 } from './mindmap'
 import { mindmapFill, mindmapStroke, mindmapText } from './mindmapTheme'
+import { useApiUrl } from '../../config/ApiUrlContext'
 import { resolveUploadUrl } from '../media/documentKind'
 import { useElementSize } from '@-reddacted-/react-hooks'
 
@@ -31,8 +32,6 @@ type Props = {
   // Le déplacement au glisser entre en conflit avec le drag dnd-kit de l'éditeur de
   // grille : là-bas seule la molette pilote le cadrage.
   pannable?: boolean
-  // Origine de l'API, pour les documents enregistrés avec une URL relative.
-  apiUrl?: string
 }
 
 type ViewBox = { x: number; y: number; width: number; height: number }
@@ -50,7 +49,8 @@ const ZOOM_STEP = 1.15
 const MIN_ZOOM = 0.1
 const MAX_ZOOM = 4
 
-export function MindmapView({ url, mindmap, padding = 24, pannable = true, apiUrl }: Props) {
+export function MindmapView({ url, mindmap, padding = 24, pannable = true }: Props) {
+  const apiUrl = useApiUrl()
   const [loaded, setLoaded] = useState<Mindmap | null>(mindmap ?? null)
   const [failed, setFailed] = useState(false)
   const container = useRef<HTMLDivElement>(null)

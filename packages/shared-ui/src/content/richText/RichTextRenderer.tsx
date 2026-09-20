@@ -1,8 +1,9 @@
 import type { CSSProperties } from 'react'
 import { EditorContent, useEditor } from '@tiptap/react'
+import { useApiUrl } from '../../config/ApiUrlContext'
 import { buildRichTextExtensions } from './richTextExtensions'
 
-type Props = { html: string; apiUrl: string }
+type Props = { html: string }
 
 // Les images insérées dans un texte riche sont stockées en chemin relatif, comme les autres
 // médias : le HTML est réécrit au rendu plutôt qu'à l'enregistrement.
@@ -12,7 +13,8 @@ function resolveUploadPaths(html: string, apiUrl: string): string {
 
 // Rendu lecture seule du contenu texte, avec les mêmes extensions que l'éditeur (jetons de
 // données live compris) : les jetons résolvent leur valeur, le formatage est appliqué à l'identique.
-export function RichTextRenderer({ html, apiUrl }: Props) {
+export function RichTextRenderer({ html }: Props) {
+  const apiUrl = useApiUrl()
   const editor = useEditor(
     {
       editable: false,

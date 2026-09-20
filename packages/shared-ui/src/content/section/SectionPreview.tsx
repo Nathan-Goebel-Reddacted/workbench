@@ -11,6 +11,7 @@ import {
   readTextContent,
   type SectionDto,
 } from './types'
+import { useApiUrl } from '../../config/ApiUrlContext'
 import { backgroundColorForDepth } from '../grid/backgroundStacking'
 import { RichTextRenderer } from '../richText/RichTextRenderer'
 import { ContactForm } from './ContactForm'
@@ -27,7 +28,7 @@ type ProjectDetail = { id: string; name: string; description: string; documents?
 // backgroundDepth n'est fourni que pour les sections de type « fond » : il décide
 // de l'alternance fond / surface (voir backgroundStacking.ts).
 // mode « public » : aucun placeholder d'administration ne doit sortir sur le site.
-type Props = { section: SectionDto; apiUrl: string; backgroundDepth?: number; mode?: RenderMode }
+type Props = { section: SectionDto; backgroundDepth?: number; mode?: RenderMode }
 
 const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']
 
@@ -43,7 +44,8 @@ function firstImage(documents?: Array<{ url: string }>): string | null {
   return doc?.url ?? null
 }
 
-export function SectionPreview({ section, apiUrl, backgroundDepth = 0, mode = 'edit' }: Props) {
+export function SectionPreview({ section, backgroundDepth = 0, mode = 'edit' }: Props) {
+  const apiUrl = useApiUrl()
   const { type, content } = section
 
   // Aplat décoratif : aucun contenu, la couleur vient de la profondeur d'empilement.
@@ -65,17 +67,17 @@ export function SectionPreview({ section, apiUrl, backgroundDepth = 0, mode = 'e
 
   // Le widget texte unifié encode sa source dans content.
   if (type === 'text') {
-    return <TextPreview content={content} apiUrl={apiUrl} mode={mode} />
+    return <TextPreview content={content} mode={mode} />
   }
 
   // Le widget lien porte ses liens externes dans son content.
   if (type === 'link') {
-    return <LinkPreview content={content} apiUrl={apiUrl} mode={mode} />
+    return <LinkPreview content={content} mode={mode} />
   }
 
   // Le formulaire porte tout son contenu.
   if (type === 'contactForm') {
-    return <ContactForm content={content} apiUrl={apiUrl} mode={mode} />
+    return <ContactForm content={content} mode={mode} />
   }
 
   // Zone cliquable : aucun contenu visible, elle n'existe que pour recevoir les clics
@@ -120,7 +122,7 @@ export function SectionPreview({ section, apiUrl, backgroundDepth = 0, mode = 'e
         <div style={{ ...mediaStyle, borderRadius: `${radius}px`, overflow: 'hidden' }}>
           {/* Dans l'éditeur, le glisser appartient au capteur dnd-kit de la grille :
               le mindmap n'y garde que le zoom à la molette. */}
-          <MindmapView url={url} apiUrl={apiUrl} pannable={mode === 'public'} />
+          <MindmapView url={url} pannable={mode === 'public'} />
         </div>
       )
     }
@@ -165,13 +167,7 @@ export function SectionPreview({ section, apiUrl, backgroundDepth = 0, mode = 'e
     return (
       <div style={carouselStyle}>
         {withUrl.map((it, i) => (
-          <CarouselSlide
-            key={i}
-            url={resolveUploadUrl(it.url, apiUrl)}
-            caption={it.caption ?? ''}
-            mode={mode}
-            apiUrl={apiUrl}
-          />
+          <CarouselSlide key={i} url={resolveUploadUrl(it.url, apiUrl)} caption={it.caption ?? ''} mode={mode} />
         ))}
       </div>
     )
@@ -180,7 +176,7 @@ export function SectionPreview({ section, apiUrl, backgroundDepth = 0, mode = 'e
   if (type === 'projectCard') {
     const projectId = typeof content.projectId === 'string' ? content.projectId : ''
     return projectId ? (
-      <ProjectCard projectId={projectId} apiUrl={apiUrl} mode={mode} />
+      <ProjectCard projectId={projectId} mode={mode} />
     ) : (
       <Empty label="Aucun projet sélectionné" mode={mode} />
     )
@@ -236,7 +232,8 @@ function EmbedPreview({ content, mode }: { content: SectionDto['content']; mode:
 
 // Les liens hérités du projet ne sont pas encore résolus ici (le pageRef n'est pas
 // disponible dans la grille) : seuls les liens externes saisis sont rendus.
-function LinkPreview({ content, apiUrl, mode }: { content: SectionDto['content']; apiUrl: string; mode: RenderMode }) {
+function LinkPreview({ content, mode }: { content: SectionDto['content']; mode: RenderMode }) {
+  const apiUrl = useApiUrl()
   const { externalLinks } = readLinkContent(content)
   const withUrl = externalLinks.filter(link => link.url)
 
@@ -304,17 +301,7 @@ function LinkAreaPreview({ content, mode }: { content: SectionDto['content']; mo
 
 // Une slide accueille n'importe quel document : elle choisit son rendu d'après l'URL,
 // avec la même résolution que le widget document (resolveDocumentKind).
-function CarouselSlide({
-  url,
-  caption,
-  mode,
-  apiUrl,
-}: {
-  url: string
-  caption: string
-  mode: RenderMode
-  apiUrl: string
-}) {
+function CarouselSlide({ url, caption, mode }: { url: string; caption: string; mode: RenderMode }) {
   const kind = resolveDocumentKind(url)
 
   if (kind === 'video') {
@@ -345,7 +332,7 @@ function CarouselSlide({
   if (kind === 'mindmap') {
     return (
       <div style={{ ...carouselImgStyle, width: undefined, aspectRatio: '4 / 3' }}>
-        <MindmapView url={url} apiUrl={apiUrl} pannable={mode === 'public'} />
+        <MindmapView url={url} pannable={mode === 'public'} />
       </div>
     )
   }
@@ -368,14 +355,15 @@ function CarouselSlide({
   return <img src={url} alt={caption} style={carouselImgStyle} />
 }
 
-function TextPreview({ content, apiUrl, mode }: { content: SectionDto['content']; apiUrl: string; mode: RenderMode }) {
+function TextPreview({ content, mode }: { content: SectionDto['content']; mode: RenderMode }) {
   const { html } = readTextContent(content)
   const trimmed = html.trim()
   if (!trimmed || trimmed === '<p></p>') return <Empty mode={mode} />
-  return <RichTextRenderer html={html} apiUrl={apiUrl} />
+  return <RichTextRenderer html={html} />
 }
 
-function ProjectCard({ projectId, apiUrl, mode }: { projectId: string; apiUrl: string; mode: RenderMode }) {
+function ProjectCard({ projectId, mode }: { projectId: string; mode: RenderMode }) {
+  const apiUrl = useApiUrl()
   const [project, setProject] = useState<ProjectDetail | null>(null)
   const [notFound, setNotFound] = useState(false)
 
