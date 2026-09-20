@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { MindmapView, resolveDocumentKind, type DocumentKind } from '@content'
-import { API_URL, uploadUrl } from '../config'
+import { uploadUrl } from '../config'
 
 export type PreviewState = { url: string; kind: DocumentKind; x: number; y: number } | null
 
@@ -83,7 +83,7 @@ export function PreviewTooltip({ state, onMouseEnter, onMouseLeave }: TooltipPro
     if (state.kind === 'mindmap')
       return (
         <div style={previewMindmapStyle}>
-          <MindmapView url={url} apiUrl={API_URL} />
+          <MindmapView url={url} />
         </div>
       )
     return null

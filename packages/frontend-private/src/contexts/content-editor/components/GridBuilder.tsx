@@ -4,7 +4,6 @@ import { GridCanvas } from './GridCanvas'
 import { LayoutPreview } from '@content'
 import type { PageType } from '../widgets'
 import { usePageLayout } from '../hooks/usePageLayout'
-import { API_URL } from '../../../shared/config'
 
 type GridBuilderProps = {
   pageType: PageType
@@ -32,7 +31,7 @@ export function GridBuilder({ pageType, pageRef }: GridBuilderProps) {
       </section>
       <section style={columnStyle}>
         <h2 style={columnTitleStyle}>preview</h2>
-        <LayoutPreview apiUrl={API_URL} sections={layout.sections} />
+        <LayoutPreview sections={layout.sections} />
       </section>
     </div>
   )

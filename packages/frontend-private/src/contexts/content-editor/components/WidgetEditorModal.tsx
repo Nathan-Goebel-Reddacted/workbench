@@ -37,7 +37,7 @@ import {
 } from '@content'
 import type { SectionContent } from '../widgets'
 import { useBindableProjects } from '../hooks/useBindables'
-import { API_URL, uploadUrl } from '../../../shared/config'
+import { uploadUrl } from '../../../shared/config'
 
 type CarouselItem = { url: string; caption: string }
 
@@ -283,7 +283,7 @@ function DocumentPreview({
             }}
           />
         )}
-        {kind === 'mindmap' && <MindmapView url={resolved} apiUrl={API_URL} />}
+        {kind === 'mindmap' && <MindmapView url={resolved} />}
         {kind === 'pdf' && (
           <iframe
             src={resolved}
@@ -378,7 +378,7 @@ function CarouselThumb({ url }: { url: string }) {
   if (kind === 'mindmap')
     return (
       <div style={carouselThumbStyle}>
-        <MindmapView url={resolved} apiUrl={API_URL} padding={8} />
+        <MindmapView url={resolved} padding={8} />
       </div>
     )
   if (kind === 'pdf') return <span style={carouselThumbEmptyStyle}>📄</span>
