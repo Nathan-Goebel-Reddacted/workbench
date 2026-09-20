@@ -7,6 +7,7 @@ export class GetPageLayoutByRefQuery implements Query {
     constructor(
         readonly pageType: string,
         readonly pageRef: string,
+        readonly includeHidden: boolean = false,
     ) {
         this.queryName = GetPageLayoutByRefQuery.queryName;
     }

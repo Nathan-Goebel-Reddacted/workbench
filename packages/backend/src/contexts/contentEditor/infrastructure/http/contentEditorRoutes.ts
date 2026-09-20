@@ -9,7 +9,7 @@ import { UpdateSectionContentCommand } from '@contexts/contentEditor/application
 import { GetPageLayoutByIdQuery } from '@contexts/contentEditor/application/query/getPageLayoutById/getPageLayoutByIdQuery';
 import { GetPageLayoutByRefQuery } from '@contexts/contentEditor/application/query/getPageLayoutByRef/getPageLayoutByRefQuery';
 import { ListMediaImagesQuery } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesQuery';
-import { requirePrivateRead, requireRole } from '@shared/infrastructure/http/roleGuard';
+import { hasPrivateRead, requirePrivateRead, requireRole } from '@shared/infrastructure/http/roleGuard';
 import { PageType } from '@contexts/contentEditor/domain/valueObject/pageType';
 import { SectionType } from '@contexts/contentEditor/domain/valueObject/sectionType';
 import { UserRole } from '@shared/domain/valueObject/userRole';
@@ -45,7 +45,9 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
     });
 
     app.get<{ Querystring: { pageType: string; pageRef: string } }>('/page-layouts/by-ref', async (req, reply) => {
-        const result = await queryBus.dispatch(new GetPageLayoutByRefQuery(req.query.pageType, req.query.pageRef));
+        const result = await queryBus.dispatch(
+            new GetPageLayoutByRefQuery(req.query.pageType, req.query.pageRef, hasPrivateRead(req)),
+        );
         return reply.send(result);
     });
 

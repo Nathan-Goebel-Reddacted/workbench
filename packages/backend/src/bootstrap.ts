@@ -294,6 +294,7 @@ import { SearchErrorLogQuery } from '@contexts/errorLog/application/query/search
 import { SearchErrorLogHandler } from '@contexts/errorLog/application/query/searchErrorLog/searchErrorLogHandler';
 
 import { MediaLibrary } from '@contexts/contentEditor/infrastructure/gateway/mediaLibrary';
+import { PageVisibility } from '@contexts/contentEditor/infrastructure/gateway/pageVisibility';
 
 // --- Registre des fichiers uploadés ---
 import { projectUploadReferences } from '@contexts/project/infrastructure/uploadReferences';
@@ -521,7 +522,13 @@ export function bootstrap(
     commandBus.register(MoveSectionCommand.commandName, new MoveSectionHandler(repos.pageLayout));
     commandBus.register(UpdateSectionContentCommand.commandName, new UpdateSectionContentHandler(repos.pageLayout));
     queryBus.register(GetPageLayoutByIdQuery.queryName, new GetPageLayoutByIdHandler(repos.pageLayout));
-    queryBus.register(GetPageLayoutByRefQuery.queryName, new GetPageLayoutByRefHandler(repos.pageLayout));
+    // Le layout n'est public que si la page qu'il habille l'est : l'éditeur ne sait pas
+    // lire un projet, il demande.
+    const pageVisibility = new PageVisibility(repos.project, repos.portfolio);
+    queryBus.register(
+        GetPageLayoutByRefQuery.queryName,
+        new GetPageLayoutByRefHandler(repos.pageLayout, pageVisibility),
+    );
     // Seul point de contact entre l'éditeur de contenu et les contextes qui détiennent
     // les médias : il pose la question, eux répondent — aucun agrégat étranger ne remonte.
     const mediaLibrary = new MediaLibrary(repos.project, repos.feature, repos.ticket);
