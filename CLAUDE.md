@@ -73,7 +73,9 @@ Ces variables sont injectées sur `:root` par `ThemeProvider` (shared-ui) et peu
 - Composition entre contextes : un contexte peut afficher le composant public d'un autre via son `index.ts` (sans cycle, vérifié par `boundaries.test.ts`) ; quand il a besoin de ses **données**, il déclare un port que `app/` branche (ex. `BindingSource` de content-editor, implémenté par `app/bindingSource.ts`) ; les lectures qu'un contexte expose pour ces ports vivent dans son `queries.ts`, importable par `app/` seulement
 - Concept partagé par plusieurs contextes (ex. `Category`) : `shared/domain/`, libellés dans `shared/components/`
 - Aucune règle métier côté front : placement, valeurs initiales, attribution, invariants → backend. Le front peut refléter une règle pour le confort (bouton désactivé), jamais la porter seul
-- Libellés de l'interface en **anglais**
+- Libellés de l'interface en **anglais** dans `frontend-private` (outil d'administration).
+  `frontend-public` est un site francophone : ses libellés sont en **français**. Le code, lui,
+  reste en anglais partout
 
 ### Styles
 
