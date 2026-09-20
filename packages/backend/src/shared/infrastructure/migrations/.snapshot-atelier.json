@@ -1185,8 +1185,8 @@
           "scale": null,
           "default": "'personal'",
           "comment": null,
-          "enumItems": [],
-          "mappedType": "string"
+          "enumItems": ["personal", "professional", "academic"],
+          "mappedType": "enum"
         }
       },
       "name": "ideas",
@@ -1469,8 +1469,8 @@
           "scale": null,
           "default": "'personal'",
           "comment": null,
-          "enumItems": [],
-          "mappedType": "string"
+          "enumItems": ["personal", "professional", "academic"],
+          "mappedType": "enum"
         },
         "number": {
           "name": "number",
