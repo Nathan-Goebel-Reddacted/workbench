@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { PopupProvider as BasePopupProvider } from '@-reddacted-/react-ui'
 import { popupMessages } from './messages'
+import { PopupMessageProvider } from './PopupMessageProvider'
 import { toJournalEntry } from './toJournalEntry'
 import { useErrorReporter } from '../errorLog/ErrorReporterProvider'
 
@@ -16,7 +17,7 @@ export function PopupProvider({ children }: { children: ReactNode }) {
         if (entry) report(entry)
       }}
     >
-      {children}
+      <PopupMessageProvider closeLabel="Fermer">{children}</PopupMessageProvider>
     </BasePopupProvider>
   )
 }
