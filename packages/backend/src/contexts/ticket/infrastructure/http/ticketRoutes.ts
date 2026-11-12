@@ -12,7 +12,8 @@ import { AddTicketDocumentCommand } from '@contexts/ticket/application/command/a
 import { RemoveTicketDocumentCommand } from '@contexts/ticket/application/command/removeTicketDocument/removeTicketDocumentCommand';
 import { GetTicketByIdQuery } from '@contexts/ticket/application/query/getTicketById/getTicketByIdQuery';
 import { GetTicketsByFeatureIdQuery } from '@contexts/ticket/application/query/getTicketsByFeatureId/getTicketsByFeatureIdQuery';
-import { requireRole, requirePrivateRead } from '@shared/infrastructure/http/roleGuard';
+import { requireRole, requirePrivateRead, hasPrivateRead } from '@shared/infrastructure/http/roleGuard';
+import { uuidParamsSchema } from '@shared/infrastructure/http/routeSchemas';
 import { TicketStatus } from '@contexts/ticket/domain/valueObject/status';
 import { UserRole } from '@shared/domain/valueObject/userRole';
 
@@ -29,10 +30,10 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
         },
     );
 
-    // Volontairement ouverte, même raison que GET /features/:id : jetons de liaison du
-    // site public. Dette assumée.
-    app.get<{ Params: { id: string } }>('/tickets/:id', async (req, reply) => {
-        const result = await queryBus.dispatch(new GetTicketByIdQuery(req.params.id));
+    // Ouverte, même raison que GET /features/:id : jetons de liaison du site public. Un ticket
+    // ne sort d'ici que si la feature qui le porte est elle-même publiquement lisible.
+    app.get<{ Params: { id: string } }>('/tickets/:id', { schema: uuidParamsSchema }, async (req, reply) => {
+        const result = await queryBus.dispatch(new GetTicketByIdQuery(req.params.id, hasPrivateRead(req)));
         return reply.send(result);
     });
 

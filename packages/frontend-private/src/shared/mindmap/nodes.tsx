@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { Handle, NodeResizer, Position, type NodeProps } from '@xyflow/react'
-import { mindmapFill, mindmapStroke, mindmapText } from '@atelier/content-renderer'
+import { mindmapFill, mindmapStroke, mindmapText } from '@content'
 import type { MindmapNodeData } from './serialize'
 
 type MindmapEditApi = { setText: (id: string, text: string) => void }

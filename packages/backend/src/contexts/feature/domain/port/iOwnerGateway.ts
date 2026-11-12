@@ -11,4 +11,6 @@ export interface IOwnerGateway {
 
     /** Numéro du porteur — premier segment des références. `null` si le porteur a disparu. */
     numberOf(owner: FeatureOwner): Promise<number | null>;
+
+    isPubliclyVisible(owner: FeatureOwner): Promise<boolean>;
 }

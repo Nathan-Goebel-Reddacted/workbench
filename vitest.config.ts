@@ -17,6 +17,14 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    env: {
+      JWT_SECRET: '0'.repeat(64),
+      APP_URL: 'http://localhost:3000',
+      FRONTEND_PUBLIC_URL: 'http://localhost:5173',
+      FRONTEND_PRIVATE_URL: 'http://localhost:5174',
+      GITHUB_CLIENT_ID: 'test-client-id',
+      GITHUB_CLIENT_SECRET: 'test-client-secret',
+    },
     include: ['packages/*/src/**/*.test.ts'],
     passWithNoTests: false,
   },

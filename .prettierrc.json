@@ -13,7 +13,7 @@
       }
     },
     {
-      "files": ["packages/{frontend-public,frontend-private,shared-ui,content-renderer}/**/*.{ts,tsx,js,jsx}"],
+      "files": ["packages/{frontend-public,frontend-private,shared-ui}/**/*.{ts,tsx,js,jsx}"],
       "options": {
         "tabWidth": 2,
         "semi": false

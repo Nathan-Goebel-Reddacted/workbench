@@ -11,8 +11,10 @@ import { FeatureDto } from '@contexts/feature/application/query/getFeatureById/f
 export class FeatureGateway implements IFeatureGateway {
     constructor(private readonly queryBus: QueryBus) {}
 
-    async describe(featureId: string): Promise<FeatureContext | null> {
-        const feature = (await this.queryBus.dispatch(new GetFeatureByIdQuery(featureId))) as FeatureDto | null;
+    async describe(featureId: string, includeHidden: boolean = true): Promise<FeatureContext | null> {
+        const feature = (await this.queryBus.dispatch(
+            new GetFeatureByIdQuery(featureId, includeHidden),
+        )) as FeatureDto | null;
         if (!feature) return null;
 
         // Une référence vide signale un porteur disparu : sans lui, aucun numéro n'est calculable.

@@ -2,10 +2,10 @@ import type { CSSProperties } from 'react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@atelier/shared-ui'
-import { MindmapView, resolveDocumentKind } from '@atelier/content-renderer'
+import { MindmapView, resolveDocumentKind } from '@content'
 import { useMedia } from '../hooks/useMedia'
 import type { FeatureMedia, MediaItem, MediaKind, ProjectMedia } from '../types'
-import { API_URL, uploadUrl } from '../../../shared/config'
+import { uploadUrl } from '../../../shared/config'
 
 export type { MediaKind }
 
@@ -212,7 +212,7 @@ function Thumbnail({ item }: { item: MediaItem }) {
   if (kind === 'mindmap')
     return (
       <div style={thumbMediaStyle}>
-        <MindmapView url={url} apiUrl={API_URL} padding={8} />
+        <MindmapView url={url} padding={8} />
       </div>
     )
 

@@ -28,4 +28,10 @@ export class OwnerGateway implements IOwnerGateway {
         const project = await this.projects.findById(new ProjectId(owner.getId()));
         return project ? project.getNumber() : null;
     }
+
+    async isPubliclyVisible(owner: FeatureOwner): Promise<boolean> {
+        if (owner.isIdea()) return false;
+        const project = await this.projects.findById(new ProjectId(owner.getId()));
+        return project !== null && project.isVisible();
+    }
 }

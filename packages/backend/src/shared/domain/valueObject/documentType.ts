@@ -57,7 +57,7 @@ export function isPdfDocument(type: string, url: string): boolean {
 
 // Un mindmap est un fichier JSON : son extension ne le distingue pas d'un autre JSON,
 // seul le suffixe complet le fait. Ce suffixe est aussi la convention appliquée côté
-// frontend (MINDMAP_SUFFIX dans @atelier/content-renderer) — les deux doivent rester
+// frontend (MINDMAP_SUFFIX dans @content, shared-ui/src/content) — les deux doivent rester
 // alignés.
 export const MINDMAP_SUFFIX = '.mindmap.json';
 

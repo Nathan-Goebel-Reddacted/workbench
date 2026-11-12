@@ -1,3 +1,5 @@
+import { ProjectDestination } from '../projectDestination';
+
 export type ProjectDto = Readonly<{
     id: string;
     /** Numéro de porteur, premier segment des références de ses tickets. */
@@ -8,6 +10,7 @@ export type ProjectDto = Readonly<{
     description: string;
     visible: boolean;
     category: string;
-    links: Array<{ url: string; displayText: string; logo: string }>;
+    destination: ProjectDestination;
+    links: Array<{ url: string; displayText: string; logo: string; replacesPage: boolean }>;
     documents: Array<{ id: string; name: string; url: string; type: string }>;
 }>;

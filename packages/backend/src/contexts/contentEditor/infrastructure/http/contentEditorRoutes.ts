@@ -9,7 +9,7 @@ import { UpdateSectionContentCommand } from '@contexts/contentEditor/application
 import { GetPageLayoutByIdQuery } from '@contexts/contentEditor/application/query/getPageLayoutById/getPageLayoutByIdQuery';
 import { GetPageLayoutByRefQuery } from '@contexts/contentEditor/application/query/getPageLayoutByRef/getPageLayoutByRefQuery';
 import { ListMediaImagesQuery } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesQuery';
-import { requirePrivateRead, requireRole } from '@shared/infrastructure/http/roleGuard';
+import { hasPrivateRead, requirePrivateRead, requireRole } from '@shared/infrastructure/http/roleGuard';
 import { PageType } from '@contexts/contentEditor/domain/valueObject/pageType';
 import { SectionType } from '@contexts/contentEditor/domain/valueObject/sectionType';
 import { UserRole } from '@shared/domain/valueObject/userRole';
@@ -44,10 +44,30 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
         return reply.send(result);
     });
 
-    app.get<{ Querystring: { pageType: string; pageRef: string } }>('/page-layouts/by-ref', async (req, reply) => {
-        const result = await queryBus.dispatch(new GetPageLayoutByRefQuery(req.query.pageType, req.query.pageRef));
-        return reply.send(result);
-    });
+    // Route ouverte : c'est par elle que le site public lit ses pages. `pageRef` descend
+    // jusqu'à une colonne `uuid`, où Postgres refusait lui-même toute autre forme — un 500
+    // par requête malformée, et le journal d'erreurs rempli par le premier venu.
+    app.get<{ Querystring: { pageType: string; pageRef: string } }>(
+        '/page-layouts/by-ref',
+        {
+            schema: {
+                querystring: {
+                    type: 'object',
+                    required: ['pageType', 'pageRef'],
+                    properties: {
+                        pageType: { type: 'string', enum: Object.values(PageType) },
+                        pageRef: { type: 'string', format: 'uuid' },
+                    },
+                },
+            },
+        },
+        async (req, reply) => {
+            const result = await queryBus.dispatch(
+                new GetPageLayoutByRefQuery(req.query.pageType, req.query.pageRef, hasPrivateRead(req)),
+            );
+            return reply.send(result);
+        },
+    );
 
     app.get<{ Params: { id: string } }>('/page-layouts/:id', { preHandler: requirePrivateRead }, async (req, reply) => {
         const result = await queryBus.dispatch(new GetPageLayoutByIdQuery(req.params.id));

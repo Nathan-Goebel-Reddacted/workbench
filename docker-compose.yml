@@ -31,7 +31,8 @@ services:
     environment:
       NODE_ENV: development
       # Développement local en HTTP : sans cela le cookie `secure` n'est jamais posé.
-      # docker-compose.prod.yml ne définit pas cette variable — le cookie y reste secure.
+      # docker-compose.prod.yml remet explicitement cette variable à 'false' : les maps
+      # `environment` fusionnent, la valeur ci-dessous survivrait sinon jusqu'en production.
       ALLOW_INSECURE_COOKIE: 'true'
     depends_on:
       postgres:

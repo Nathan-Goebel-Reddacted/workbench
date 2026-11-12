@@ -1,10 +1,10 @@
 import type { CSSProperties } from 'react'
 import { useCallback, useState } from 'react'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
-import { buildRichTextExtensions } from '@atelier/content-renderer'
+import { useApiUrl } from '@atelier/shared-ui'
+import { buildRichTextExtensions } from '@content'
 import { DataBindingPicker } from './DataBindingPicker'
 import { FileUpload } from '../../../shared/components/FileUpload'
-import { API_URL } from '../../../shared/config'
 
 const FONT_SIZES = ['12', '14', '16', '18', '20', '24', '30', '36', '48']
 
@@ -18,8 +18,9 @@ type Props = {
 }
 
 export function RichTextEditor({ html, onChange }: Props) {
+  const apiUrl = useApiUrl()
   const editor = useEditor({
-    extensions: buildRichTextExtensions(API_URL),
+    extensions: buildRichTextExtensions(apiUrl),
     content: html,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
   })

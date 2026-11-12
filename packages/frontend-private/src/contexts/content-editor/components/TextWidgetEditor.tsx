@@ -1,5 +1,5 @@
 import { RichTextEditor } from './RichTextEditor'
-import type { TextContent } from '@atelier/content-renderer'
+import type { TextContent } from '@content'
 
 type Props = {
   value: TextContent

@@ -45,5 +45,5 @@ select {
   font-size: inherit;
 }
 
-/* Les styles .rich-text-content vivent désormais dans @atelier/content-renderer
-   (src/richText.css), importés par main.tsx — le rendu public en dépend aussi. */
+/* Les styles .rich-text-content vivent désormais dans @content
+   (shared-ui/src/content/richText/richText.css), importés par main.tsx — le rendu public en dépend aussi. */

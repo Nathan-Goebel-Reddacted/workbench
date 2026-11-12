@@ -1,3 +1,5 @@
+import { ProjectDestination } from '../projectDestination';
+
 export type ProjectSummaryDto = Readonly<{
     id: string;
     number: number;
@@ -6,4 +8,5 @@ export type ProjectSummaryDto = Readonly<{
     description: string;
     visible: boolean;
     category: string;
+    destination: ProjectDestination;
 }>;

@@ -18,7 +18,11 @@ function command() {
 }
 
 function ownerGateway(exists: boolean): IOwnerGateway {
-    return { exists: async () => exists, numberOf: async () => (exists ? 4 : null) };
+    return {
+        exists: async () => exists,
+        numberOf: async () => (exists ? 4 : null),
+        isPubliclyVisible: async () => exists,
+    };
 }
 
 /**

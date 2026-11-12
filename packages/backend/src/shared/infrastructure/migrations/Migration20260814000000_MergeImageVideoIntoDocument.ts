@@ -6,7 +6,7 @@ import { Migration } from '@mikro-orm/migrations';
  * Avant : la palette du grid-builder offrait deux widgets distincts, chacun avec son type de
  * section persisté. Après : un seul widget « Document », dont la forme du rendu (image, vidéo,
  * PDF, mindmap) se déduit de l'URL au moment de l'affichage — voir `resolveDocumentKind` dans
- * `@atelier/content-renderer`.
+ * `@content` (shared-ui/src/content/media).
  *
  * Le `content` de chaque section est laissé intact : le widget document lit les mêmes clés
  * (`url`, `alt`, `fit`, `position`, `radius`), les sections vidéo n'en portant qu'`url`. Seul le

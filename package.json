@@ -5,7 +5,6 @@
   "workspaces": [
     "packages/backend",
     "packages/shared-ui",
-    "packages/content-renderer",
     "packages/frontend-public",
     "packages/frontend-private"
   ],
@@ -22,7 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "npm run build --workspaces --if-present",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install || exit 0"
   },
   "optionalDependencies": {
     "@esbuild/linux-x64": "^0.27.7"

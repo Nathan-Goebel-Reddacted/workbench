@@ -35,6 +35,10 @@ export function updateProjectInfo(id: string, info: ProjectInfo): Promise<void> 
   return send(projectPath(id), { method: 'PATCH', body: info })
 }
 
+export function setProjectPageReplacement(id: string, url: string | null): Promise<void> {
+  return send(`${projectPath(id)}/page-replacement`, { method: 'PUT', body: { url } })
+}
+
 export function setProjectVisibility(id: string, visible: boolean): Promise<void> {
   return send(`${projectPath(id)}/visibility`, { method: 'PATCH', body: { visible } })
 }

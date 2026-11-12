@@ -13,7 +13,9 @@ import { ListProjectsQuery } from '@contexts/project/application/query/listProje
 import { UpdateProjectCommand } from '@contexts/project/application/command/updateProject/updateProjectCommand';
 import { UpdateProjectVisibilityCommand } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityCommand';
 import { Category } from '@contexts/project/domain/valueObject/category';
+import { SetProjectPageReplacementCommand } from '@contexts/project/application/command/setProjectPageReplacement/setProjectPageReplacementCommand';
 import { requireRole, hasPrivateRead } from '@shared/infrastructure/http/roleGuard';
+import { uuidParamsSchema } from '@shared/infrastructure/http/routeSchemas';
 import { UserRole } from '@shared/domain/valueObject/userRole';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
@@ -26,7 +28,7 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
         return reply.send(result);
     });
 
-    app.get<{ Params: { id: string } }>('/projects/:id', async (req, reply) => {
+    app.get<{ Params: { id: string } }>('/projects/:id', { schema: uuidParamsSchema }, async (req, reply) => {
         const result = await queryBus.dispatch(new GetProjectByIdQuery(req.params.id, hasPrivateRead(req)));
         return reply.send(result);
     });
@@ -172,6 +174,24 @@ export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
         { preHandler: requireRole(UserRole.EDIT) },
         async (req, reply) => {
             await commandBus.dispatch(new RemoveProjectDocumentCommand(req.params.id, req.params.documentId));
+            return reply.status(204).send();
+        },
+    );
+
+    app.put<{ Params: { id: string }; Body: { url: string | null } }>(
+        '/projects/:id/page-replacement',
+        {
+            preHandler: requireRole(UserRole.EDIT),
+            schema: {
+                body: {
+                    type: 'object',
+                    required: ['url'],
+                    properties: { url: { type: ['string', 'null'] } },
+                },
+            },
+        },
+        async (req, reply) => {
+            await commandBus.dispatch(new SetProjectPageReplacementCommand(req.params.id, req.body.url));
             return reply.status(204).send();
         },
     );

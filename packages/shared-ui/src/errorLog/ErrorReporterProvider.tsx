@@ -1,4 +1,5 @@
 import { Component, createContext, useContext, useEffect, useMemo, type ErrorInfo, type ReactNode } from 'react'
+import { useApiUrl } from '../config/ApiUrlContext'
 import { createErrorReporter, type ErrorReport } from './errorReporter'
 
 type Report = (entry: ErrorReport) => void
@@ -56,7 +57,8 @@ class ErrorBoundary extends Component<BoundaryProps, BoundaryState> {
   }
 }
 
-export function ErrorReporterProvider({ apiUrl, children }: { apiUrl: string; children: ReactNode }) {
+export function ErrorReporterProvider({ children }: { children: ReactNode }) {
+  const apiUrl = useApiUrl()
   const report = useMemo(() => createErrorReporter(apiUrl), [apiUrl])
 
   useEffect(() => {

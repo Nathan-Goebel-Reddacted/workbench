@@ -11,20 +11,17 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/backend/package.json          ./packages/backend/
 COPY packages/shared-ui/package.json        ./packages/shared-ui/
-COPY packages/content-renderer/package.json ./packages/content-renderer/
 COPY packages/frontend-public/package.json  ./packages/frontend-public/
 COPY packages/frontend-private/package.json ./packages/frontend-private/
 # Le backend est volontairement hors périmètre : bcrypt exigerait une chaîne de
 # compilation native dont aucun build Vite n'a besoin.
 RUN npm ci \
       --workspace=packages/shared-ui \
-      --workspace=packages/content-renderer \
       --workspace=packages/frontend-public \
       --workspace=packages/frontend-private \
       --include-workspace-root
 
 COPY packages/shared-ui/        ./packages/shared-ui/
-COPY packages/content-renderer/ ./packages/content-renderer/
 COPY packages/frontend-public/  ./packages/frontend-public/
 COPY packages/frontend-private/ ./packages/frontend-private/
 

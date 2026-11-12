@@ -55,6 +55,8 @@ import { GetProjectByIdQuery } from '@contexts/project/application/query/getProj
 import { GetProjectByIdHandler } from '@contexts/project/application/query/getProjectById/getProjectByIdHandler';
 import { ListProjectsQuery } from '@contexts/project/application/query/listProjects/listProjectsQuery';
 import { ListProjectsHandler } from '@contexts/project/application/query/listProjects/listProjectsHandler';
+import { SetProjectPageReplacementCommand } from '@contexts/project/application/command/setProjectPageReplacement/setProjectPageReplacementCommand';
+import { SetProjectPageReplacementHandler } from '@contexts/project/application/command/setProjectPageReplacement/setProjectPageReplacementHandler';
 import { UpdateProjectCommand } from '@contexts/project/application/command/updateProject/updateProjectCommand';
 import { UpdateProjectHandler } from '@contexts/project/application/command/updateProject/updateProjectHandler';
 import { UpdateProjectVisibilityCommand } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityCommand';
@@ -294,6 +296,8 @@ import { SearchErrorLogQuery } from '@contexts/errorLog/application/query/search
 import { SearchErrorLogHandler } from '@contexts/errorLog/application/query/searchErrorLog/searchErrorLogHandler';
 
 import { MediaLibrary } from '@contexts/contentEditor/infrastructure/gateway/mediaLibrary';
+import { PageVisibility } from '@contexts/contentEditor/infrastructure/gateway/pageVisibility';
+import { ProjectPageGateway } from '@contexts/project/infrastructure/gateway/projectPageGateway';
 
 // --- Registre des fichiers uploadés ---
 import { projectUploadReferences } from '@contexts/project/infrastructure/uploadReferences';
@@ -430,8 +434,13 @@ export function bootstrap(
     );
     commandBus.register(AddProjectLinkCommand.commandName, new AddProjectLinkHandler(repos.project));
     commandBus.register(RemoveProjectLinkCommand.commandName, new RemoveProjectLinkHandler(repos.project));
-    queryBus.register(GetProjectByIdQuery.queryName, new GetProjectByIdHandler(repos.project));
-    queryBus.register(ListProjectsQuery.queryName, new ListProjectsHandler(repos.project));
+    commandBus.register(
+        SetProjectPageReplacementCommand.commandName,
+        new SetProjectPageReplacementHandler(repos.project),
+    );
+    const projectPages = new ProjectPageGateway(queryBus);
+    queryBus.register(GetProjectByIdQuery.queryName, new GetProjectByIdHandler(repos.project, projectPages));
+    queryBus.register(ListProjectsQuery.queryName, new ListProjectsHandler(repos.project, projectPages));
     commandBus.register(UpdateProjectCommand.commandName, new UpdateProjectHandler(repos.project));
     commandBus.register(UpdateProjectVisibilityCommand.commandName, new UpdateProjectVisibilityHandler(repos.project));
 
@@ -521,7 +530,13 @@ export function bootstrap(
     commandBus.register(MoveSectionCommand.commandName, new MoveSectionHandler(repos.pageLayout));
     commandBus.register(UpdateSectionContentCommand.commandName, new UpdateSectionContentHandler(repos.pageLayout));
     queryBus.register(GetPageLayoutByIdQuery.queryName, new GetPageLayoutByIdHandler(repos.pageLayout));
-    queryBus.register(GetPageLayoutByRefQuery.queryName, new GetPageLayoutByRefHandler(repos.pageLayout));
+    // Le layout n'est public que si la page qu'il habille l'est : l'éditeur ne sait pas
+    // lire un projet, il demande.
+    const pageVisibility = new PageVisibility(repos.project, repos.portfolio);
+    queryBus.register(
+        GetPageLayoutByRefQuery.queryName,
+        new GetPageLayoutByRefHandler(repos.pageLayout, pageVisibility),
+    );
     // Seul point de contact entre l'éditeur de contenu et les contextes qui détiennent
     // les médias : il pose la question, eux répondent — aucun agrégat étranger ne remonte.
     const mediaLibrary = new MediaLibrary(repos.project, repos.feature, repos.ticket);

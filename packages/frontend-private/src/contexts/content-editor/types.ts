@@ -1,4 +1,4 @@
-import type { SectionType } from '@atelier/content-renderer'
+import type { SectionType } from '@content'
 
 export type MediaItem = { id: string; name: string; url: string }
 export type TicketMedia = { ticketId: string; reference: string; title: string; images: MediaItem[] }

@@ -116,6 +116,19 @@ describe('frontières entre contextes', () => {
     expect(offenders.map(describeImport)).toEqual([])
   })
 
+  // L'origine de l'API est un fait de déploiement : elle entre une fois par le point de
+  // composition, qui la donne à ApiUrlProvider. Partout ailleurs l'affichage la lit par
+  // useApiUrl() plutôt que de la faire descendre de prop en prop. La règle vise la valeur,
+  // pas le module : `uploadUrl` reste un helper de présentation, lisible depuis une vue.
+  it('ne fait lire l’origine de l’API qu’au point de composition', () => {
+    const offenders = Object.entries(sources)
+      .map(([path, content]) => ({ file: path.replace(/^\.\//, ''), content }))
+      .filter(({ file, content }) => file.endsWith('.tsx') && file !== 'App.tsx' && /\bAPI_URL\b/.test(content))
+      .map(({ file }) => file)
+
+    expect(offenders).toEqual([])
+  })
+
   it("ne fait pas dépendre un contexte de l'application", () => {
     const offenders = imports.filter(
       ({ file, target }) => file.startsWith('contexts/') && (target.startsWith('app/') || target === 'App'),
