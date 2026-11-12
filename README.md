@@ -183,7 +183,7 @@ Celui-ci répartit la pile sous **une seule origine** :
 ### Variables : Infisical, pas de `.env`
 
 En production, aucun `.env` n'existe sur le serveur. Les variables vivent dans
-[Infisical](https://eu.infisical.com) (cloud EU, projet `workbench`, environnement `prod`) et sont
+[Infisical](https://app.infisical.com) (cloud US, projet `workbench`, environnement `prod`) et sont
 injectées dans l'environnement de `docker compose` au lancement. `docker-compose.prod.yml` retire
 l'`env_file` du backend et lui relaie chaque variable depuis cet environnement.
 
@@ -192,7 +192,7 @@ projet). Ses identifiants sont le seul secret sur le disque, dans
 `~/.config/workbench/infisical` (`chmod 600`) :
 
 ```bash
-export INFISICAL_DOMAIN=https://eu.infisical.com
+export INFISICAL_DOMAIN=https://app.infisical.com
 export INFISICAL_CLIENT_ID=...
 export INFISICAL_CLIENT_SECRET=...
 ```
