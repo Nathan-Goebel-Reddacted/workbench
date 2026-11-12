@@ -180,12 +180,35 @@ Celui-ci répartit la pile sous **une seule origine** :
 | `/admin/` | espace privé |
 | `/api/` | backend (le préfixe est retiré par le proxy) |
 
+### Variables : Infisical, pas de `.env`
+
+En production, aucun `.env` n'existe sur le serveur. Les variables vivent dans
+[Infisical](https://eu.infisical.com) (cloud EU, projet `workbench`, environnement `prod`) et sont
+injectées dans l'environnement de `docker compose` au lancement. `docker-compose.prod.yml` retire
+l'`env_file` du backend et lui relaie chaque variable depuis cet environnement.
+
+Le serveur s'authentifie par une *Machine Identity* (Universal Auth, rôle **Viewer** sur le
+projet). Ses identifiants sont le seul secret sur le disque, dans
+`~/.config/workbench/infisical` (`chmod 600`) :
+
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-make db-migrate-prod
+export INFISICAL_DOMAIN=https://eu.infisical.com
+export INFISICAL_CLIENT_ID=...
+export INFISICAL_CLIENT_SECRET=...
 ```
 
-Avant de lancer, remplacer les URLs de développement du `.env` par l'origine réelle :
+```bash
+make db-migrate-prod
+make prod-up      # construit et démarre la pile
+make prod-logs
+make prod-down
+```
+
+Lancer `docker compose -f docker-compose.yml -f docker-compose.prod.yml` à la main, sans passer par
+ces cibles, démarre un backend sans configuration : il refuse de démarrer, c'est voulu.
+
+Valeurs de l'environnement `prod`, en plus des secrets (`POSTGRES_PASSWORD`, `JWT_SECRET`, clés
+OAuth) :
 
 ```dotenv
 APP_URL=https://domaine.tld/api
@@ -193,11 +216,12 @@ FRONTEND_PUBLIC_URL=https://domaine.tld
 FRONTEND_PRIVATE_URL=https://domaine.tld/admin
 VITE_API_URL=https://domaine.tld/api
 VITE_PUBLIC_URL=https://domaine.tld
-ALLOW_INSECURE_COOKIE=
 PUBLIC_DOMAIN=domaine.tld
 ```
 
 Les URLs de callback OAuth doivent alors pointer sur `${APP_URL}/auth/<fournisseur>/callback`.
+Toute variable ajoutée au backend doit aussi être déclarée dans l'`environment` du backend de
+`docker-compose.prod.yml`, sinon elle n'atteint pas le conteneur.
 
 Points à ne pas manquer :
 
