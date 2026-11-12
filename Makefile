@@ -106,7 +106,7 @@ db-migrate-prod:
 # ──────────────────────────────────────────────
 # Production
 # ──────────────────────────────────────────────
-INFISICAL_PROJECT_ID ?= a2445015-3763-4abe-8461-9ac741853f8b
+INFISICAL_PROJECT_ID ?= 9e57e210-f903-4754-9d72-e2c671cbd69b
 INFISICAL_CREDENTIALS ?= $(HOME)/.config/workbench/infisical
 PROD_COMPOSE = docker compose -f docker-compose.yml -f docker-compose.prod.yml
 PROD = . $(INFISICAL_CREDENTIALS) && \
