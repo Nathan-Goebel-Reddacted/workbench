@@ -2,6 +2,7 @@
         db-up db-down db-restart db-logs db-shell \
         db-migrate db-migrate-down db-migrate-fresh db-migrate-create db-migrate-status db-migrate-debug \
         db-export db-import db-migrate-prod \
+        prod-up prod-down prod-logs \
         install start dev dev-backend dev-public dev-private build
 
 # Charger le .env automatiquement si présent
@@ -40,6 +41,11 @@ help:
 	@echo "    make start                  Démarrer PostgreSQL + tout le projet"
 	@echo "    make dev                    Lancer le dev sans démarrer la DB"
 	@echo "    make build                  Compiler le backend (tsc)"
+	@echo ""
+	@echo "  Production (variables lues dans Infisical)"
+	@echo "    make prod-up                Construire et démarrer la pile"
+	@echo "    make prod-down              Arrêter la pile"
+	@echo "    make prod-logs              Suivre les logs"
 	@echo ""
 
 # ──────────────────────────────────────────────
@@ -95,7 +101,27 @@ db-migrate-debug:
 # Image de production : @mikro-orm/cli est une devDependency, absente après
 # `npm ci --omit=dev`. dist/migrate.js n'utilise que le noyau ORM.
 db-migrate-prod:
-	docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm backend node packages/backend/dist/migrate.js
+	$(PROD) $(PROD_COMPOSE) run --rm backend node packages/backend/dist/migrate.js
+
+# ──────────────────────────────────────────────
+# Production
+# ──────────────────────────────────────────────
+INFISICAL_PROJECT_ID ?= 9e57e210-f903-4754-9d72-e2c671cbd69b
+INFISICAL_CREDENTIALS ?= $(HOME)/.config/workbench/infisical
+PROD_COMPOSE = docker compose -f docker-compose.yml -f docker-compose.prod.yml
+PROD = . $(INFISICAL_CREDENTIALS) && \
+	INFISICAL_TOKEN=$$(infisical login --method=universal-auth \
+		--client-id="$$INFISICAL_CLIENT_ID" --client-secret="$$INFISICAL_CLIENT_SECRET" --silent --plain) \
+	infisical secrets-manager run --projectId=$(INFISICAL_PROJECT_ID) --env=prod --silent --
+
+prod-up:
+	$(PROD) $(PROD_COMPOSE) up -d --build
+
+prod-down:
+	$(PROD) $(PROD_COMPOSE) down
+
+prod-logs:
+	$(PROD) $(PROD_COMPOSE) logs -f --tail=200
 
 # ──────────────────────────────────────────────
 # Import / Export de la base (dossier ioPort/)

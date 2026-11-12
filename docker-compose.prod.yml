@@ -19,7 +19,31 @@ services:
     # par-dessus l'image compilée, ce qui n'a aucun sens ici.
     volumes: !override
       - uploads_data:/app/packages/backend/uploads
+    env_file: !reset []
     environment:
+      JWT_SECRET:
+      SESSION_TTL:
+      APP_URL:
+      FRONTEND_PUBLIC_URL:
+      FRONTEND_PRIVATE_URL:
+      BOOTSTRAP_ADMIN_EMAIL:
+      GITHUB_CLIENT_ID:
+      GITHUB_CLIENT_SECRET:
+      GOOGLE_CLIENT_ID:
+      GOOGLE_CLIENT_SECRET:
+      POSTGRES_DB:
+      POSTGRES_USER:
+      POSTGRES_PASSWORD:
+      POSTGRES_PORT:
+      PORT:
+      HOST:
+      LOG_LEVEL:
+      CONTACT_MAIL_TO:
+      SMTP_HOST:
+      SMTP_PORT:
+      SMTP_USER:
+      SMTP_PASS:
+      SMTP_FROM:
       NODE_ENV: production
       # Les maps `environment` fusionnent d'un fichier à l'autre : sans cette ligne, le
       # `'true'` du fichier de base survit ici et le cookie de session part sans `Secure`.
