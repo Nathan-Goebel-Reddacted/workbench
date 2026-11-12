@@ -11,6 +11,14 @@ type PgCredentials = {
     user: string;
     password: string;
     database: string;
+    host: string;
+    port: string;
+};
+
+export type PgInvocation = {
+    bin: string;
+    args: string[];
+    env: NodeJS.ProcessEnv;
 };
 
 export function readPgCredentials(): PgCredentials {
@@ -22,18 +30,46 @@ export function readPgCredentials(): PgCredentials {
         throw new Error('POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB are required for database import/export');
     }
 
-    return { user, password, database };
+    return {
+        user,
+        password,
+        database,
+        host: process.env.POSTGRES_HOST || 'localhost',
+        port: process.env.POSTGRES_PORT || '5432',
+    };
 }
 
 // PGPASSWORD est passé par -e à `docker compose exec` : il n'apparaît donc pas dans la ligne de
 // commande exécutée à l'intérieur du conteneur, contrairement à un mot de passe en argument.
-function dockerArgs(credentials: PgCredentials, command: string[]): string[] {
-    return ['compose', 'exec', '-T', '-e', `PGPASSWORD=${credentials.password}`, SERVICE, ...command];
+export function pgInvocation(
+    credentials: PgCredentials,
+    command: string[],
+    mode: string | undefined = process.env.PG_TOOLS,
+): PgInvocation {
+    if (mode === 'direct') {
+        const [bin, ...args] = command;
+        return {
+            bin,
+            args,
+            env: {
+                ...process.env,
+                PGHOST: credentials.host,
+                PGPORT: credentials.port,
+                PGPASSWORD: credentials.password,
+            },
+        };
+    }
+
+    return {
+        bin: 'docker',
+        args: ['compose', 'exec', '-T', '-e', `PGPASSWORD=${credentials.password}`, SERVICE, ...command],
+        env: process.env,
+    };
 }
 
-function run(args: string[], stdin?: string): Promise<string> {
+function run({ bin, args, env }: PgInvocation, stdin?: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        const child = spawn('docker', args, { cwd: REPO_ROOT });
+        const child = spawn(bin, args, { cwd: REPO_ROOT, env });
 
         let stdout = '';
         let stderr = '';
@@ -48,7 +84,7 @@ function run(args: string[], stdin?: string): Promise<string> {
 
         child.on('error', (error: NodeJS.ErrnoException) => {
             if (error.code === 'ENOENT') {
-                reject(new Error('`docker` was not found in PATH — database import/export needs the Docker CLI'));
+                reject(new Error(`\`${bin}\` was not found in PATH — database import/export needs it`));
                 return;
             }
             reject(error);
@@ -57,6 +93,10 @@ function run(args: string[], stdin?: string): Promise<string> {
         child.on('close', code => {
             if (code === 0) {
                 resolve(stdout);
+                return;
+            }
+            if (bin !== 'docker') {
+                reject(new Error(`${bin} failed (exit ${code})\n${stderr.trim()}`));
                 return;
             }
             // Le cas de loin le plus fréquent : la base n'est pas démarrée. Le message brut de
@@ -88,7 +128,7 @@ export async function pgDumpData(credentials: PgCredentials, excludedTables: str
         ...excludedTables.flatMap(table => ['--exclude-table-data', `public.${table}`]),
     ];
 
-    return run(dockerArgs(credentials, command));
+    return run(pgInvocation(credentials, command));
 }
 
 // ON_ERROR_STOP + -1 : le script entier est une transaction unique qui est annulée à la première
@@ -113,5 +153,5 @@ export async function psqlScript(credentials: PgCredentials, sql: string): Promi
         '-',
     ];
 
-    return run(dockerArgs(credentials, command), sql);
+    return run(pgInvocation(credentials, command), sql);
 }
