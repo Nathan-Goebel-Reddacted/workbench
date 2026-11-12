@@ -23,7 +23,7 @@ RUN npm run build --workspace=packages/backend
 
 # ── prod ─────────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS prod
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ postgresql17-client
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/backend/package.json          ./packages/backend/
