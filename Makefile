@@ -2,7 +2,7 @@
         db-up db-down db-restart db-logs db-shell \
         db-migrate db-migrate-down db-migrate-fresh db-migrate-create db-migrate-status db-migrate-debug \
         db-export db-import db-migrate-prod \
-        prod-up prod-down prod-logs \
+        prod-up prod-down prod-logs deploy \
         install start dev dev-backend dev-public dev-private build
 
 # Charger le .env automatiquement si présent
@@ -46,6 +46,7 @@ help:
 	@echo "    make prod-up                Construire et démarrer la pile"
 	@echo "    make prod-down              Arrêter la pile"
 	@echo "    make prod-logs              Suivre les logs"
+	@echo "    make deploy                 Sauvegarde, build, migration, up (lancé par workbench-deploy, pas à la main)"
 	@echo ""
 
 # ──────────────────────────────────────────────
@@ -122,6 +123,27 @@ prod-down:
 
 prod-logs:
 	$(PROD) $(PROD_COMPOSE) logs -f --tail=200
+
+deploy: SHELL := /bin/bash
+deploy: .SHELLFLAGS := -eo pipefail -c
+deploy:
+	@echo '==> backup'
+	umask 077; \
+	dump=backup/predeploy-$$(date +%Y%m%d-%H%M%S)-$$(git rev-parse --short HEAD).sql.gz; \
+	$(PROD) $(PROD_COMPOSE) exec -T postgres sh -c 'pg_dump -U "$$POSTGRES_USER" "$$POSTGRES_DB"' | gzip > "$$dump.tmp"; \
+	gzip -t "$$dump.tmp"; \
+	test "$$(zcat "$$dump.tmp" | wc -c)" -gt 1000; \
+	mv "$$dump.tmp" "$$dump"; \
+	ls -1 backup/predeploy-*.sql.gz | sort | head -n -10 | xargs -r rm --
+	@echo '==> build'
+	$(PROD) $(PROD_COMPOSE) build
+	@echo '==> migrate'
+	$(PROD) $(PROD_COMPOSE) run --rm backend node packages/backend/dist/migrate.js
+	@echo '==> up'
+	$(PROD) $(PROD_COMPOSE) up -d --wait --wait-timeout 300
+	@echo '==> prune'
+	docker image prune -f
+	docker builder prune -f --filter until=168h
 
 # ──────────────────────────────────────────────
 # Import / Export de la base (dossier ioPort/)
