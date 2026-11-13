@@ -12,7 +12,7 @@ export async function listPendingPairingRequests(): Promise<PairingRequest[]> {
 }
 
 export function decidePairingRequest(id: string, decision: Decision): Promise<void> {
-  return send(`/agent-pairing-requests/${id}/${decision}`, { method: 'POST' })
+  return send(`/agent-pairing-requests/${id}/${decision}`, { method: 'POST', body: {} })
 }
 
 export function listAgentTools(): Promise<AgentTool[]> {
