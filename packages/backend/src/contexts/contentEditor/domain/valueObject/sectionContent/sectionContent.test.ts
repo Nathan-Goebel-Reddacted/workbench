@@ -100,7 +100,17 @@ describe('SectionContent — écriture', () => {
     it('conserve le HTML du texte', () => {
         expect(SectionContent.fromInput(SectionType.TEXT, { html: '<p>a</p>' }).toRecord()).toEqual({
             html: '<p>a</p>',
+            scale: 'normal',
         });
+    });
+
+    it('retient l’échelle choisie pour un texte et refuse une échelle inconnue', () => {
+        expect(SectionContent.fromInput(SectionType.TEXT, { html: '', scale: 'display' }).toRecord().scale).toBe(
+            'display',
+        );
+        expect(() => SectionContent.fromInput(SectionType.TEXT, { scale: 'huge' })).toThrow(
+            InvalidSectionContentException,
+        );
     });
 });
 
@@ -132,6 +142,7 @@ describe('SectionContent — relecture', () => {
     it('reprend l’ancien texte libre', () => {
         expect(SectionContent.rehydrate(SectionType.TEXT, { text: 'bonjour' }).toRecord()).toEqual({
             html: 'bonjour',
+            scale: 'normal',
         });
     });
 

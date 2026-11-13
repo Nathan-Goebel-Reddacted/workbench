@@ -19,7 +19,15 @@ export type PageLayoutDto = {
 
 // --- Contenu du widget texte ---
 // Un unique éditeur riche. Le HTML peut contenir des jetons de données live (voir dataBinding.ts).
-export type TextContent = { html: string }
+export type TextScale = 'normal' | 'large' | 'display'
+
+export type TextContent = { html: string; scale: TextScale }
+
+export const TEXT_SCALE_OPTIONS: { value: TextScale; label: string; factor: number }[] = [
+  { value: 'normal', label: 'Normal', factor: 1 },
+  { value: 'large', label: 'Large', factor: 1.5 },
+  { value: 'display', label: 'Display', factor: 2.3 },
+]
 
 // Normalise un content brut (issu de la base, potentiellement legacy) en TextContent sûr.
 export function readTextContent(content: Record<string, unknown>): TextContent {
@@ -27,7 +35,8 @@ export function readTextContent(content: Record<string, unknown>): TextContent {
   // Les anciens binds `source:'project'` (sans html) retombent sur une chaîne vide (OK en dev).
   const legacy = typeof content.text === 'string' ? content.text : ''
   const html = typeof content.html === 'string' ? content.html : legacy
-  return { html }
+  const scale = TEXT_SCALE_OPTIONS.some(o => o.value === content.scale) ? (content.scale as TextScale) : 'normal'
+  return { html, scale }
 }
 
 // --- Contenu du widget image ---

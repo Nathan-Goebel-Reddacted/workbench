@@ -91,6 +91,7 @@ export type {
   SectionPosition,
   PageLayoutDto,
   TextContent,
+  TextScale,
   ImageContent,
   ImageFit,
   ImagePosition,
@@ -113,6 +114,7 @@ export type {
 } from './section/types'
 export {
   readTextContent,
+  TEXT_SCALE_OPTIONS,
   readImageContent,
   readLinkContent,
   LINK_STYLE_OPTIONS,

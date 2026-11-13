@@ -9,6 +9,7 @@ import {
   readLinkAreaContent,
   readLinkContent,
   readTextContent,
+  TEXT_SCALE_OPTIONS,
   type LinkStyle,
   type SectionDto,
 } from './types'
@@ -365,10 +366,11 @@ function CarouselSlide({ url, caption, mode }: { url: string; caption: string; m
 }
 
 function TextPreview({ content, mode }: { content: SectionDto['content']; mode: RenderMode }) {
-  const { html } = readTextContent(content)
+  const { html, scale } = readTextContent(content)
   const trimmed = html.trim()
   if (!trimmed || trimmed === '<p></p>') return <Empty mode={mode} />
-  return <RichTextRenderer html={html} />
+  const factor = TEXT_SCALE_OPTIONS.find(o => o.value === scale)?.factor ?? 1
+  return <RichTextRenderer html={html} scale={factor} />
 }
 
 function ProjectCard({ projectId, mode }: { projectId: string; mode: RenderMode }) {

@@ -20,6 +20,7 @@ const IMAGE_POSITIONS = [
 ] as const;
 const LINK_AREA_TARGETS = ['url', 'project'] as const;
 const LINK_STYLES = ['link', 'solid', 'outline'] as const;
+const TEXT_SCALES = ['normal', 'large', 'display'] as const;
 const FORM_FIELD_TYPES = ['text', 'email', 'textarea'] as const;
 
 export const DEFAULT_FORM_FIELDS = [
@@ -60,6 +61,7 @@ function formFields(content: ContentReader): Record<string, unknown>[] {
 export const SECTION_CONTENT_SCHEMAS: Record<SectionType, Normalize> = {
     [SectionType.TEXT]: content => ({
         html: content.has('html') ? content.string('html') : content.string('text'),
+        scale: content.oneOf('scale', TEXT_SCALES, 'normal'),
     }),
     [SectionType.DOCUMENT]: content => ({
         url: content.string('url'),

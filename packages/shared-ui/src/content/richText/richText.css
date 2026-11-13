@@ -2,19 +2,19 @@
    dans les pages publiques. Doit être importé par toute application qui monte
    RichTextRenderer, sinon le texte sort sans mise en forme. */
 .rich-text-content h1 {
-  font-size: 1.4rem;
+  font-size: calc(1.4rem * var(--text-scale, 1));
   margin: 0.5rem 0;
 }
 .rich-text-content h2 {
-  font-size: 1.15rem;
+  font-size: calc(1.15rem * var(--text-scale, 1));
   margin: 0.5rem 0;
 }
 .rich-text-content h3 {
-  font-size: 1rem;
+  font-size: calc(1rem * var(--text-scale, 1));
   margin: 0.5rem 0;
 }
 .rich-text-content h4 {
-  font-size: 0.9rem;
+  font-size: calc(0.9rem * var(--text-scale, 1));
   margin: 0.5rem 0;
 }
 .rich-text-content p {
@@ -40,7 +40,7 @@
   border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 0.6rem 0.75rem;
-  font-size: 0.8rem;
+  font-size: calc(0.8rem * var(--text-scale, 1));
   overflow-x: auto;
 }
 .rich-text-content code {
