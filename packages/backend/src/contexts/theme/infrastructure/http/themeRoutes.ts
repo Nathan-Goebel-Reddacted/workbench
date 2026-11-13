@@ -30,7 +30,7 @@ const newThemeSchema = {
 export const themeRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
     // Ouverte : le site public a besoin du thème par défaut et de ceux que le visiteur
     // peut choisir. Les thèmes masqués ne sortent jamais par là.
-    app.get('/themes', async (_req, reply) => {
+    app.get('/themes', { config: { servedWhenSiteClosed: true } }, async (_req, reply) => {
         const catalog = await queryBus.dispatch<ListVisibleThemesQuery, ThemeCatalogDto>(new ListVisibleThemesQuery());
         return reply.send(catalog);
     });

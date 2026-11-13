@@ -38,7 +38,14 @@ process.env.FRONTEND_PRIVATE_URL ??= 'http://localhost:5174';
 const orm = { em: {} } as unknown as MikroORM;
 const silentLogger = pino({ level: 'silent' }) as unknown as FastifyBaseLogger;
 
-let createServer: (orm: MikroORM, commandBus: CommandBus, logger: FastifyBaseLogger) => FastifyInstance;
+const siteOpen = async () => true;
+
+let createServer: (
+    orm: MikroORM,
+    commandBus: CommandBus,
+    logger: FastifyBaseLogger,
+    isSiteOpen: () => Promise<boolean>,
+) => FastifyInstance;
 // Typé explicitement plutôt que par `ReturnType<typeof vi.fn>` : ce dernier rend un mock
 // générique que le bus refuse, et sa forme a changé entre les versions de vitest.
 let record: Mock<(command: RecordErrorLogEntryCommand) => Promise<void>>;
@@ -53,7 +60,7 @@ function busRecording(): CommandBus {
 }
 
 async function serverThrowing(error: unknown): Promise<FastifyInstance> {
-    const app = createServer(orm, busRecording(), silentLogger);
+    const app = createServer(orm, busRecording(), silentLogger, siteOpen);
     app.get('/boom', () => {
         throw error;
     });
@@ -124,7 +131,7 @@ describe('setErrorHandler', () => {
         // Ce gestionnaire remplace celui de Fastify : sans branche pour `statusCode`, un corps
         // hors schéma devenait un 500 journalisé, et n'importe qui pouvait remplir le journal
         // en envoyant n'importe quoi sur une route publique.
-        const app = createServer(orm, busRecording(), silentLogger);
+        const app = createServer(orm, busRecording(), silentLogger, siteOpen);
         app.post(
             '/strict',
             {

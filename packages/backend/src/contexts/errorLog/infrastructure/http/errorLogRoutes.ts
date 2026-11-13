@@ -70,7 +70,7 @@ export const errorLogRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus
         '/error-log',
         {
             schema: { body: reportSchema },
-            config: { public: true, rateLimit: { max: 30, timeWindow: '5 minutes' } },
+            config: { public: true, servedWhenSiteClosed: true, rateLimit: { max: 30, timeWindow: '5 minutes' } },
             bodyLimit: 32 * 1024,
         },
         async (req, reply) => {

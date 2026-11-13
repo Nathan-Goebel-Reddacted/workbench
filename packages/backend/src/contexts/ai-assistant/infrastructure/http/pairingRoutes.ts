@@ -32,7 +32,7 @@ export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     app.post<{ Body: { name: string; scopes: string[]; permission: string } }>(
         '/mcp/pair',
         {
-            config: { public: true, rateLimit: { max: 10, timeWindow: '15 minutes' } },
+            config: { public: true, servedWhenSiteClosed: true, rateLimit: { max: 10, timeWindow: '15 minutes' } },
             schema: {
                 body: {
                     type: 'object',
@@ -78,7 +78,7 @@ export const pairingRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
         {
             // Cette route délivre le secret de l'agent contre un code court : sans plafond,
             // le code se devine par énumération.
-            config: { public: true, rateLimit: { max: 10, timeWindow: '15 minutes' } },
+            config: { public: true, servedWhenSiteClosed: true, rateLimit: { max: 10, timeWindow: '15 minutes' } },
             schema: {
                 body: {
                     type: 'object',
