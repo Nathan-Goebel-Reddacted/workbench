@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo="$HOME/workbench"
+state="$HOME/.local/state/workbench"
+
+fail() {
+    echo "workbench-deploy: $2" >&2
+    exit "$1"
+}
+
+sha="${SSH_ORIGINAL_COMMAND:-${1:-}}"
+[[ $sha =~ ^[0-9a-f]{40}$ ]] || fail 64 "usage: workbench-deploy <full sha of a main commit>"
+
+mkdir -p "$state"
+shopt -s nullglob
+
+exec 9>"$state/deploy.lock"
+if ! flock -w 600 9; then
+    logs=("$state"/deploy-*.log)
+    current=${logs[-1]:-}
+    age='?'
+    [[ -n $current ]] && age=$(($(date +%s) - $(stat -c %Y "$current")))
+    fail 75 "another deploy is still running (${current:-no log}, last output ${age}s ago): re-run this job later"
+fi
+
+cd "$repo"
+[[ $(git symbolic-ref --short HEAD) == main ]] || fail 65 "$repo is not on main"
+[[ -z $(git status --porcelain --untracked-files=no) ]] || fail 65 "tracked files are modified in $repo"
+
+git fetch --quiet origin main
+git merge-base --is-ancestor "$sha" origin/main 2>/dev/null || fail 65 "$sha is not on main"
+git merge --quiet --ff-only "$sha"
+[[ $(git rev-parse HEAD) == "$sha" ]] || fail 65 "main is already past ${sha:0:7}: nothing deployed"
+
+logs=("$state"/deploy-*.log)
+if ((${#logs[@]} > 30)); then
+    for old in "${logs[@]:0:${#logs[@]}-30}"; do
+        rm -f -- "$old" "${old%.log}.pid" "${old%.log}.exit"
+    done
+fi
+
+run="$state/deploy-$(date +%Y%m%d-%H%M%S)-${sha:0:7}-$$"
+rm -f -- "$run.pid" "$run.exit"
+
+setsid nohup bash -c 'echo $$ > "$1.pid"; timeout --kill-after=60 40m make deploy; echo $? > "$1.exit"' \
+    _ "$run" >"$run.log" 2>&1 </dev/null &
+
+for _ in {1..50}; do
+    [[ -s $run.pid ]] && break
+    sleep 0.1
+done
+[[ -s $run.pid ]] || fail 70 "deploy did not start, see $run.log"
+
+tail -n +1 -f --pid="$(cat "$run.pid")" "$run.log" | grep --line-buffered '^==>' || true
+
+[[ -s $run.exit ]] || fail 70 "deploy interrupted without exit code, see $run.log"
+code=$(cat "$run.exit")
+if [[ $code != 0 ]]; then
+    step=$(grep '^==>' "$run.log" | tail -n 1 || true)
+    fail "$code" "failed at '${step:-before the first step}' (exit $code), see $run.log"
+fi
+
+echo "deployed $sha"

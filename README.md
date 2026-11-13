@@ -179,6 +179,7 @@ Celui-ci répartit la pile sous **une seule origine** :
 | `/` | site public |
 | `/admin/` | espace privé |
 | `/api/` | backend (le préfixe est retiré par le proxy) |
+| `/mcp` | serveur MCP du backend (chemin transmis tel quel ; `/api/mcp` répond 404) |
 
 ### Variables : Infisical, pas de `.env`
 
@@ -198,11 +199,15 @@ export INFISICAL_CLIENT_SECRET=...
 ```
 
 ```bash
+make prod-up      # construit et démarre la pile, sans migrer
 make db-migrate-prod
-make prod-up      # construit et démarre la pile
 make prod-logs
 make prod-down
 ```
+
+`db-migrate-prod` tourne dans l'image backend **déjà construite** : une nouvelle migration n'est
+jouée qu'après un build. Pour une mise à jour, passer par le déploiement ci-dessous, qui fait
+sauvegarde → build → migration → up dans cet ordre.
 
 Lancer `docker compose -f docker-compose.yml -f docker-compose.prod.yml` à la main, sans passer par
 ces cibles, démarre un backend sans configuration : il refuse de démarrer, c'est voulu.
@@ -239,6 +244,65 @@ Points à ne pas manquer :
   démarrage : Let's Encrypt valide le domaine en frappant le port 80.
 
 Les uploads vivent dans le volume `uploads_data` — c'est ce qui les fait survivre à un rebuild.
+
+### Déploiement automatique
+
+Une fusion sur `main` déploie : le job `deploy` de la CI attend que `verify` passe, puis se
+connecte en SSH au serveur et lui passe le SHA vérifié. Le serveur n'exécute rien d'autre que
+`/usr/local/bin/workbench-deploy`, imposé par `authorized_keys` :
+
+1. refuse tout ce qui n'est pas un SHA complet présent sur `main` (et un SHA plus ancien que celui
+   déjà déployé) ;
+2. prend un verrou (un seul déploiement à la fois, attente de 10 min au plus) ;
+3. avance `~/workbench` sur ce SHA en fast-forward ;
+4. lance `make deploy` détaché de la session SSH — annuler le job ou perdre le réseau ne
+   l'interrompt pas — avec une limite de 40 min ;
+5. ne renvoie à Actions que les étapes (`==> backup`, `build`, `migrate`, `up`, `prune`) et, en
+   cas d'échec, l'étape fautive, son code et le chemin du log. Le dépôt est public : la sortie brute
+   reste sur le serveur, dans `~/.local/state/workbench/` (30 derniers déploiements).
+
+`make deploy` sauvegarde la base dans `backup/predeploy-<date>-<sha>.sql.gz` (10 dernières gardées)
+avant de migrer, et s'arrête si la sauvegarde est vide ou corrompue. Il ne se lance pas seul : sans
+l'enveloppe, ni verrou ni contrôle du SHA.
+
+Mise en place, une fois :
+
+```bash
+# sur le serveur, depuis ~/workbench
+sudo install -m 755 scripts/workbench-deploy /usr/local/bin/
+```
+
+```text
+# ~/.ssh/authorized_keys — clé dédiée à la CI, sans passphrase
+command="/usr/local/bin/workbench-deploy",restrict ssh-ed25519 AAAA… workbench-ci
+```
+
+Côté GitHub, un environment `production` limité à la branche `main` porte le secret
+`DEPLOY_SSH_KEY` (clé privée) et les variables `DEPLOY_HOST` (nom du serveur), `DEPLOY_URL`
+(`https://domaine.tld`) et `DEPLOY_KNOWN_HOSTS` (sortie de `ssh-keyscan -t ed25519 <DEPLOY_HOST>`,
+empreinte vérifiée contre `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` lu sur le serveur).
+La copie installée de l'enveloppe ne suit pas le dépôt : la réinstaller quand
+`scripts/workbench-deploy` change.
+
+Déployer à la main, sur le serveur :
+
+```bash
+git -C ~/workbench fetch origin main
+workbench-deploy "$(git -C ~/workbench rev-parse origin/main)"
+```
+
+#### Si le déploiement échoue
+
+1. Lire l'étape fautive dans le job, puis le log indiqué sur le serveur.
+2. Échec passager (réseau, registre) : « Re-run jobs » dans Actions.
+3. Code fautif : `git revert` du merge, par PR vers `main` — la fusion redéploie la version
+   précédente.
+4. Un revert n'annule pas une migration. Repartir de la sauvegarde `backup/predeploy-*.sql.gz` ou
+   d'une migration `down` jouée à la main.
+
+Pour qu'un déploiement ne casse jamais la version en cours, une migration reste compatible avec le
+code précédent (expand/contract) : ajouter d'abord, retirer dans un déploiement suivant, une fois
+plus aucun code ne lit l'ancien schéma.
 
 ## Qualité
 
