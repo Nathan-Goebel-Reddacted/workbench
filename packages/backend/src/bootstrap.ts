@@ -217,6 +217,13 @@ import { ReorderCvsHandler } from '@contexts/cv/application/command/reorderCvs/r
 import { ListCvsQuery } from '@contexts/cv/application/query/listCvs/listCvsQuery';
 import { ListCvsHandler } from '@contexts/cv/application/query/listCvs/listCvsHandler';
 
+// --- Site ---
+import { SetSiteAccessCommand } from '@contexts/site/application/command/setSiteAccess/setSiteAccessCommand';
+import { SetSiteAccessHandler } from '@contexts/site/application/command/setSiteAccess/setSiteAccessHandler';
+import { GetSiteAccessQuery } from '@contexts/site/application/query/getSiteAccess/getSiteAccessQuery';
+import { GetSiteAccessHandler } from '@contexts/site/application/query/getSiteAccess/getSiteAccessHandler';
+import { SiteAccessRepository } from '@contexts/site/infrastructure/repository/siteAccessRepository';
+
 import { EntityManager } from '@mikro-orm/postgresql';
 import { PostgresOwnerNumberSequence } from '@shared/infrastructure/sequence/postgresOwnerNumberSequence';
 import { UserRepository } from '@contexts/user/infrastructure/repository/userRepository';
@@ -328,6 +335,7 @@ export function bootstrap(
         pairingRequest: new PairingRequestRepository(em),
         contactMessage: new ContactMessageRepository(em),
         cv: new CvRepository(em),
+        siteAccess: new SiteAccessRepository(em),
         allowedEmail: new AllowedEmailRepository(em),
         accessRequest: new AccessRequestRepository(em),
         theme: new ThemeRepository(em),
@@ -605,6 +613,10 @@ export function bootstrap(
     commandBus.register(SetCvVisibilityCommand.commandName, new SetCvVisibilityHandler(repos.cv));
     commandBus.register(ReorderCvsCommand.commandName, new ReorderCvsHandler(repos.cv));
     queryBus.register(ListCvsQuery.queryName, new ListCvsHandler(repos.cv));
+
+    // Site
+    commandBus.register(SetSiteAccessCommand.commandName, new SetSiteAccessHandler(repos.siteAccess));
+    queryBus.register(GetSiteAccessQuery.queryName, new GetSiteAccessHandler(repos.siteAccess));
 
     // Auth
     // La politique d'accès reçoit l'adresse d'amorçage : c'est une donnée de déploiement,
