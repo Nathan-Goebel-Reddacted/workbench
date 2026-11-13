@@ -19,6 +19,7 @@ const IMAGE_POSITIONS = [
     'bottom right',
 ] as const;
 const LINK_AREA_TARGETS = ['url', 'project'] as const;
+const LINK_STYLES = ['link', 'solid', 'outline'] as const;
 const FORM_FIELD_TYPES = ['text', 'email', 'textarea'] as const;
 
 export const DEFAULT_FORM_FIELDS = [
@@ -77,6 +78,8 @@ export const SECTION_CONTENT_SCHEMAS: Record<SectionType, Normalize> = {
             url: link.string('url'),
             displayText: link.string('displayText'),
             logo: link.string('logo'),
+            style: link.oneOf('style', LINK_STYLES, 'link'),
+            newTab: link.boolean('newTab', true),
         })),
     }),
     [SectionType.EMBED]: content => ({

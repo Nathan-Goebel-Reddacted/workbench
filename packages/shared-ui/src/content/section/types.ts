@@ -137,7 +137,17 @@ export function isEmbeddableUrl(url: string): boolean {
 
 // --- Contenu du widget lien ---
 // Les liens externes saisis à la main vivent dans le content de la section.
-export type ExternalLink = { url: string; displayText: string; logo: string }
+export type LinkStyle = 'link' | 'solid' | 'outline'
+
+export type ExternalLink = { url: string; displayText: string; logo: string; style: LinkStyle; newTab: boolean }
+
+export const LINK_STYLE_OPTIONS: { value: LinkStyle; label: string }[] = [
+  { value: 'link', label: 'Link' },
+  { value: 'solid', label: 'Solid button' },
+  { value: 'outline', label: 'Outline button' },
+]
+
+export const EMPTY_EXTERNAL_LINK: ExternalLink = { url: '', displayText: '', logo: '', style: 'link', newTab: true }
 
 export function readLinkContent(content: Record<string, unknown>): { externalLinks: ExternalLink[] } {
   const raw = Array.isArray(content.externalLinks) ? content.externalLinks : []
@@ -147,6 +157,8 @@ export function readLinkContent(content: Record<string, unknown>): { externalLin
       url: typeof item.url === 'string' ? item.url : '',
       displayText: typeof item.displayText === 'string' ? item.displayText : '',
       logo: typeof item.logo === 'string' ? item.logo : '',
+      style: LINK_STYLE_OPTIONS.some(o => o.value === item.style) ? (item.style as LinkStyle) : 'link',
+      newTab: item.newTab !== false,
     }))
   return { externalLinks }
 }

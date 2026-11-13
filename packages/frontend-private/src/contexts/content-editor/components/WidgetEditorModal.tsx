@@ -25,11 +25,14 @@ import {
   CODE_LANGUAGE_OPTIONS,
   isEmbeddableUrl,
   LINK_AREA_TARGET_OPTIONS,
+  LINK_STYLE_OPTIONS,
+  EMPTY_EXTERNAL_LINK,
   FORM_FIELD_TYPE_OPTIONS,
   resolveDocumentKind,
   MindmapView,
   type DocumentKind,
   type ExternalLink,
+  type LinkStyle,
   type FormField,
   type FormFieldType,
   type SectionDto,
@@ -513,6 +516,21 @@ function LinkEditor({ draft, set }: { draft: SectionContent; set: (k: string, v:
             onChange={e => patch(i, { displayText: e.target.value })}
             placeholder="Displayed label"
           />
+          <select
+            style={inputStyle}
+            value={link.style}
+            onChange={e => patch(i, { style: e.target.value as LinkStyle })}
+          >
+            {LINK_STYLE_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <label style={{ ...rowStyle, gap: '0.25rem' }}>
+            <input type="checkbox" checked={link.newTab} onChange={e => patch(i, { newTab: e.target.checked })} />
+            <span style={mutedStyle}>New tab</span>
+          </label>
           <FileUpload accept={IMAGE_ACCEPT} label="📁" onUploaded={logo => patch(i, { logo })} />
           <Button variant="ghost" onClick={() => update(externalLinks.filter((_, j) => j !== i))}>
             ✕
@@ -521,7 +539,7 @@ function LinkEditor({ draft, set }: { draft: SectionContent; set: (k: string, v:
       ))}
 
       <div style={rowStyle}>
-        <Button variant="secondary" onClick={() => update([...externalLinks, { url: '', displayText: '', logo: '' }])}>
+        <Button variant="secondary" onClick={() => update([...externalLinks, { ...EMPTY_EXTERNAL_LINK }])}>
           + Add a link
         </Button>
       </div>

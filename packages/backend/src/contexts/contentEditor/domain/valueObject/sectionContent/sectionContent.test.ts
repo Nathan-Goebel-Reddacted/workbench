@@ -58,6 +58,36 @@ describe('SectionContent — écriture', () => {
         expect(fields[1].id).not.toBe('');
     });
 
+    it('donne à un lien sans style le rendu lien, ouvert dans un nouvel onglet', () => {
+        expect(
+            SectionContent.fromInput(SectionType.LINK, {
+                externalLinks: [{ url: '/projects', displayText: 'Projets' }],
+            }).toRecord(),
+        ).toEqual({
+            externalLinks: [{ url: '/projects', displayText: 'Projets', logo: '', style: 'link', newTab: true }],
+        });
+    });
+
+    it('conserve le style et l’onglet choisis pour chaque lien', () => {
+        const { externalLinks } = SectionContent.fromInput(SectionType.LINK, {
+            externalLinks: [
+                { url: '/projects', style: 'solid', newTab: false },
+                { url: '/cv.pdf', style: 'outline' },
+            ],
+        }).toRecord() as { externalLinks: { style: string; newTab: boolean }[] };
+
+        expect(externalLinks.map(l => [l.style, l.newTab])).toEqual([
+            ['solid', false],
+            ['outline', true],
+        ]);
+    });
+
+    it('refuse un style de lien hors vocabulaire', () => {
+        expect(() =>
+            SectionContent.fromInput(SectionType.LINK, { externalLinks: [{ url: '/a', style: 'ghost' }] }),
+        ).toThrow(InvalidSectionContentException);
+    });
+
     it('conserve le HTML du texte', () => {
         expect(SectionContent.fromInput(SectionType.TEXT, { html: '<p>a</p>' }).toRecord()).toEqual({
             html: '<p>a</p>',
