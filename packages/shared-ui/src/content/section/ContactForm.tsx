@@ -128,6 +128,7 @@ const containerStyle: CSSProperties = {
 
 const titleStyle: CSSProperties = {
   margin: 0,
+  fontFamily: 'var(--font-heading)',
   fontSize: '1.125rem',
   color: 'var(--color-text)',
 }

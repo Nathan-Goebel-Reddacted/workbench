@@ -9,6 +9,8 @@ import {
   readLinkAreaContent,
   readLinkContent,
   readTextContent,
+  TEXT_SCALE_OPTIONS,
+  type LinkStyle,
   type SectionDto,
 } from './types'
 import { useApiUrl } from '../../config/ApiUrlContext'
@@ -50,13 +52,13 @@ export function SectionPreview({ section, backgroundDepth = 0, mode = 'edit' }: 
 
   // Aplat décoratif : aucun contenu, la couleur vient de la profondeur d'empilement.
   if (type === 'background') {
-    const { radius, border } = readBackgroundContent(content)
+    const { radius, border, dark } = readBackgroundContent(content)
     return (
       <div
         style={{
           width: '100%',
           height: '100%',
-          backgroundColor: backgroundColorForDepth(backgroundDepth),
+          backgroundColor: backgroundColorForDepth(backgroundDepth, dark),
           borderRadius: `${radius}px`,
           border: border ? '1px solid var(--color-border)' : 'none',
           boxSizing: 'border-box',
@@ -239,28 +241,36 @@ function LinkPreview({ content, mode }: { content: SectionDto['content']; mode: 
 
   if (withUrl.length === 0) return <Empty label="Aucun lien" mode={mode} />
 
+  const hasButton = withUrl.some(link => link.style !== 'link')
+
   return (
-    <div style={linkListStyle}>
-      {withUrl.map((link, i) =>
+    <div style={hasButton ? linkRowStyle : linkListStyle}>
+      {withUrl.map((link, i) => {
+        const body = (
+          <>
+            {link.logo && <img src={resolveUploadUrl(link.logo, apiUrl)} alt="" style={linkLogoStyle} />}
+            <span style={linkTextStyle}>{link.displayText || link.url}</span>
+          </>
+        )
+        const style = LINK_STYLES[link.style]
         // Dans l'éditeur les liens restent inertes ; sur le site ils sont cliquables.
-        mode === 'public' ? (
+        if (mode !== 'public')
+          return (
+            <span key={i} style={style}>
+              {body}
+            </span>
+          )
+        return (
           <a
             key={i}
             href={link.url}
-            target="_blank"
-            rel="noreferrer"
-            style={{ ...linkItemStyle, textDecoration: 'none' }}
+            {...(link.newTab ? { target: '_blank', rel: 'noreferrer' } : {})}
+            style={{ ...style, textDecoration: 'none' }}
           >
-            {link.logo && <img src={resolveUploadUrl(link.logo, apiUrl)} alt="" style={linkLogoStyle} />}
-            <span style={linkTextStyle}>{link.displayText || link.url}</span>
+            {body}
           </a>
-        ) : (
-          <span key={i} style={linkItemStyle}>
-            {link.logo && <img src={resolveUploadUrl(link.logo, apiUrl)} alt="" style={linkLogoStyle} />}
-            <span style={linkTextStyle}>{link.displayText || link.url}</span>
-          </span>
-        ),
-      )}
+        )
+      })}
     </div>
   )
 }
@@ -356,10 +366,11 @@ function CarouselSlide({ url, caption, mode }: { url: string; caption: string; m
 }
 
 function TextPreview({ content, mode }: { content: SectionDto['content']; mode: RenderMode }) {
-  const { html } = readTextContent(content)
+  const { html, scale } = readTextContent(content)
   const trimmed = html.trim()
   if (!trimmed || trimmed === '<p></p>') return <Empty mode={mode} />
-  return <RichTextRenderer html={html} />
+  const factor = TEXT_SCALE_OPTIONS.find(o => o.value === scale)?.factor ?? 1
+  return <RichTextRenderer html={html} scale={factor} />
 }
 
 function ProjectCard({ projectId, mode }: { projectId: string; mode: RenderMode }) {
@@ -477,6 +488,34 @@ const linkItemStyle: CSSProperties = {
   maxWidth: '100%',
   fontSize: '0.75rem',
   color: 'var(--color-primary)',
+}
+const linkRowStyle: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  alignContent: 'flex-start',
+  gap: '0.75rem',
+  flex: 1,
+  minHeight: 0,
+}
+const linkButtonStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '0.5rem',
+  maxWidth: '100%',
+  minHeight: '44px',
+  padding: '0 1.25rem',
+  borderRadius: '8px',
+  border: '1px solid var(--color-text)',
+  fontSize: '0.9375rem',
+  fontWeight: 600,
+  boxSizing: 'border-box',
+}
+const LINK_STYLES: Record<LinkStyle, CSSProperties> = {
+  link: linkItemStyle,
+  solid: { ...linkButtonStyle, backgroundColor: 'var(--color-text)', color: 'var(--color-surface)' },
+  outline: { ...linkButtonStyle, backgroundColor: 'transparent', color: 'var(--color-text)' },
 }
 const linkLogoStyle: CSSProperties = {
   width: '16px',

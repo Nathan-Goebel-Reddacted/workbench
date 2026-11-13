@@ -2,7 +2,8 @@ import { useRef, type CSSProperties } from 'react'
 import { SectionPreview } from '../section/SectionPreview'
 import { gridHeightFor, sectionBox, growForType } from './gridGeometry'
 import { useRowHeight } from './useRowHeight'
-import { computeBackgroundDepths, zIndexFor } from './backgroundStacking'
+import { computeBackgroundDepths, computeSectionsOnDark, zIndexFor } from './backgroundStacking'
+import { onDarkSnapshotStyle, onDarkThemeStyle } from './onDarkTheme'
 import type { SectionDto } from '../section/types'
 import type { RenderMode } from '../section/renderMode'
 
@@ -24,13 +25,26 @@ export function LayoutPreview({ sections, mode = 'edit' }: LayoutPreviewProps) {
   // Sans z-index explicite, l'ordre du DOM ferait passer un fond ajouté en dernier
   // par-dessus les widgets qu'il est censé habiller.
   const depths = computeBackgroundDepths(sections)
+  const onDark = computeSectionsOnDark(sections, depths)
 
   return (
     <div ref={surfaceRef} style={{ ...(mode === 'public' ? publicSurfaceStyle : surfaceStyle), minHeight: height }}>
       {mode === 'edit' && sections.length === 0 && <p style={emptyStyle}>L'aperçu s'affichera ici.</p>}
       {sections.map(section => (
-        <div key={section.id} style={sectionStyle(section, zIndexFor(section, depths), rowHeight)}>
-          <SectionPreview section={section} backgroundDepth={depths.get(section.id)} mode={mode} />
+        <div
+          key={section.id}
+          style={{
+            ...sectionStyle(section, zIndexFor(section, depths), rowHeight),
+            ...(onDark.has(section.id) ? onDarkSnapshotStyle : {}),
+          }}
+        >
+          {onDark.has(section.id) ? (
+            <div style={onDarkThemeStyle}>
+              <SectionPreview section={section} backgroundDepth={depths.get(section.id)} mode={mode} />
+            </div>
+          ) : (
+            <SectionPreview section={section} backgroundDepth={depths.get(section.id)} mode={mode} />
+          )}
         </div>
       ))}
     </div>
@@ -57,6 +71,7 @@ const surfaceStyle: CSSProperties = {
   minWidth: 0,
   flex: 1,
   backgroundColor: 'var(--color-bg)',
+  fontFamily: 'var(--font-body)',
   border: '1px solid var(--color-border)',
   borderRadius: '8px',
   overflow: 'hidden',
@@ -69,6 +84,7 @@ const publicSurfaceStyle: CSSProperties = {
   width: '100%',
   minWidth: 0,
   backgroundColor: 'var(--color-bg)',
+  fontFamily: 'var(--font-body)',
 }
 
 const emptyStyle: CSSProperties = {

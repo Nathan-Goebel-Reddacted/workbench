@@ -36,8 +36,10 @@ export {
   DRAGGING_Z,
   computeBackgroundDepths,
   backgroundColorForDepth,
+  computeSectionsOnDark,
   zIndexFor,
 } from './grid/backgroundStacking'
+export { onDarkSnapshotStyle, onDarkThemeStyle } from './grid/onDarkTheme'
 export {
   VIDEO_EXTENSIONS,
   IMAGE_EXTENSIONS,
@@ -89,6 +91,7 @@ export type {
   SectionPosition,
   PageLayoutDto,
   TextContent,
+  TextScale,
   ImageContent,
   ImageFit,
   ImagePosition,
@@ -96,6 +99,7 @@ export type {
   LinkAreaContent,
   LinkAreaTarget,
   ExternalLink,
+  LinkStyle,
   CodeContent,
   EmbedContent,
   ContactFormContent,
@@ -110,8 +114,11 @@ export type {
 } from './section/types'
 export {
   readTextContent,
+  TEXT_SCALE_OPTIONS,
   readImageContent,
   readLinkContent,
+  LINK_STYLE_OPTIONS,
+  EMPTY_EXTERNAL_LINK,
   readBackgroundContent,
   readLinkAreaContent,
   LINK_AREA_TARGET_OPTIONS,

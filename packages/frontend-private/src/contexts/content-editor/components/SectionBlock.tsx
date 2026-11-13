@@ -17,7 +17,7 @@ export function SectionBlock({ section, backgroundDepth, onRemove, onUpdateConte
   const [editing, setEditing] = useState(false)
 
   const isBackground = section.type === 'background'
-  const { radius, border } = readBackgroundContent(section.content)
+  const { radius, border, dark } = readBackgroundContent(section.content)
 
   const style: CSSProperties = isBackground
     ? {
@@ -27,7 +27,7 @@ export function SectionBlock({ section, backgroundDepth, onRemove, onUpdateConte
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-start',
-        backgroundColor: backgroundColorForDepth(backgroundDepth ?? 0),
+        backgroundColor: backgroundColorForDepth(backgroundDepth ?? 0, dark),
         borderRadius: `${radius}px`,
         border: border ? '1px solid var(--color-border)' : '1px dashed var(--color-border)',
       }

@@ -1,4 +1,4 @@
-import type { SectionDto, SectionPosition } from '../section/types'
+import { readBackgroundContent, type SectionDto, type SectionPosition } from '../section/types'
 
 export const BACKGROUND_TYPE = 'background'
 export const LINK_AREA_TYPE = 'linkArea'
@@ -51,8 +51,24 @@ export function computeBackgroundDepths(sections: SectionDto[]): Map<string, num
 
 // La page est un « fond » : le premier niveau prend donc la surface, le suivant
 // revient au fond, et ainsi de suite.
-export function backgroundColorForDepth(depth: number): string {
+export function backgroundColorForDepth(depth: number, dark = false): string {
+  if (dark) return 'var(--color-text)'
   return depth % 2 === 0 ? 'var(--color-surface)' : 'var(--color-bg)'
+}
+
+export function computeSectionsOnDark(sections: SectionDto[], depths: Map<string, number>): Set<string> {
+  const backgrounds = sections.filter(section => section.type === BACKGROUND_TYPE)
+  const onDark = new Set<string>()
+  for (const section of sections) {
+    if (section.type === BACKGROUND_TYPE) continue
+    const innermost = backgrounds
+      .filter(background => covers(background, section))
+      .reduce<
+        SectionDto | undefined
+      >((best, background) => (best === undefined || (depths.get(background.id) ?? 0) >= (depths.get(best.id) ?? 0) ? background : best), undefined)
+    if (innermost && readBackgroundContent(innermost.content).dark) onDark.add(section.id)
+  }
+  return onDark
 }
 
 export function zIndexFor(section: SectionDto, depths: Map<string, number>): number {

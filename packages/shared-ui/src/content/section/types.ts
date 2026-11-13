@@ -19,7 +19,15 @@ export type PageLayoutDto = {
 
 // --- Contenu du widget texte ---
 // Un unique éditeur riche. Le HTML peut contenir des jetons de données live (voir dataBinding.ts).
-export type TextContent = { html: string }
+export type TextScale = 'normal' | 'large' | 'display'
+
+export type TextContent = { html: string; scale: TextScale }
+
+export const TEXT_SCALE_OPTIONS: { value: TextScale; label: string; factor: number }[] = [
+  { value: 'normal', label: 'Normal', factor: 1 },
+  { value: 'large', label: 'Large', factor: 1.5 },
+  { value: 'display', label: 'Display', factor: 2.3 },
+]
 
 // Normalise un content brut (issu de la base, potentiellement legacy) en TextContent sûr.
 export function readTextContent(content: Record<string, unknown>): TextContent {
@@ -27,7 +35,8 @@ export function readTextContent(content: Record<string, unknown>): TextContent {
   // Les anciens binds `source:'project'` (sans html) retombent sur une chaîne vide (OK en dev).
   const legacy = typeof content.text === 'string' ? content.text : ''
   const html = typeof content.html === 'string' ? content.html : legacy
-  return { html }
+  const scale = TEXT_SCALE_OPTIONS.some(o => o.value === content.scale) ? (content.scale as TextScale) : 'normal'
+  return { html, scale }
 }
 
 // --- Contenu du widget image ---
@@ -137,7 +146,17 @@ export function isEmbeddableUrl(url: string): boolean {
 
 // --- Contenu du widget lien ---
 // Les liens externes saisis à la main vivent dans le content de la section.
-export type ExternalLink = { url: string; displayText: string; logo: string }
+export type LinkStyle = 'link' | 'solid' | 'outline'
+
+export type ExternalLink = { url: string; displayText: string; logo: string; style: LinkStyle; newTab: boolean }
+
+export const LINK_STYLE_OPTIONS: { value: LinkStyle; label: string }[] = [
+  { value: 'link', label: 'Link' },
+  { value: 'solid', label: 'Solid button' },
+  { value: 'outline', label: 'Outline button' },
+]
+
+export const EMPTY_EXTERNAL_LINK: ExternalLink = { url: '', displayText: '', logo: '', style: 'link', newTab: true }
 
 export function readLinkContent(content: Record<string, unknown>): { externalLinks: ExternalLink[] } {
   const raw = Array.isArray(content.externalLinks) ? content.externalLinks : []
@@ -147,6 +166,8 @@ export function readLinkContent(content: Record<string, unknown>): { externalLin
       url: typeof item.url === 'string' ? item.url : '',
       displayText: typeof item.displayText === 'string' ? item.displayText : '',
       logo: typeof item.logo === 'string' ? item.logo : '',
+      style: LINK_STYLE_OPTIONS.some(o => o.value === item.style) ? (item.style as LinkStyle) : 'link',
+      newTab: item.newTab !== false,
     }))
   return { externalLinks }
 }
@@ -181,13 +202,14 @@ export function readLinkAreaContent(content: Record<string, unknown>): LinkAreaC
 
 // --- Contenu du widget fond ---
 // La couleur n'est pas stockée : elle se déduit de l'empilement (backgroundStacking.ts).
-export type BackgroundContent = { radius: number; border: boolean }
+export type BackgroundContent = { radius: number; border: boolean; dark: boolean }
 
 export function readBackgroundContent(content: Record<string, unknown>): BackgroundContent {
   const radius = Number(content.radius)
   return {
     radius: Number.isFinite(radius) ? Math.min(Math.max(radius, 0), 64) : 8,
     border: content.border === true,
+    dark: content.dark === true,
   }
 }
 
