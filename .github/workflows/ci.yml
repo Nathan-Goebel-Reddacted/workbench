@@ -6,10 +6,10 @@ on:
   pull_request:
 
 # Une exécution par branche : un push qui suit de près annule le précédent au lieu de faire
-# la queue.
+# la queue, sauf sur main où il attend — annuler couperait un déploiement en cours.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   verify:
@@ -44,3 +44,37 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    env:
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DEPLOY_URL: ${{ vars.DEPLOY_URL }}
+
+    steps:
+      - name: Clé SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Déploiement
+        run: >-
+          ssh -i ~/.ssh/deploy
+          -o IdentitiesOnly=yes -o BatchMode=yes
+          -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts
+          -o ServerAliveInterval=30
+          "nathan@$DEPLOY_HOST" "$GITHUB_SHA"
+
+      - name: Santé
+        run: curl -fsS --max-time 10 --retry 5 --retry-delay 5 "$DEPLOY_URL/api/health"
