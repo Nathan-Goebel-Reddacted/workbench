@@ -1,5 +1,6 @@
 import type { FetchErrorReport } from '@-reddacted-/react-ui'
 import { ERROR_LOG_PATH, type ErrorReport } from '../errorLog/errorReporter'
+import { SITE_CLOSED_MESSAGE } from './messages'
 
 /**
  * Traduit ce que la popup vient de signaler en entrée de journal. Le libellé affiché à l'écran est
@@ -9,6 +10,8 @@ import { ERROR_LOG_PATH, type ErrorReport } from '../errorLog/errorReporter'
 export function toJournalEntry(report: FetchErrorReport): ErrorReport | null {
   // Le POST du journal ne se journalise pas lui-même : ce serait une boucle sans fin.
   if (report.url.includes(ERROR_LOG_PATH)) return null
+  // Un site fermé n'est pas une panne.
+  if (report.status === 503 && report.message === SITE_CLOSED_MESSAGE) return null
 
   const request = `${report.method} ${report.url}`
 

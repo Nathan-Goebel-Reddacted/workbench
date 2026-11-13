@@ -7,7 +7,7 @@ export { ErrorReporterProvider, useErrorReporter } from './errorLog/ErrorReporte
 export { createErrorReporter, ERROR_LOG_PATH, type ErrorReport } from './errorLog/errorReporter'
 export { ThemeProvider } from './theme/ThemeProvider'
 export { workbenchPalette as defaultPalette } from './theme/palette'
-export { popupMessages } from './popup/messages'
+export { popupMessages, SITE_CLOSED_MESSAGE } from './popup/messages'
 
 export {
   Modal,

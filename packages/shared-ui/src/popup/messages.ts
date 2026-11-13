@@ -9,3 +9,6 @@ export const popupMessages: PopupMessages = {
   serverError: 'Le serveur a rencontré une erreur.',
   requestFailed: status => `La requête a échoué (${status}).`,
 }
+
+// Le backend rend ce texte avec le 503 d'un site public fermé : la popup l'affiche tel quel.
+export const SITE_CLOSED_MESSAGE = 'Site en maintenance'
