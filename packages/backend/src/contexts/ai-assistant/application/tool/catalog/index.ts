@@ -6,6 +6,7 @@ import { createFeatureTools } from './featureTools';
 import { createTicketTools } from './ticketTools';
 import { createIdeaTools } from './ideaTools';
 import { createPortfolioTools } from './portfolioTools';
+import { createPortfolioLayoutTools } from './portfolioLayoutTools';
 import { createReferenceTools } from './referenceTools';
 import { ILogger } from '@shared/application/port/iLogger';
 
@@ -19,6 +20,7 @@ export function createToolRegistry(commandBus: CommandBus, queryBus: QueryBus, l
         ...createTicketTools(commandBus, queryBus),
         ...createIdeaTools(commandBus, queryBus),
         ...createPortfolioTools(commandBus, queryBus),
+        ...createPortfolioLayoutTools(commandBus, queryBus),
         ...createReferenceTools(queryBus),
     );
 
