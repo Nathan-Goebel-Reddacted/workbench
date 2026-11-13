@@ -71,6 +71,7 @@ const surfaceStyle: CSSProperties = {
   minWidth: 0,
   flex: 1,
   backgroundColor: 'var(--color-bg)',
+  fontFamily: 'var(--font-body)',
   border: '1px solid var(--color-border)',
   borderRadius: '8px',
   overflow: 'hidden',
@@ -83,6 +84,7 @@ const publicSurfaceStyle: CSSProperties = {
   width: '100%',
   minWidth: 0,
   backgroundColor: 'var(--color-bg)',
+  fontFamily: 'var(--font-body)',
 }
 
 const emptyStyle: CSSProperties = {
