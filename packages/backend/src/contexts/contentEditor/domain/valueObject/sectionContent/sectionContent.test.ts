@@ -88,6 +88,15 @@ describe('SectionContent — écriture', () => {
         ).toThrow(InvalidSectionContentException);
     });
 
+    it('garde un fond clair par défaut et retient un fond sombre', () => {
+        expect(SectionContent.fromInput(SectionType.BACKGROUND, {}).toRecord()).toEqual({
+            radius: 8,
+            border: false,
+            dark: false,
+        });
+        expect(SectionContent.fromInput(SectionType.BACKGROUND, { dark: true }).toRecord().dark).toBe(true);
+    });
+
     it('conserve le HTML du texte', () => {
         expect(SectionContent.fromInput(SectionType.TEXT, { html: '<p>a</p>' }).toRecord()).toEqual({
             html: '<p>a</p>',

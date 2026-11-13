@@ -36,8 +36,10 @@ export {
   DRAGGING_Z,
   computeBackgroundDepths,
   backgroundColorForDepth,
+  computeSectionsOnDark,
   zIndexFor,
 } from './grid/backgroundStacking'
+export { onDarkSnapshotStyle, onDarkThemeStyle } from './grid/onDarkTheme'
 export {
   VIDEO_EXTENSIONS,
   IMAGE_EXTENSIONS,

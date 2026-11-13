@@ -99,6 +99,7 @@ export const SECTION_CONTENT_SCHEMAS: Record<SectionType, Normalize> = {
     [SectionType.BACKGROUND]: content => ({
         radius: content.number('radius', 8, 0, MAX_RADIUS),
         border: content.boolean('border', false),
+        dark: content.boolean('dark', false),
     }),
     [SectionType.CONTACT_FORM]: content => ({
         title: content.string('title', DEFAULT_FORM_TITLE),

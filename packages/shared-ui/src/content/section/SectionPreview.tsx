@@ -51,13 +51,13 @@ export function SectionPreview({ section, backgroundDepth = 0, mode = 'edit' }: 
 
   // Aplat décoratif : aucun contenu, la couleur vient de la profondeur d'empilement.
   if (type === 'background') {
-    const { radius, border } = readBackgroundContent(content)
+    const { radius, border, dark } = readBackgroundContent(content)
     return (
       <div
         style={{
           width: '100%',
           height: '100%',
-          backgroundColor: backgroundColorForDepth(backgroundDepth),
+          backgroundColor: backgroundColorForDepth(backgroundDepth, dark),
           borderRadius: `${radius}px`,
           border: border ? '1px solid var(--color-border)' : 'none',
           boxSizing: 'border-box',

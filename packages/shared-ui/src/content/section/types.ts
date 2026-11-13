@@ -193,13 +193,14 @@ export function readLinkAreaContent(content: Record<string, unknown>): LinkAreaC
 
 // --- Contenu du widget fond ---
 // La couleur n'est pas stockée : elle se déduit de l'empilement (backgroundStacking.ts).
-export type BackgroundContent = { radius: number; border: boolean }
+export type BackgroundContent = { radius: number; border: boolean; dark: boolean }
 
 export function readBackgroundContent(content: Record<string, unknown>): BackgroundContent {
   const radius = Number(content.radius)
   return {
     radius: Number.isFinite(radius) ? Math.min(Math.max(radius, 0), 64) : 8,
     border: content.border === true,
+    dark: content.dark === true,
   }
 }
 

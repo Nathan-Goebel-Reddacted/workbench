@@ -463,7 +463,7 @@ function EmbedEditor({ draft, set }: { draft: SectionContent; set: (k: string, v
 }
 
 function BackgroundEditor({ draft, set }: { draft: SectionContent; set: (k: string, v: unknown) => void }) {
-  const { radius, border } = readBackgroundContent(draft)
+  const { radius, border, dark } = readBackgroundContent(draft)
 
   return (
     <>
@@ -480,6 +480,11 @@ function BackgroundEditor({ draft, set }: { draft: SectionContent; set: (k: stri
       <label style={{ ...rowStyle, alignItems: 'center' }}>
         <input type="checkbox" checked={border} onChange={e => set('border', e.target.checked)} />
         <span style={labelStyle}>Show a border</span>
+      </label>
+
+      <label style={{ ...rowStyle, alignItems: 'center' }}>
+        <input type="checkbox" checked={dark} onChange={e => set('dark', e.target.checked)} />
+        <span style={labelStyle}>Dark background — content placed on it switches to light colors</span>
       </label>
     </>
   )
