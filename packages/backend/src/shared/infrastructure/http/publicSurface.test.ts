@@ -13,13 +13,10 @@ import { dirname, join, relative } from 'node:path';
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 /**
- * Les deux seules routes publiques sans plafond, et pourquoi :
- *  - `/health` est une sonde d'infrastructure. La brider, c'est déclarer l'application morte
- *    au redémarreur au moment précis où il la sollicite le plus.
- *  - `/uploads/*` sert des fichiers statiques. Une page qui en affiche vingt ferait vingt
- *    requêtes, et un plafond les transformerait en images cassées.
+ * La seule route publique sans plafond : `/health` est une sonde d'infrastructure. La brider,
+ * c'est déclarer l'application morte au redémarreur au moment précis où il la sollicite le plus.
  */
-const EXEMPT = ['/health', '/uploads'];
+const EXEMPT = ['/health'];
 
 function sourceFiles(directory: string = SRC): string[] {
     return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
@@ -46,8 +43,6 @@ describe('surface publique', () => {
                 const window = [line, lines[index + 1] ?? ''].join(' ');
                 if (window.includes('rateLimit')) return;
                 if (EXEMPT.some(route => window.includes(route) || line.includes(route))) return;
-                // L'estampillage du plugin statique, couvert par l'exemption `/uploads`.
-                if (window.includes('route.config')) return;
                 unguarded.push(`${relative(SRC, path)}:${index + 1}`);
             });
         }

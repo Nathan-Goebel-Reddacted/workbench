@@ -1,8 +1,9 @@
-import type { CSSProperties } from 'react'
-import { useState } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
+import { Fragment, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EDIT_ROLE_REQUIRED, useCanEdit, useCanView } from '../shared/auth/EditPermissionContext'
 import { ExportModal, ImportModal } from '../contexts/io'
+import { SiteAccessSwitch } from '../contexts/site'
 
 type Entry = {
   label: string
@@ -10,6 +11,7 @@ type Entry = {
   onClick?: () => void
   disabled?: boolean
   title?: string
+  control?: ReactNode
 }
 type Section = { title: string; entries: Entry[] }
 
@@ -24,6 +26,7 @@ export function HomePage() {
     ...(canViewAdmin ? [{ label: 'User Management', to: '/admin' }] : []),
     ...(canEdit ? [{ label: 'Error Log', to: '/error-log' }] : []),
     ...(canEdit ? [{ label: 'Contact Messages', to: '/contact-messages' }] : []),
+    ...(canEdit ? [{ label: 'Public site', control: <SiteAccessSwitch style={entryStyle} /> }] : []),
   ]
 
   const sections: Section[] = [
@@ -68,7 +71,9 @@ export function HomePage() {
           <p style={sectionLabelStyle}>{section.title}</p>
           <div style={entriesStyle}>
             {section.entries.map(entry =>
-              entry.to ? (
+              entry.control ? (
+                <Fragment key={entry.label}>{entry.control}</Fragment>
+              ) : entry.to ? (
                 <Link key={entry.label} to={entry.to} style={entryStyle}>
                   {entry.label}
                 </Link>

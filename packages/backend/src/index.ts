@@ -23,6 +23,9 @@ import { themeRoutes } from './contexts/theme/infrastructure/http/themeRoutes.js
 import { uploadRoutes } from './shared/infrastructure/http/uploadRoutes.js';
 import { ioRoutes } from './shared/infrastructure/http/ioRoutes.js';
 import { errorLogRoutes } from './contexts/errorLog/infrastructure/http/errorLogRoutes.js';
+import { siteRoutes } from './contexts/site/infrastructure/http/siteRoutes.js';
+import { GetSiteAccessQuery } from './contexts/site/application/query/getSiteAccess/getSiteAccessQuery.js';
+import { SiteAccessDto } from './contexts/site/application/query/getSiteAccess/siteAccessDto.js';
 import { PurgeOrphanUploadsCommand } from './shared/application/command/purgeOrphanUploads/purgeOrphanUploadsCommand.js';
 
 const ORPHAN_UPLOAD_AGE_MS = 24 * 60 * 60 * 1000;
@@ -41,7 +44,9 @@ try {
     // puis bus — est rompu par le logger autonome ci-dessus.
     const buses = bootstrap(orm.em, logger);
 
-    const app = createServer(orm, buses.commandBus, loggerInstance);
+    const isSiteOpen = async () =>
+        (await buses.queryBus.dispatch<GetSiteAccessQuery, SiteAccessDto>(new GetSiteAccessQuery())).open;
+    const app = createServer(orm, buses.commandBus, loggerInstance, isSiteOpen);
 
     await bootstrapAdmin({
         em: orm.em,
@@ -73,6 +78,7 @@ try {
     await app.register(ioRoutes, { orm });
     // Public en écriture : le site public n'a pas de session et ses erreurs comptent autant.
     await app.register(errorLogRoutes, buses);
+    await app.register(siteRoutes, buses);
 
     for (const warning of envWarnings) app.log.warn(warning);
 

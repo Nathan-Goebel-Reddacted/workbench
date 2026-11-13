@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { toJournalEntry } from './toJournalEntry'
+import { SITE_CLOSED_MESSAGE } from './messages'
 
 // Ce qui arrive ici a déjà passé les règles de la popup : il ne reste qu'à traduire en entrée de
 // journal, et à retenir le seul cas que le package ne peut pas connaître — le POST du journal.
@@ -47,6 +48,17 @@ describe('toJournalEntry', () => {
       method: 'POST',
       url: 'http://api/error-log',
       status: 500,
+    })
+
+    expect(entry).toBeNull()
+  })
+
+  it('ne journalise pas le refus d’un site public fermé', () => {
+    const entry = toJournalEntry({
+      message: SITE_CLOSED_MESSAGE,
+      method: 'GET',
+      url: 'http://api/projects',
+      status: 503,
     })
 
     expect(entry).toBeNull()

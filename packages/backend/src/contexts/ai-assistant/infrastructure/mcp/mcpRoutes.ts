@@ -15,7 +15,7 @@ function bearerToken(req: FastifyRequest): string | undefined {
 export const mcpRoutes: FastifyPluginAsync<Opts> = async (app, { registry, authenticator }) => {
     app.post(
         '/mcp',
-        { config: { public: true, rateLimit: { max: 120, timeWindow: '1 minute' } } },
+        { config: { public: true, servedWhenSiteClosed: true, rateLimit: { max: 120, timeWindow: '1 minute' } } },
         async (req, reply) => {
             const agent = await authenticator.authenticate(bearerToken(req));
             if (!agent) {

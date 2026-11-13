@@ -11,6 +11,7 @@ import { HomePage } from './app/HomePage'
 import { NotFoundPage } from './app/NotFoundPage'
 import { CvPage } from './contexts/cv'
 import { ProjectsPage, ProjectPage } from './contexts/project'
+import { SiteGate } from './contexts/site'
 import { API_URL } from './shared/config'
 
 export function App() {
@@ -20,22 +21,24 @@ export function App() {
         <ErrorReporterProvider>
           <PopupProvider>
             <ThemeProvider>
-              <NavBar
-                brand="Workbench"
-                links={[
-                  { label: 'Projets', to: '/projects' },
-                  { label: 'CV', to: '/cv' },
-                ]}
-                linkAs={Link}
-                actions={<ThemeSelect ariaLabel="Thème" />}
-              />
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/projects" element={<ProjectsPage />} />
-                <Route path="/projects/:id" element={<ProjectPage />} />
-                <Route path="/cv" element={<CvPage />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
+              <SiteGate>
+                <NavBar
+                  brand="Workbench"
+                  links={[
+                    { label: 'Projets', to: '/projects' },
+                    { label: 'CV', to: '/cv' },
+                  ]}
+                  linkAs={Link}
+                  actions={<ThemeSelect ariaLabel="Thème" />}
+                />
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/projects" element={<ProjectsPage />} />
+                  <Route path="/projects/:id" element={<ProjectPage />} />
+                  <Route path="/cv" element={<CvPage />} />
+                  <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+              </SiteGate>
             </ThemeProvider>
           </PopupProvider>
         </ErrorReporterProvider>

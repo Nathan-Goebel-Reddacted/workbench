@@ -78,10 +78,16 @@ export const authRoutes: FastifyPluginAsync<AuthOpts> = async (app, { commandBus
     // un 500 opaque au visiteur.
 
     // Atteignables sans session : ce sont les seules portes ouvertes de l'authentification.
-    const oauthRateLimit = { config: { public: true, rateLimit: { max: 20, timeWindow: '15 minutes' } } };
+    const oauthRateLimit = {
+        config: { public: true, servedWhenSiteClosed: true, rateLimit: { max: 20, timeWindow: '15 minutes' } },
+    };
+    // Le parcours de connexion du privé doit survivre à un site public fermé.
+    const loginFlow = { config: { servedWhenSiteClosed: true } };
 
     // Le site privé n'a pas à deviner ce qui est configuré : il dessine ses boutons à partir d'ici.
-    app.get('/auth/providers', async () => ({ providers: env.oauth.map(credentials => credentials.provider) }));
+    app.get('/auth/providers', loginFlow, async () => ({
+        providers: env.oauth.map(credentials => credentials.provider),
+    }));
 
     if (isOAuthEnabled('github')) {
         const credentials = oauthCredentials('github');
@@ -171,7 +177,7 @@ export const authRoutes: FastifyPluginAsync<AuthOpts> = async (app, { commandBus
 
     // ── Session courante ───────────────────────────────────────────────────────────
 
-    app.get('/auth/me', async (req, reply) => {
+    app.get('/auth/me', loginFlow, async (req, reply) => {
         try {
             await req.jwtVerify();
             return reply.send({ id: req.user.sub, email: req.user.email, roles: req.user.roles });
@@ -182,13 +188,13 @@ export const authRoutes: FastifyPluginAsync<AuthOpts> = async (app, { commandBus
 
     // Le cookie est `httpOnly` : le navigateur ne peut pas l'effacer lui-même, seule une
     // réponse du serveur le peut. Sans cette route, se déconnecter était impossible.
-    app.post('/auth/logout', async (_req, reply) => {
+    app.post('/auth/logout', loginFlow, async (_req, reply) => {
         return reply.clearCookie('session', { path: '/' }).status(204).send();
     });
 
     // Coupe toutes les sessions du compte, y compris celles ouvertes ailleurs — c'est la
     // réponse à un cookie que l'on croit volé.
-    app.post('/auth/logout-everywhere', async (req, reply) => {
+    app.post('/auth/logout-everywhere', loginFlow, async (req, reply) => {
         try {
             await req.jwtVerify();
         } catch {

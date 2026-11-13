@@ -9,7 +9,10 @@ export type IoTable = {
 // La table de suivi des migrations décrit l'état du schéma de la base cible, pas les données
 // du domaine : la transporter ferait croire à une base qu'elle a joué des migrations qu'elle
 // n'a pas jouées.
-const EXCLUDED_TABLES = new Set(['mikro_orm_migrations']);
+//
+// L'ouverture du site public est un réglage de déploiement : importer la base d'un autre
+// environnement ne doit pas rouvrir celui-ci.
+const EXCLUDED_TABLES = new Set(['mikro_orm_migrations', 'site_access']);
 
 // Dériver la liste des tables des métadonnées plutôt que de l'énumérer à la main est ce qui
 // fait que l'import/export couvre tous les bounded contexts sans entretien : une nouvelle

@@ -29,7 +29,14 @@ process.env.FRONTEND_PRIVATE_URL ??= 'http://localhost:5174';
 
 const silentLogger = pino({ level: 'silent' }) as unknown as FastifyBaseLogger;
 
-let createServer: (orm: MikroORM, commandBus: CommandBus, logger: FastifyBaseLogger) => FastifyInstance;
+const siteOpen = async () => true;
+
+let createServer: (
+    orm: MikroORM,
+    commandBus: CommandBus,
+    logger: FastifyBaseLogger,
+    isSiteOpen: () => Promise<boolean>,
+) => FastifyInstance;
 
 /** `tokenVersion` en base — c'est elle qui décide si un jeton signé plus tôt vaut encore. */
 function ormWithTokenVersion(stored: number | null): MikroORM {
@@ -39,7 +46,7 @@ function ormWithTokenVersion(stored: number | null): MikroORM {
 }
 
 async function server(orm: MikroORM): Promise<FastifyInstance> {
-    const app = createServer(orm, new CommandBus(), silentLogger);
+    const app = createServer(orm, new CommandBus(), silentLogger, siteOpen);
     app.get('/read', async req => ({ signedIn: Boolean(req.user) }));
     app.post('/write', async () => ({ reached: true }));
     await app.ready();

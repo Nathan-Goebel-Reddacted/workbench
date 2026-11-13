@@ -27,10 +27,17 @@ process.env.FRONTEND_PRIVATE_URL ??= 'http://localhost:5174';
 const orm = { em: {} } as unknown as MikroORM;
 const commandBus = new CommandBus();
 
-let createServer: (orm: MikroORM, commandBus: CommandBus, logger: FastifyBaseLogger) => FastifyInstance;
+const siteOpen = async () => true;
+
+let createServer: (
+    orm: MikroORM,
+    commandBus: CommandBus,
+    logger: FastifyBaseLogger,
+    isSiteOpen: () => Promise<boolean>,
+) => FastifyInstance;
 
 async function server(): Promise<FastifyInstance> {
-    const app = createServer(orm, commandBus, pino({ level: 'silent' }) as unknown as FastifyBaseLogger);
+    const app = createServer(orm, commandBus, pino({ level: 'silent' }) as unknown as FastifyBaseLogger, siteOpen);
     app.post('/public-write', { config: { public: true } }, async () => ({ reached: true }));
     app.post('/guarded-write', async () => ({ reached: true }));
     // `@fastify/jwt` décore la requête : `user` existe et vaut `null` tant qu'aucun jeton
@@ -73,7 +80,7 @@ describe('garde de session piloté par config.public', () => {
     });
 
     it('sert /health sans session', async () => {
-        const app = createServer(orm, commandBus, pino({ level: 'silent' }) as unknown as FastifyBaseLogger);
+        const app = createServer(orm, commandBus, pino({ level: 'silent' }) as unknown as FastifyBaseLogger, siteOpen);
         // La sonde interroge la base ; ici elle est absente, donc 503 — mais 503 prouve
         // déjà que le garde ne s'est pas interposé, ce qui est tout ce qu'on vérifie.
         (orm as unknown as { em: { getConnection: () => unknown } }).em = {
@@ -87,15 +94,16 @@ describe('garde de session piloté par config.public', () => {
         const res = await app.inject({ method: 'GET', url: '/health' });
 
         expect(res.statusCode).toBe(503);
+        expect(res.json()).toMatchObject({ database: 'unreachable' });
         await app.close();
     });
 
-    it('sert les fichiers uploadés sans session — le plugin statique écrase config, le hook onRoute le réinstalle', async () => {
+    it('sert les fichiers uploadés sans session, par la retombée anonyme des GET', async () => {
         const app = await server();
         const res = await app.inject({ method: 'GET', url: '/uploads/.gitkeep' });
 
         // 200 si le fichier est là, 404 si le dossier est vide : dans les deux cas le garde
-        // a été contourné. Un 401 signifierait que l'estampillage `onRoute` n'a pas pris.
+        // a laissé passer la lecture anonyme.
         expect([200, 404]).toContain(res.statusCode);
         await app.close();
     });

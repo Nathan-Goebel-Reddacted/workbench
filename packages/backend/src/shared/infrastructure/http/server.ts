@@ -16,6 +16,7 @@ import { CommandBus } from '@shared/application/command/commandBus';
 import { RecordErrorLogEntryCommand } from '@contexts/errorLog/application/command/recordErrorLogEntry/recordErrorLogEntryCommand';
 import { ErrorOrigin } from '@contexts/errorLog/domain/valueObject/errorOrigin';
 import { env } from '../config/env.js';
+import { hasPrivateRead } from './roleGuard.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -28,10 +29,13 @@ function isPublicRoute(req: FastifyRequest): boolean {
     return req.routeOptions?.config?.public === true;
 }
 
+export const SITE_CLOSED = 'Site closed';
+
 export function createServer(
     orm: MikroORM,
     commandBus: CommandBus,
     loggerInstance: FastifyBaseLogger,
+    isSiteOpen: () => Promise<boolean>,
 ): FastifyInstance {
     // Le logger est construit en amont et prêté à Fastify : les lignes émises avant que le
     // serveur n'existe et celles émises pendant une requête sortent ainsi au même format.
@@ -52,17 +56,12 @@ export function createServer(
 
     void app.register(fastifyMultipart);
 
-    // `fastify-static` écrit son propre `config` et n'offre aucun moyen d'y ajouter le nôtre.
-    // Un `onRoute` dans un périmètre encapsulé estampille ses routes à l'enregistrement :
-    // les fichiers uploadés restent lisibles sans session, comme les pages qui les affichent.
-    void app.register(async scope => {
-        scope.addHook('onRoute', route => {
-            route.config = { ...route.config, public: true };
-        });
-        await scope.register(fastifyStatic, {
-            root: join(__dirname, '../../../../uploads'),
-            prefix: '/uploads/',
-        });
+    // Pas `public` : les fichiers restent lisibles sans session par la retombée anonyme des
+    // GET, mais la session présentée doit être lue pour qu'un site fermé les serve encore à
+    // l'administration.
+    void app.register(fastifyStatic, {
+        root: join(__dirname, '../../../../uploads'),
+        prefix: '/uploads/',
     });
 
     // fastifyCookie doit précéder fastifyJwt (requis pour la lecture du cookie session)
@@ -83,7 +82,7 @@ export function createServer(
     //
     //  1. `config.public` — la route ne veut pas de session du tout. Le garde ne s'exécute
     //     pas : callbacks OAuth, /mcp (qui s'authentifie par son propre jeton), appairage
-    //     d'agent, formulaire de contact, journal d'erreurs, sonde de santé, fichiers uploadés.
+    //     d'agent, formulaire de contact, journal d'erreurs, sonde de santé.
     //     Chaque route le déclare chez elle — plus de liste d'URLs à tenir ici.
     //
     //  2. La retombée anonyme des GET, plus bas — les lectures du site public passent par les
@@ -113,6 +112,22 @@ export function createServer(
         }
     });
 
+    // Hook 3 : site public fermé. Placé après la garde JWT, qui a résolu `req.user` ; une
+    // session privée passe sans lecture du réglage. Une lecture en échec ferme.
+    app.addHook('onRequest', async (req, reply) => {
+        if (req.routeOptions?.config?.servedWhenSiteClosed === true) return;
+        if (hasPrivateRead(req)) return;
+
+        let open = false;
+        try {
+            open = await isSiteOpen();
+        } catch (err) {
+            req.log.warn({ err }, 'Site access unreadable: serving as closed');
+        }
+        if (open) return;
+        return reply.status(503).send({ error: SITE_CLOSED, message: 'Site en maintenance' });
+    });
+
     /**
      * Un cookie a été présenté mais ne vaut plus rien — expiré, signé sous une version de
      * session périmée, ou appartenant à un compte supprimé.
@@ -134,7 +149,7 @@ export function createServer(
 
     // Liveness et readiness en une sonde : un backend qui ne joint plus sa base ne sert à
     // rien, et c'est exactement ce qu'un redémarrage automatique doit voir.
-    app.get('/health', { config: { public: true } }, async (_req, reply) => {
+    app.get('/health', { config: { public: true, servedWhenSiteClosed: true } }, async (_req, reply) => {
         try {
             await orm.em.getConnection().execute('select 1');
         } catch (err) {
