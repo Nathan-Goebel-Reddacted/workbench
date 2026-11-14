@@ -4,7 +4,6 @@ import { ProjectFactory } from '../../domain/factory/projectFactory.js';
 import { MultipleReplacingLinksException } from '../../domain/exception/multipleReplacingLinks.js';
 import { UnknownProjectLinkException } from '../../domain/exception/unknownProjectLink.js';
 import { Link } from '../../domain/valueObject/link.js';
-import type { IProjectPageGateway } from '../../domain/port/iProjectPageGateway.js';
 import type { Project } from '../../domain/projectAggregate.js';
 
 type LinkInput = { url: string; displayText: string; logo: string; replacesPage?: boolean };
@@ -13,35 +12,31 @@ function project(links: LinkInput[] = []): Project {
     return new ProjectFactory().create('p1', 4, 'Logitio', 'Logiciel RH', links, [], true);
 }
 
-function pages(hasSections: boolean): IProjectPageGateway {
-    return { hasSections: async () => hasSections };
-}
-
 const showcase = { url: 'https://logitio.com', displayText: 'Site vitrine', logo: '' };
 
 describe('destination d’un projet', () => {
-    it('renvoie vers la page quand elle porte des sections', async () => {
-        expect(await destinationOf(project(), pages(true))).toEqual({ kind: 'page' });
+    it('renvoie vers la page quand elle porte du contenu', () => {
+        expect(destinationOf(project(), true)).toEqual({ kind: 'page' });
     });
 
-    it('n’offre aucune destination quand la page est vide', async () => {
-        expect(await destinationOf(project(), pages(false))).toEqual({ kind: 'none' });
+    it('n’offre aucune destination quand la page est vide', () => {
+        expect(destinationOf(project(), false)).toEqual({ kind: 'none' });
     });
 
-    it('renvoie vers le lien marqué quand la page est vide', async () => {
-        const destination = await destinationOf(project([{ ...showcase, replacesPage: true }]), pages(false));
+    it('renvoie vers le lien marqué quand la page est vide', () => {
+        const destination = destinationOf(project([{ ...showcase, replacesPage: true }]), false);
 
         expect(destination).toEqual({ kind: 'external', url: 'https://logitio.com' });
     });
 
-    it('fait primer le lien marqué sur une page remplie', async () => {
-        const destination = await destinationOf(project([{ ...showcase, replacesPage: true }]), pages(true));
+    it('fait primer le lien marqué sur une page remplie', () => {
+        const destination = destinationOf(project([{ ...showcase, replacesPage: true }]), true);
 
         expect(destination).toEqual({ kind: 'external', url: 'https://logitio.com' });
     });
 
-    it('ignore les liens non marqués', async () => {
-        expect(await destinationOf(project([showcase]), pages(true))).toEqual({ kind: 'page' });
+    it('ignore les liens non marqués', () => {
+        expect(destinationOf(project([showcase]), true)).toEqual({ kind: 'page' });
     });
 });
 
