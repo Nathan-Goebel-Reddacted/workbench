@@ -23,15 +23,19 @@ type LinkBody = { url: string; displayText: string; logo: string };
 type DocumentBody = { name: string; url: string };
 
 export const projectRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
-    app.get('/projects', async (req, reply) => {
+    app.get('/projects', { config: { anonymousRead: true } }, async (req, reply) => {
         const result = await queryBus.dispatch(new ListProjectsQuery(hasPrivateRead(req)));
         return reply.send(result);
     });
 
-    app.get<{ Params: { id: string } }>('/projects/:id', { schema: uuidParamsSchema }, async (req, reply) => {
-        const result = await queryBus.dispatch(new GetProjectByIdQuery(req.params.id, hasPrivateRead(req)));
-        return reply.send(result);
-    });
+    app.get<{ Params: { id: string } }>(
+        '/projects/:id',
+        { schema: uuidParamsSchema, config: { anonymousRead: true } },
+        async (req, reply) => {
+            const result = await queryBus.dispatch(new GetProjectByIdQuery(req.params.id, hasPrivateRead(req)));
+            return reply.send(result);
+        },
+    );
 
     app.post<{
         Body: { name: string; description?: string; links?: LinkBody[]; documents?: DocumentBody[]; category?: string };

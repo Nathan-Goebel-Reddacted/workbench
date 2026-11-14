@@ -32,10 +32,14 @@ export const ticketRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, 
 
     // Ouverte, même raison que GET /features/:id : jetons de liaison du site public. Un ticket
     // ne sort d'ici que si la feature qui le porte est elle-même publiquement lisible.
-    app.get<{ Params: { id: string } }>('/tickets/:id', { schema: uuidParamsSchema }, async (req, reply) => {
-        const result = await queryBus.dispatch(new GetTicketByIdQuery(req.params.id, hasPrivateRead(req)));
-        return reply.send(result);
-    });
+    app.get<{ Params: { id: string } }>(
+        '/tickets/:id',
+        { schema: uuidParamsSchema, config: { anonymousRead: true } },
+        async (req, reply) => {
+            const result = await queryBus.dispatch(new GetTicketByIdQuery(req.params.id, hasPrivateRead(req)));
+            return reply.send(result);
+        },
+    );
 
     // `featureRef` a disparu du contrat : la référence se déduit de la feature et de son porteur,
     // le client n'a plus à inventer de préfixe.

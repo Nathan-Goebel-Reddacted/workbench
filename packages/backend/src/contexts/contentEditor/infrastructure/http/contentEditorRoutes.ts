@@ -50,6 +50,7 @@ export const contentEditorRoutes: FastifyPluginAsync<Opts> = async (app, { comma
     app.get<{ Querystring: { pageType: string; pageRef: string } }>(
         '/page-layouts/by-ref',
         {
+            config: { anonymousRead: true },
             schema: {
                 querystring: {
                     type: 'object',

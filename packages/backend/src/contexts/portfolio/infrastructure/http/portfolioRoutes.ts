@@ -12,7 +12,7 @@ import { UserRole } from '@shared/domain/valueObject/userRole';
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
 export const portfolioRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
-    app.get('/portfolio', async (_req, reply) => {
+    app.get('/portfolio', { config: { anonymousRead: true } }, async (_req, reply) => {
         const result = await queryBus.dispatch(new GetPortfolioQuery());
         return reply.send(result);
     });

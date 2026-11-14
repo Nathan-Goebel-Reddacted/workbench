@@ -40,10 +40,14 @@ export const featureRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
     // Ouverte : le site public la lit via les jetons de liaison des widgets texte
     // (shared-ui/src/content/richText/dataBinding.tsx). Une feature ne sort d'ici que si son
     // porteur est publiquement visible.
-    app.get<{ Params: { id: string } }>('/features/:id', { schema: uuidParamsSchema }, async (req, reply) => {
-        const result = await queryBus.dispatch(new GetFeatureByIdQuery(req.params.id, hasPrivateRead(req)));
-        return reply.send(result);
-    });
+    app.get<{ Params: { id: string } }>(
+        '/features/:id',
+        { schema: uuidParamsSchema, config: { anonymousRead: true } },
+        async (req, reply) => {
+            const result = await queryBus.dispatch(new GetFeatureByIdQuery(req.params.id, hasPrivateRead(req)));
+            return reply.send(result);
+        },
+    );
 
     app.get<{ Params: { id: string } }>(
         '/features/:id/deletion-impact',
