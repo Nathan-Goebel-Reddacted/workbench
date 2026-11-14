@@ -307,12 +307,7 @@ import { PageVisibility } from '@contexts/contentEditor/infrastructure/gateway/p
 import { ProjectPageGateway } from '@contexts/project/infrastructure/gateway/projectPageGateway';
 
 // --- Registre des fichiers uploadés ---
-import { projectUploadReferences } from '@contexts/project/infrastructure/uploadReferences';
-import { ideaUploadReferences } from '@contexts/idea/infrastructure/uploadReferences';
-import { featureUploadReferences } from '@contexts/feature/infrastructure/uploadReferences';
-import { ticketUploadReferences } from '@contexts/ticket/infrastructure/uploadReferences';
-import { cvUploadReferences } from '@contexts/cv/infrastructure/uploadReferences';
-import { contentEditorUploadReferences } from '@contexts/contentEditor/infrastructure/uploadReferences';
+import { UPLOAD_REFERENCE_SOURCES } from './uploadReferenceSources';
 
 export function bootstrap(
     em: EntityManager,
@@ -351,14 +346,7 @@ export function bootstrap(
     // contexte manquant à cette liste verrait ses fichiers effacés alors qu'il les cite encore,
     // sans la moindre erreur — d'où la déclaration chez soi plutôt qu'une liste enfouie.
     const mindmaps = new MindmapFileStorage();
-    const uploads = new UploadStorage(em, [
-        ...projectUploadReferences,
-        ...ideaUploadReferences,
-        ...featureUploadReferences,
-        ...ticketUploadReferences,
-        ...cvUploadReferences,
-        ...contentEditorUploadReferences,
-    ]);
+    const uploads = new UploadStorage(em, UPLOAD_REFERENCE_SOURCES);
 
     // Un seul exécutant de transaction pour tous les cas d'usage multi-dépôts.
     const transactions = new MikroOrmTransactionRunner(em);
