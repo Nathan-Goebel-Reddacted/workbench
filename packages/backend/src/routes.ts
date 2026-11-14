@@ -13,6 +13,7 @@ import { referenceRoutes } from './contexts/reference/infrastructure/http/refere
 import { ticketRoutes } from './contexts/ticket/infrastructure/http/ticketRoutes.js';
 import { ideaRoutes } from './contexts/idea/infrastructure/http/ideaRoutes.js';
 import { contentEditorRoutes } from './contexts/contentEditor/infrastructure/http/contentEditorRoutes.js';
+import { pageRoutes } from './contexts/contentEditor/infrastructure/http/pageRoutes.js';
 import { agentToolRoutes } from './contexts/ai-assistant/infrastructure/http/agentToolRoutes.js';
 import { contactRoutes } from './contexts/contact/infrastructure/http/contactRoutes.js';
 import { cvRoutes } from './contexts/cv/infrastructure/http/cvRoutes.js';
@@ -41,6 +42,7 @@ export async function registerRoutes(app: FastifyInstance, buses: RouteBuses, or
     await app.register(ticketRoutes, buses);
     await app.register(ideaRoutes, buses);
     await app.register(contentEditorRoutes, buses);
+    await app.register(pageRoutes, buses);
     await app.register(agentToolRoutes, buses);
     await app.register(cvRoutes, buses);
     // POST is public: the contact form is filled by site visitors. Reading is reserved to editors.

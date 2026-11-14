@@ -159,6 +159,26 @@ import { GetPageLayoutByIdQuery } from '@contexts/contentEditor/application/quer
 import { GetPageLayoutByIdHandler } from '@contexts/contentEditor/application/query/getPageLayoutById/getPageLayoutByIdHandler';
 import { GetPageLayoutByRefQuery } from '@contexts/contentEditor/application/query/getPageLayoutByRef/getPageLayoutByRefQuery';
 import { GetPageLayoutByRefHandler } from '@contexts/contentEditor/application/query/getPageLayoutByRef/getPageLayoutByRefHandler';
+import { PageFactory } from '@contexts/contentEditor/domain/factory/pageFactory';
+import { PageMutator } from '@contexts/contentEditor/application/command/pageMutator';
+import { EnsurePageCommand } from '@contexts/contentEditor/application/command/ensurePage/ensurePageCommand';
+import { EnsurePageHandler } from '@contexts/contentEditor/application/command/ensurePage/ensurePageHandler';
+import { AddElementCommand } from '@contexts/contentEditor/application/command/addElement/addElementCommand';
+import { AddElementHandler } from '@contexts/contentEditor/application/command/addElement/addElementHandler';
+import { MoveElementCommand } from '@contexts/contentEditor/application/command/moveElement/moveElementCommand';
+import { MoveElementHandler } from '@contexts/contentEditor/application/command/moveElement/moveElementHandler';
+import { SetComponentCommand } from '@contexts/contentEditor/application/command/setComponent/setComponentCommand';
+import { SetComponentHandler } from '@contexts/contentEditor/application/command/setComponent/setComponentHandler';
+import { RemoveComponentCommand } from '@contexts/contentEditor/application/command/removeComponent/removeComponentCommand';
+import { RemoveComponentHandler } from '@contexts/contentEditor/application/command/removeComponent/removeComponentHandler';
+import { DeleteElementCommand } from '@contexts/contentEditor/application/command/deleteElement/deleteElementCommand';
+import { DeleteElementHandler } from '@contexts/contentEditor/application/command/deleteElement/deleteElementHandler';
+import { GetPageByIdQuery } from '@contexts/contentEditor/application/query/getPageById/getPageByIdQuery';
+import { GetPageByIdHandler } from '@contexts/contentEditor/application/query/getPageById/getPageByIdHandler';
+import { GetPageByRefQuery } from '@contexts/contentEditor/application/query/getPageByRef/getPageByRefQuery';
+import { GetPageByRefHandler } from '@contexts/contentEditor/application/query/getPageByRef/getPageByRefHandler';
+import { ListPageRefsWithContentQuery } from '@contexts/contentEditor/application/query/listPageRefsWithContent/listPageRefsWithContentQuery';
+import { ListPageRefsWithContentHandler } from '@contexts/contentEditor/application/query/listPageRefsWithContent/listPageRefsWithContentHandler';
 import { ListMediaImagesQuery } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesQuery';
 import { ListMediaImagesHandler } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesHandler';
 
@@ -233,6 +253,7 @@ import { FeatureRepository } from '@contexts/feature/infrastructure/repository/f
 import { TicketRepository } from '@contexts/ticket/infrastructure/repository/ticketRepository';
 import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRepository';
 import { PageLayoutRepository } from '@contexts/contentEditor/infrastructure/repository/pageLayoutRepository';
+import { PageRepository } from '@contexts/contentEditor/infrastructure/repository/pageRepository';
 import { AgentToolRepository } from '@contexts/ai-assistant/infrastructure/repository/agentToolRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
 import { MindmapFileStorage } from '@shared/infrastructure/upload/mindmapFileStorage';
@@ -326,6 +347,7 @@ export function bootstrap(
         ticket: new TicketRepository(em),
         idea: new IdeaRepository(em),
         pageLayout: new PageLayoutRepository(em),
+        page: new PageRepository(em),
         agentTool: new AgentToolRepository(em),
         pairingRequest: new PairingRequestRepository(em),
         contactMessage: new ContactMessageRepository(em),
@@ -380,6 +402,7 @@ export function bootstrap(
     const ticketFactory = new TicketFactory();
     const ideaFactory = new IdeaFactory();
     const pageLayoutFactory = new PageLayoutFactory();
+    const pageFactory = new PageFactory();
     // Le haché est un choix d'infrastructure : le domaine ne connaît que le port.
     const secretHasher = new BcryptSecretHasher();
     const agentToolFactory = new AgentToolFactory(secretHasher);
@@ -533,6 +556,16 @@ export function bootstrap(
         GetPageLayoutByRefQuery.queryName,
         new GetPageLayoutByRefHandler(repos.pageLayout, pageVisibility),
     );
+    const pages = new PageMutator(repos.page, uploads);
+    commandBus.register(EnsurePageCommand.commandName, new EnsurePageHandler(repos.page, pageFactory));
+    commandBus.register(AddElementCommand.commandName, new AddElementHandler(pages));
+    commandBus.register(MoveElementCommand.commandName, new MoveElementHandler(pages));
+    commandBus.register(SetComponentCommand.commandName, new SetComponentHandler(pages));
+    commandBus.register(RemoveComponentCommand.commandName, new RemoveComponentHandler(pages));
+    commandBus.register(DeleteElementCommand.commandName, new DeleteElementHandler(pages));
+    queryBus.register(GetPageByIdQuery.queryName, new GetPageByIdHandler(repos.page));
+    queryBus.register(GetPageByRefQuery.queryName, new GetPageByRefHandler(repos.page, pageVisibility));
+    queryBus.register(ListPageRefsWithContentQuery.queryName, new ListPageRefsWithContentHandler(repos.page));
     // Seul point de contact entre l'éditeur de contenu et les contextes qui détiennent
     // les médias : il pose la question, eux répondent — aucun agrégat étranger ne remonte.
     const mediaLibrary = new MediaLibrary(repos.project, repos.feature, repos.ticket);
