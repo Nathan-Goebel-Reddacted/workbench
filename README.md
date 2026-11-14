@@ -15,6 +15,7 @@ grille, et un serveur MCP par lequel un agent vient lire et écrire dans l'ateli
 - [Export, import et restauration](#export-import-et-restauration)
 - [Déploiement](#déploiement)
 - [Qualité](#qualité)
+- [Glossaire](#glossaire)
 
 ## Prérequis
 
@@ -317,3 +318,81 @@ npm run format:check && npm run lint && npm run typecheck && npm test && npm run
 Les tests ne couvrent pour l'instant que du domaine et des fonctions pures — pas de base, pas de
 serveur HTTP simulé : la géométrie des grilles, le garde de rôles, les références de tickets, et la
 génération du script d'import.
+
+## Glossaire
+
+### Éditeur de pages
+
+**Page** :
+Surface éditable publiée sur le site public : l'accueil du portfolio ou la page d'un projet. Elle
+contient un ensemble d'Elements.
+_Avoid_ : layout, mise en page (pour désigner la page elle-même)
+
+**Element** :
+Ce qu'on pose sur une Page. Il n'a pas de type propre : ce qu'il est découle des Components qu'il
+porte.
+_Avoid_ : entity, widget, section, bloc
+
+**Component** :
+Une facette d'un Element (sa position, son habillage, son contenu…). Un Element porte au plus un
+Component de chaque sorte.
+_Avoid_ : propriété, réglage, widget
+
+**Transform** :
+Le Component qui situe un Element sur la Page : sa position et sa taille. Tout Element en porte
+un.
+_Avoid_ : position, grid position, cellule
+
+**Surface** :
+Le Component qui habille la boîte d'un Element : couleur de fond, bordure, arrondi. Il ne change
+rien à ce qui est posé dessus.
+_Avoid_ : background, fond (pour le Component)
+
+**Link** :
+Le Component qui rend un Element cliquable vers une URL externe ou la page d'un projet.
+_Avoid_ : link area, zone de lien
+
+**Contenu** :
+Le Component qui donne à un Element ce qu'il montre. Un Element porte au plus un contenu ; un
+Element sans contenu est un fond ou une zone cliquable.
+_Avoid_ : widget, type de section
+
+### Contenus
+
+**Text** :
+Un texte riche, avec sa couleur et sa taille, qui peut insérer des champs vivants issus d'un
+projet.
+_Avoid_ : paragraphe, bloc texte
+
+**Insertion liée** :
+Un champ d'un projet, d'une feature ou d'un ticket inséré dans un Text, qui suit la valeur
+d'origine au lieu d'en être une copie.
+_Avoid_ : variable, data binding (pour l'utilisateur)
+
+**Media** :
+Une image, une vidéo, un PDF ou une mindmap affiché sur la Page, avec son cadrage.
+_Avoid_ : document, image (pour le Component)
+
+**Code** :
+Un extrait de code source affiché avec son langage.
+_Avoid_ : snippet
+
+**LinkList** :
+Une liste de liens externes, chacun avec son libellé et son logo.
+_Avoid_ : link, liens
+
+**Embed** :
+Une page externe intégrée telle quelle dans la Page (vidéo hébergée, démo en ligne…).
+_Avoid_ : iframe
+
+**Carousel** :
+Une suite d'images légendées qui défilent.
+_Avoid_ : galerie, slider
+
+**ProjectCard** :
+La vignette d'un projet du catalogue, qui renvoie à sa page.
+_Avoid_ : carte, aperçu projet
+
+**ContactForm** :
+Le formulaire par lequel un visiteur envoie un message au propriétaire du portfolio.
+_Avoid_ : formulaire, contact
