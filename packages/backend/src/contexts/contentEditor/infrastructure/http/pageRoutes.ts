@@ -1,7 +1,7 @@
 import { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { CommandBus } from '@shared/application/command/commandBus';
 import { QueryBus } from '@shared/application/query/queryBus';
-import { requirePrivateRead, requireRole } from '@shared/infrastructure/http/roleGuard';
+import { hasPrivateRead, requirePrivateRead, requireRole } from '@shared/infrastructure/http/roleGuard';
 import { UserRole } from '@shared/domain/valueObject/userRole';
 import { EnsurePageCommand } from '../../application/command/ensurePage/ensurePageCommand';
 import { AddElementCommand } from '../../application/command/addElement/addElementCommand';
@@ -76,7 +76,7 @@ export const pageRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
     app.get<{ Querystring: PageRefInput }>(
         '/pages/by-ref',
         { config: { anonymousRead: true }, schema: { querystring: pageRefSchema } },
-        async (req, reply) => sendPage(reply, await readByRef(req.query, false)),
+        async (req, reply) => reply.send(await readByRef(req.query, hasPrivateRead(req))),
     );
 
     app.get<{ Querystring: PageRefInput }>(

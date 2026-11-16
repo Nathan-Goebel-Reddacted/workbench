@@ -204,7 +204,19 @@ describe('GetPageByRefHandler', () => {
 
         const dto = await handler.handle(new GetPageByRefQuery('project', PAGE_REF));
 
-        expect(dto).toMatchObject({ pageRef: PAGE_REF, referenceWidth: 1440, elements: [] });
+        expect(dto).toMatchObject({ pageRef: PAGE_REF, referenceWidth: 1440, hasContent: false, elements: [] });
+    });
+
+    it('dit qu’une Page a du contenu dès qu’un Element en porte un, comme la destination des projets', async () => {
+        const { repository, mutator, pageId } = await pageWithElement();
+        const handler = new GetPageByRefHandler(repository, visibility(true));
+        const read = () => handler.handle(new GetPageByRefQuery('portfolio', PAGE_REF));
+
+        expect((await read())?.hasContent).toBe(false);
+
+        await new SetComponentHandler(mutator).handle(new SetComponentCommand(pageId, ELEMENT, 'text', {}));
+
+        expect((await read())?.hasContent).toBe(true);
     });
 
     it('tait une Page masquée', async () => {

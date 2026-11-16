@@ -9,6 +9,7 @@ export function toPageDto(page: Page): PageDto {
         pageRef: page.getPageRef().getValue(),
         version: page.getVersion(),
         referenceWidth: REFERENCE_WIDTH,
+        hasContent: page.hasContent(),
         elements: page.getElements().map(element => {
             const t = element.getTransform();
             return {

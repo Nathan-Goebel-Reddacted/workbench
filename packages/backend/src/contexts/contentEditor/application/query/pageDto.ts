@@ -4,6 +4,7 @@ export type PageDto = Readonly<{
     pageRef: string;
     version: number;
     referenceWidth: number;
+    hasContent: boolean;
     elements: ReadonlyArray<
         Readonly<{
             id: string;
