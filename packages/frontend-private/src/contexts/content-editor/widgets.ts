@@ -1,3 +1,3 @@
-import type { PageType, SectionType, SectionContent } from '@content'
+import type { PageType } from '@content'
 
-export type { PageType, SectionType, SectionContent }
+export type { PageType }

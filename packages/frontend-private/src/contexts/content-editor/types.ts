@@ -1,4 +1,6 @@
-import type { SectionType } from '@content'
+import type { PageDto } from '@content'
+
+export type Page = PageDto
 
 export type MediaItem = { id: string; name: string; url: string }
 export type TicketMedia = { ticketId: string; reference: string; title: string; images: MediaItem[] }
@@ -10,5 +12,3 @@ export type MediaKind = 'image' | 'video' | 'mindmap' | 'document'
 export type BindableProject = { id: string; name: string }
 export type BindableFeature = { id: string; name: string }
 export type BindableTicket = { id: string; label: string }
-
-export type NewSection = { type: SectionType }

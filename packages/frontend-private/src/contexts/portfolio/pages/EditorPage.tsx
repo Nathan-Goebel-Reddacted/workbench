@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { GridBuilder } from '../../content-editor'
+import { PageEditor } from '../../content-editor'
 import { usePortfolio } from '../hooks/usePortfolio'
 
 export function EditorPage() {
@@ -12,7 +12,7 @@ export function EditorPage() {
       ) : !portfolio ? (
         <p style={mutedStyle}>No portfolio has been created for this site.</p>
       ) : (
-        <GridBuilder pageType="portfolio" pageRef={portfolio.id} />
+        <PageEditor pageType="portfolio" pageRef={portfolio.id} />
       )}
     </div>
   )
