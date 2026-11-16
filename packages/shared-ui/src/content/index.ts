@@ -1,45 +1,20 @@
-// Rendu d'un layout composé dans l'Editor. Partagé par l'aperçu de l'éditeur
-// (frontend-private) et les pages publiques (frontend-public) : une seule
-// implémentation de la géométrie et du rendu des widgets, donc un rendu identique
-// des deux côtés. Les styles du texte riche vivent dans ./richText/richText.css, à importer
-// séparément par l'application hôte.
-
 export { LayoutPreview } from './grid/LayoutPreview'
-export type { RenderMode } from './section/renderMode'
-export { SectionPreview } from './section/SectionPreview'
 export { MindmapView } from './mindmap/MindmapView'
-export { RichTextRenderer } from './richText/RichTextRenderer'
-export { ContactForm } from './section/ContactForm'
+export { PageRenderer } from './page/PageRenderer'
+export { PAGE_BOTTOM_MARGIN, readingRows, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
+export type {
+  PageDto,
+  PageElement,
+  ElementTransform,
+  ElementComponents,
+  ComponentKind,
+  TextComponent,
+} from './page/pageTypes'
 export { buildRichTextExtensions } from './richText/richTextExtensions'
 
-export {
-  COLS,
-  GAP,
-  colToPercent,
-  widthPercent,
-  REFERENCE_WIDTH,
-  REFERENCE_ROW_HEIGHT,
-  CELL_RATIO,
-  rowHeightFor,
-  gridHeightFor,
-  WIDGET_INSET,
-  BACKGROUND_OUTSET,
-  sectionBox,
-  growForType,
-} from './grid/gridGeometry'
+export { GAP, rowHeightFor, gridHeightFor, sectionBox, growForType } from './grid/gridGeometry'
 export { useRowHeight } from './grid/useRowHeight'
-export {
-  BACKGROUND_TYPE,
-  LINK_AREA_TYPE,
-  WIDGET_Z,
-  LINK_AREA_Z,
-  DRAGGING_Z,
-  computeBackgroundDepths,
-  backgroundColorForDepth,
-  computeSectionsOnDark,
-  zIndexFor,
-} from './grid/backgroundStacking'
-export { onDarkSnapshotStyle, onDarkThemeStyle } from './grid/onDarkTheme'
+export { DRAGGING_Z, computeBackgroundDepths, backgroundColorForDepth, zIndexFor } from './grid/backgroundStacking'
 export {
   VIDEO_EXTENSIONS,
   IMAGE_EXTENSIONS,
@@ -92,24 +67,12 @@ export type {
   PageLayoutDto,
   TextContent,
   TextScale,
-  ImageContent,
-  ImageFit,
-  ImagePosition,
-  BackgroundContent,
-  LinkAreaContent,
-  LinkAreaTarget,
   ExternalLink,
   LinkStyle,
-  CodeContent,
-  EmbedContent,
-  ContactFormContent,
   FormField,
   FormFieldType,
   BindingEntity,
   BindingField,
-  ProjectField,
-  FeatureField,
-  TicketField,
   DataBindingAttrs,
 } from './section/types'
 export {
@@ -127,7 +90,6 @@ export {
   readEmbedContent,
   isEmbeddableUrl,
   readContactFormContent,
-  DEFAULT_FORM_FIELDS,
   FORM_FIELD_TYPE_OPTIONS,
   IMAGE_FIT_OPTIONS,
   IMAGE_POSITION_OPTIONS,

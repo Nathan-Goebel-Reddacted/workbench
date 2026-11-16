@@ -63,14 +63,17 @@ function useBindingValue(apiUrl: string, entity: BindingEntity, id: string, fiel
   return state
 }
 
+export function useBindingLabel(apiUrl: string, { entity, id, field }: DataBindingAttrs): string {
+  const { value, loading, error } = useBindingValue(apiUrl, entity, id, field)
+  return loading ? '…' : error ? '⚠' : value || '(vide)'
+}
+
 // --- NodeView React : affiche la valeur live, non éditable, mais formatable (marques) ---
 function DataBindingView(props: NodeViewProps) {
   const { entity, id, field } = props.node.attrs as DataBindingAttrs
   const { apiUrl } = props.extension.options as DataBindingOptions
   const editable = props.editor.isEditable
-  const { value, loading, error } = useBindingValue(apiUrl, entity, id, field)
-
-  const label = loading ? '…' : error ? '⚠' : value || '(vide)'
+  const label = useBindingLabel(apiUrl, { entity, id, field })
 
   return (
     <NodeViewWrapper
