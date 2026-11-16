@@ -3,9 +3,9 @@ import { StaticRichText } from '../richText/StaticRichText'
 import { TEXT_SCALE_OPTIONS } from '../section/types'
 import type { ComponentKind, ElementComponents } from './pageTypes'
 
-type ContentRenderers = { [K in ComponentKind]: (component: NonNullable<ElementComponents[K]>) => ReactNode }
+export type ContentRenderers = { [K in ComponentKind]: (component: NonNullable<ElementComponents[K]>) => ReactNode }
 
-const CONTENT_RENDERERS: ContentRenderers = {
+export const CONTENT_RENDERERS: ContentRenderers = {
   text: ({ html, scale }) => (
     <StaticRichText html={html} scale={TEXT_SCALE_OPTIONS.find(o => o.value === scale)?.factor ?? 1} />
   ),

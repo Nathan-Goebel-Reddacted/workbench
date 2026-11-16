@@ -17,6 +17,10 @@ declare module '@tiptap/core' {
 type EntityData = Record<string, unknown>
 const entityCache = new Map<string, Promise<EntityData | null>>()
 
+export function clearBindingCache(): void {
+  entityCache.clear()
+}
+
 function entityPath(entity: BindingEntity, id: string): string {
   if (entity === 'project') return `projects/${id}`
   if (entity === 'feature') return `features/${id}`

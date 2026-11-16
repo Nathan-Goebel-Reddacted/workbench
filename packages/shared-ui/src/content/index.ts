@@ -1,6 +1,8 @@
 export { LayoutPreview } from './grid/LayoutPreview'
 export { MindmapView } from './mindmap/MindmapView'
 export { PageRenderer } from './page/PageRenderer'
+export { CONTENT_RENDERERS, type ContentRenderers } from './page/contentRenderers'
+export { clearBindingCache } from './richText/dataBinding'
 export { PAGE_BOTTOM_MARGIN, readingRows, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
 export type {
   PageDto,

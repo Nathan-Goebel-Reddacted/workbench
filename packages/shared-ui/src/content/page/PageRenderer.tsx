@@ -1,16 +1,20 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { renderContent } from './contentRenderers'
 import { pageHeight, pageScale, readingOrder } from './pageGeometry'
 import type { PageDto, PageElement } from './pageTypes'
 import { useContainerWidth } from './useContainerWidth'
 
-type Props = { page: PageDto }
+type Props = {
+  page: PageDto
+  overlay?: (element: PageElement, scale: number) => ReactNode
+  extraHeight?: number
+}
 
-export function PageRenderer({ page }: Props) {
+export function PageRenderer({ page, overlay, extraHeight = 0 }: Props) {
   const { ref, width } = useContainerWidth<HTMLDivElement>()
   const { referenceWidth, elements } = page
   const scale = pageScale(width, referenceWidth)
-  const height = pageHeight(elements)
+  const height = pageHeight(elements) + extraHeight
   const layer = new Map(elements.map((element, index) => [element.id, index + 1]))
 
   return (
@@ -19,6 +23,7 @@ export function PageRenderer({ page }: Props) {
         {readingOrder(elements).map(element => (
           <div key={element.id} style={elementStyle(element, layer.get(element.id) ?? 0)}>
             {renderContent(element.components)}
+            {overlay?.(element, scale)}
           </div>
         ))}
       </div>
@@ -27,7 +32,7 @@ export function PageRenderer({ page }: Props) {
 }
 
 function elementStyle({ transform: { x, y, w, h } }: PageElement, zIndex: number): CSSProperties {
-  return { position: 'absolute', left: x, top: y, width: w, height: h, zIndex, overflow: 'hidden' }
+  return { position: 'absolute', left: x, top: y, width: w, height: h, zIndex }
 }
 
 const frameStyle: CSSProperties = {
