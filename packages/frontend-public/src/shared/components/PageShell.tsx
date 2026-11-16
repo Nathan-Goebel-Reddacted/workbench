@@ -10,8 +10,16 @@ import type { CSSProperties, ReactNode } from 'react'
 // `fill` : pour une page dont le contenu se dimensionne sur la hauteur restante plutôt que sur
 // son propre flux — le visionneur de CV en déduit sa largeur de sa hauteur. Le contenu s'y
 // centre lui-même, la largeur n'est donc pas bornée.
-export function PageShell({ children, fill = false }: { children: ReactNode; fill?: boolean }) {
-  return <main style={fill ? fillStyle : shellStyle}>{children}</main>
+type Props = { children: ReactNode; fill?: boolean; canvas?: boolean }
+
+export function PageShell({ children, fill = false, canvas = false }: Props) {
+  return <main style={canvas ? canvasStyle : fill ? fillStyle : shellStyle}>{children}</main>
+}
+
+const canvasStyle: CSSProperties = {
+  flex: 1,
+  width: '100%',
+  backgroundColor: 'var(--color-bg)',
 }
 
 const shellStyle: CSSProperties = {
