@@ -167,6 +167,10 @@ import { AddElementCommand } from '@contexts/contentEditor/application/command/a
 import { AddElementHandler } from '@contexts/contentEditor/application/command/addElement/addElementHandler';
 import { MoveElementCommand } from '@contexts/contentEditor/application/command/moveElement/moveElementCommand';
 import { MoveElementHandler } from '@contexts/contentEditor/application/command/moveElement/moveElementHandler';
+import { ReorderElementCommand } from '@contexts/contentEditor/application/command/reorderElement/reorderElementCommand';
+import { ReorderElementHandler } from '@contexts/contentEditor/application/command/reorderElement/reorderElementHandler';
+import { DuplicateElementCommand } from '@contexts/contentEditor/application/command/duplicateElement/duplicateElementCommand';
+import { DuplicateElementHandler } from '@contexts/contentEditor/application/command/duplicateElement/duplicateElementHandler';
 import { SetComponentCommand } from '@contexts/contentEditor/application/command/setComponent/setComponentCommand';
 import { SetComponentHandler } from '@contexts/contentEditor/application/command/setComponent/setComponentHandler';
 import { RemoveComponentCommand } from '@contexts/contentEditor/application/command/removeComponent/removeComponentCommand';
@@ -560,6 +564,8 @@ export function bootstrap(
     commandBus.register(EnsurePageCommand.commandName, new EnsurePageHandler(repos.page, pageFactory));
     commandBus.register(AddElementCommand.commandName, new AddElementHandler(pages));
     commandBus.register(MoveElementCommand.commandName, new MoveElementHandler(pages));
+    commandBus.register(ReorderElementCommand.commandName, new ReorderElementHandler(pages));
+    commandBus.register(DuplicateElementCommand.commandName, new DuplicateElementHandler(pages));
     commandBus.register(SetComponentCommand.commandName, new SetComponentHandler(pages));
     commandBus.register(RemoveComponentCommand.commandName, new RemoveComponentHandler(pages));
     commandBus.register(DeleteElementCommand.commandName, new DeleteElementHandler(pages));

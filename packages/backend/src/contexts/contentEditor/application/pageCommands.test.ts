@@ -15,6 +15,10 @@ import { AddElementHandler } from './command/addElement/addElementHandler.js';
 import { AddElementCommand } from './command/addElement/addElementCommand.js';
 import { MoveElementHandler } from './command/moveElement/moveElementHandler.js';
 import { MoveElementCommand } from './command/moveElement/moveElementCommand.js';
+import { ReorderElementHandler } from './command/reorderElement/reorderElementHandler.js';
+import { ReorderElementCommand } from './command/reorderElement/reorderElementCommand.js';
+import { DuplicateElementHandler } from './command/duplicateElement/duplicateElementHandler.js';
+import { DuplicateElementCommand } from './command/duplicateElement/duplicateElementCommand.js';
 import { SetComponentHandler } from './command/setComponent/setComponentHandler.js';
 import { SetComponentCommand } from './command/setComponent/setComponentCommand.js';
 import { RemoveComponentHandler } from './command/removeComponent/removeComponentHandler.js';
@@ -117,6 +121,16 @@ describe('commandes sur les Elements', () => {
         await new MoveElementHandler(mutator).handle(new MoveElementCommand(pageId, ELEMENT, 8, 16, 24, 32));
 
         expect((await elements())[0].getTransform().getX()).toBe(8);
+    });
+
+    it('duplique un Element puis le recule sous sa copie', async () => {
+        const { mutator, pageId, elements } = await pageWithElement();
+        const copy = crypto.randomUUID();
+
+        await new DuplicateElementHandler(mutator).handle(new DuplicateElementCommand(pageId, ELEMENT, copy));
+        await new ReorderElementHandler(mutator).handle(new ReorderElementCommand(pageId, copy, 'backward'));
+
+        expect((await elements()).map(e => e.getId().getValue())).toEqual([copy, ELEMENT]);
     });
 
     it('libère l’ancien contenu quand on le remplace, pas à la première pose', async () => {

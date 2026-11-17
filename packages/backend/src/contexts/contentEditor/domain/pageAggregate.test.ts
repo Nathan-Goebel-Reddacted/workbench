@@ -230,3 +230,87 @@ describe('au plus un contenu', () => {
         expect(contentConflict(['f'], 'b', registry)).toBeNull();
     });
 });
+
+describe('Page — ordre d’affichage', () => {
+    function ids(p: Page): string[] {
+        return p.getElements().map(e => e.getId().getValue());
+    }
+
+    it('avance un Element en l’échangeant avec son voisin suivant', () => {
+        const [a, b, c] = [element(), element(), element()];
+        const p = page([a, b, c]);
+
+        p.reorderElement(a.getId(), 'forward');
+
+        expect(ids(p)).toEqual([b, a, c].map(e => e.getId().getValue()));
+    });
+
+    it('recule un Element en l’échangeant avec son voisin précédent', () => {
+        const [a, b, c] = [element(), element(), element()];
+        const p = page([a, b, c]);
+
+        p.reorderElement(c.getId(), 'backward');
+
+        expect(ids(p)).toEqual([a, c, b].map(e => e.getId().getValue()));
+    });
+
+    it('ne fait rien en bout de liste', () => {
+        const [a, b] = [element(), element()];
+        const p = page([a, b]);
+
+        p.reorderElement(b.getId(), 'forward');
+        p.reorderElement(a.getId(), 'backward');
+
+        expect(ids(p)).toEqual([a, b].map(e => e.getId().getValue()));
+    });
+
+    it('signale un Element inconnu', () => {
+        expect(() => page([element()]).reorderElement(new ElementId(), 'forward')).toThrow(ElementNotFoundException);
+    });
+});
+
+describe('Page — duplication', () => {
+    it('copie les Components dans un nouvel Element décalé, juste au-dessus de l’original', () => {
+        const source = element(new Transform(100, 200, 300, 400), { text: { html: '<p>a</p>' } });
+        const last = element();
+        const p = page([source, last]);
+        const id = new ElementId();
+
+        p.duplicateElement(source.getId(), id);
+
+        const elements = p.getElements();
+        expect(elements.map(e => e.getId().getValue())).toEqual([
+            source.getId().getValue(),
+            id.getValue(),
+            last.getId().getValue(),
+        ]);
+        expect(elements[1].getTransform()).toEqual(new Transform(120, 220, 300, 400));
+        expect(elements[1].getComponents()).toEqual(source.getComponents());
+    });
+
+    it('garde la copie dans la Page quand l’original touche un bord', () => {
+        const source = element(new Transform(REFERENCE_WIDTH - 300, MAX_PAGE_HEIGHT - 400, 300, 400));
+        const p = page([source]);
+
+        const copy = p.duplicateElement(source.getId(), new ElementId());
+
+        expect(copy.getTransform()).toEqual(source.getTransform());
+    });
+
+    it('ne partage pas ses Components avec l’original', () => {
+        const source = element(undefined, { text: { html: '<p>a</p>' } });
+        const p = page([source]);
+        const copy = p.duplicateElement(source.getId(), new ElementId());
+
+        copy.setComponent('text', { html: '<p>b</p>' });
+
+        expect(source.getComponents().text).toMatchObject({ html: '<p>a</p>' });
+    });
+
+    it('refuse au-delà du nombre maximal d’Elements', () => {
+        const elements = Array.from({ length: MAX_ELEMENTS }, () => element());
+        const p = page(elements);
+
+        expect(() => p.duplicateElement(elements[0].getId(), new ElementId())).toThrow(TooManyElementsException);
+    });
+});

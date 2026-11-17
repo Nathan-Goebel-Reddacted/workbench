@@ -34,6 +34,10 @@ export class Element {
         return new Element(id, transform, components);
     }
 
+    duplicate(id: ElementId, transform: Transform): Element {
+        return new Element(id, transform, structuredClone(this.components));
+    }
+
     getId(): ElementId {
         return this.id;
     }

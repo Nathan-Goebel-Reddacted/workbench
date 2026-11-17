@@ -6,6 +6,8 @@ import { UserRole } from '@shared/domain/valueObject/userRole';
 import { EnsurePageCommand } from '../../application/command/ensurePage/ensurePageCommand';
 import { AddElementCommand } from '../../application/command/addElement/addElementCommand';
 import { MoveElementCommand } from '../../application/command/moveElement/moveElementCommand';
+import { ReorderElementCommand } from '../../application/command/reorderElement/reorderElementCommand';
+import { DuplicateElementCommand } from '../../application/command/duplicateElement/duplicateElementCommand';
 import { SetComponentCommand } from '../../application/command/setComponent/setComponentCommand';
 import { RemoveComponentCommand } from '../../application/command/removeComponent/removeComponentCommand';
 import { DeleteElementCommand } from '../../application/command/deleteElement/deleteElementCommand';
@@ -13,6 +15,7 @@ import { GetPageByIdQuery } from '../../application/query/getPageById/getPageByI
 import { GetPageByRefQuery } from '../../application/query/getPageByRef/getPageByRefQuery';
 import { PageDto } from '../../application/query/pageDto';
 import { PageType } from '../../domain/valueObject/pageType';
+import { ReorderDirection } from '../../domain/pageAggregate';
 import { MAX_PAGE_HEIGHT, REFERENCE_WIDTH } from '../../domain/valueObject/transform';
 import { COMPONENT_KINDS } from '../../domain/component/componentRegistry';
 
@@ -131,6 +134,38 @@ export const pageRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
             const { x, y, w, h } = req.body;
             await commandBus.dispatch(new MoveElementCommand(req.params.id, req.params.elementId, x, y, w, h));
             return reply.status(204).send();
+        },
+    );
+
+    app.post<{ Params: { id: string; elementId: string }; Body: { direction: ReorderDirection } }>(
+        '/pages/:id/elements/:elementId/reorder',
+        {
+            preHandler: requireRole(UserRole.EDIT),
+            schema: {
+                params: elementParams,
+                body: {
+                    type: 'object',
+                    required: ['direction'],
+                    additionalProperties: false,
+                    properties: { direction: { type: 'string', enum: ['forward', 'backward'] } },
+                },
+            },
+        },
+        async (req, reply) => {
+            await commandBus.dispatch(
+                new ReorderElementCommand(req.params.id, req.params.elementId, req.body.direction),
+            );
+            return reply.status(204).send();
+        },
+    );
+
+    app.post<{ Params: { id: string; elementId: string } }>(
+        '/pages/:id/elements/:elementId/duplicate',
+        { preHandler: requireRole(UserRole.EDIT), schema: { params: elementParams } },
+        async (req, reply) => {
+            const elementId = crypto.randomUUID();
+            await commandBus.dispatch(new DuplicateElementCommand(req.params.id, req.params.elementId, elementId));
+            return reply.status(201).send({ id: elementId });
         },
     );
 

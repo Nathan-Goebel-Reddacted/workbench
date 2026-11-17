@@ -12,6 +12,9 @@ export const MAX_ELEMENTS = 200;
 export const NEW_ELEMENT_WIDTH = 480;
 export const NEW_ELEMENT_HEIGHT = 160;
 export const NEW_ELEMENT_GAP = 40;
+export const DUPLICATE_OFFSET = 20;
+
+export type ReorderDirection = 'forward' | 'backward';
 
 export class Page {
     private elements: Element[];
@@ -62,6 +65,24 @@ export class Page {
 
     moveElement(id: ElementId, transform: Transform): void {
         this.find(id).moveTo(transform);
+    }
+
+    reorderElement(id: ElementId, direction: ReorderDirection): void {
+        const index = this.elements.indexOf(this.find(id));
+        const neighbour = direction === 'forward' ? index + 1 : index - 1;
+        if (neighbour < 0 || neighbour >= this.elements.length) return;
+        [this.elements[index], this.elements[neighbour]] = [this.elements[neighbour], this.elements[index]];
+    }
+
+    duplicateElement(sourceId: ElementId, id: ElementId): Element {
+        if (this.elements.length >= MAX_ELEMENTS) throw new TooManyElementsException(MAX_ELEMENTS);
+        const source = this.find(sourceId);
+        const t = source.getTransform();
+        const x = Math.min(t.getX() + DUPLICATE_OFFSET, REFERENCE_WIDTH - t.getW());
+        const y = Math.min(t.getY() + DUPLICATE_OFFSET, MAX_PAGE_HEIGHT - t.getH());
+        const copy = source.duplicate(id, new Transform(x, y, t.getW(), t.getH()));
+        this.elements.splice(this.elements.indexOf(source) + 1, 0, copy);
+        return copy;
     }
 
     removeElement(id: ElementId): Element {
