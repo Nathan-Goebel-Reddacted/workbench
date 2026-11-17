@@ -8,6 +8,7 @@ export class GetPageByRefQuery implements Query {
         readonly pageType: string,
         readonly pageRef: string,
         readonly includeHidden: boolean = false,
+        readonly forEditor: boolean = false,
     ) {
         this.queryName = GetPageByRefQuery.queryName;
     }

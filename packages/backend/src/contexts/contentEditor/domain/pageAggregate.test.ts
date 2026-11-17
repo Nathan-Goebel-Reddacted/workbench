@@ -445,3 +445,56 @@ describe('Link sur un contenu interactif', () => {
         expect(linkConflict(['link'], 'surface', registry, 'link')).toBeNull();
     });
 });
+
+describe('Media et Carousel', () => {
+    it('normalise un Media vide et un Media posé sur un fichier', () => {
+        const target = element();
+
+        target.setComponent('media', {});
+        expect(target.getComponents().media).toEqual({ url: null, alt: '', fit: 'contain', position: 'center' });
+
+        target.setComponent('media', { url: '/uploads/a.png', alt: 'A', fit: 'cover', position: 'top' });
+        expect(target.getComponents().media).toEqual({
+            url: '/uploads/a.png',
+            alt: 'A',
+            fit: 'cover',
+            position: 'top',
+        });
+    });
+
+    it.each([[{ url: 'javascript:alert(1)' }], [{ url: '/uploads/../x' }], [{ fit: 'stretch' }], [{ radius: 4 }]])(
+        'refuse ou ignore %j',
+        raw => {
+            const target = element();
+            if ('radius' in raw) {
+                target.setComponent('media', raw);
+                expect(target.getComponents().media).not.toHaveProperty('radius');
+            } else {
+                expect(() => target.setComponent('media', raw)).toThrow(InvalidComponentException);
+            }
+        },
+    );
+
+    it('normalise les slides d’un Carousel et refuse une URL dangereuse', () => {
+        const target = element();
+
+        target.setComponent('carousel', { items: [{ url: '/uploads/a.png', caption: 'A' }, {}] });
+        expect(target.getComponents().carousel).toEqual({
+            items: [
+                { url: '/uploads/a.png', caption: 'A' },
+                { url: null, caption: '' },
+            ],
+        });
+
+        expect(() => target.setComponent('carousel', { items: [{ url: 'data:image/png;base64,x' }] })).toThrow(
+            InvalidComponentException,
+        );
+    });
+
+    it('refuse un deuxième contenu à côté d’un Media', () => {
+        const target = element();
+        target.setComponent('media', {});
+
+        expect(() => target.setComponent('carousel', {})).toThrow();
+    });
+});

@@ -4,6 +4,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { IUploadStorage } from '@shared/application/port/iUploadStorage.js';
 import { IOrphanUploadSweeper } from '@shared/application/port/iOrphanUploadSweeper.js';
+import { IUploadPresence } from '@shared/application/port/iUploadPresence.js';
 import { UploadReferenceSource } from '@shared/application/port/uploadReferenceSource.js';
 
 const UPLOADS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../../../uploads');
@@ -38,7 +39,7 @@ function collectFilenames(value: unknown, found: Set<string>): void {
  * se voyait autrefois à ceci près que rien ne cassait — les fichiers encore cités par lui
  * disparaissaient en silence.
  */
-export class UploadStorage implements IUploadStorage, IOrphanUploadSweeper {
+export class UploadStorage implements IUploadStorage, IOrphanUploadSweeper, IUploadPresence {
     private readonly referenceSql: string;
     private readonly patternCount: number;
 
@@ -70,6 +71,20 @@ export class UploadStorage implements IUploadStorage, IOrphanUploadSweeper {
             // faire échouer la suppression métier qui vient d'aboutir.
             await unlink(join(this.uploadsDir, filename)).catch(() => undefined);
         }
+    }
+
+    async missing(urls: readonly string[]): Promise<ReadonlySet<string>> {
+        const missing = new Set<string>();
+        for (const url of new Set(urls)) {
+            if (!url.startsWith('/uploads/')) continue;
+            const filenames = new Set<string>();
+            collectFilenames(url, filenames);
+            const [filename] = filenames;
+            if (!filename) continue;
+            const stats = await stat(join(this.uploadsDir, filename)).catch(() => null);
+            if (!stats?.isFile()) missing.add(url);
+        }
+        return missing;
     }
 
     async purgeUnreferenced(olderThan: Date): Promise<string[]> {

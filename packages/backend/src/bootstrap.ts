@@ -570,12 +570,9 @@ export function bootstrap(
     commandBus.register(SetComponentCommand.commandName, new SetComponentHandler(pages));
     commandBus.register(RemoveComponentCommand.commandName, new RemoveComponentHandler(pages));
     commandBus.register(DeleteElementCommand.commandName, new DeleteElementHandler(pages));
-    const projectDestinations = new ProjectDestinations(repos.project, repos.page);
-    queryBus.register(GetPageByIdQuery.queryName, new GetPageByIdHandler(repos.page, projectDestinations));
-    queryBus.register(
-        GetPageByRefQuery.queryName,
-        new GetPageByRefHandler(repos.page, pageVisibility, projectDestinations),
-    );
+    const pageReaders = { destinations: new ProjectDestinations(repos.project, repos.page), presence: uploads };
+    queryBus.register(GetPageByIdQuery.queryName, new GetPageByIdHandler(repos.page, pageReaders));
+    queryBus.register(GetPageByRefQuery.queryName, new GetPageByRefHandler(repos.page, pageVisibility, pageReaders));
     queryBus.register(ListPageRefsWithContentQuery.queryName, new ListPageRefsWithContentHandler(repos.page));
     // Seul point de contact entre l'éditeur de contenu et les contextes qui détiennent
     // les médias : il pose la question, eux répondent — aucun agrégat étranger ne remonte.

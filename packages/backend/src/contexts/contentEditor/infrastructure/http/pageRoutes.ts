@@ -71,21 +71,21 @@ function sendPage(reply: FastifyReply, page: PageDto | null) {
 }
 
 export const pageRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
-    const readByRef = (input: PageRefInput, includeHidden: boolean) =>
+    const readByRef = (input: PageRefInput, includeHidden: boolean, forEditor: boolean) =>
         queryBus.dispatch<GetPageByRefQuery, PageDto | null>(
-            new GetPageByRefQuery(input.pageType, input.pageRef, includeHidden),
+            new GetPageByRefQuery(input.pageType, input.pageRef, includeHidden, forEditor),
         );
 
     app.get<{ Querystring: PageRefInput }>(
         '/pages/by-ref',
         { config: { anonymousRead: true }, schema: { querystring: pageRefSchema } },
-        async (req, reply) => reply.send(await readByRef(req.query, hasPrivateRead(req))),
+        async (req, reply) => reply.send(await readByRef(req.query, hasPrivateRead(req), false)),
     );
 
     app.get<{ Querystring: PageRefInput }>(
         '/pages/private/by-ref',
         { preHandler: requirePrivateRead, schema: { querystring: pageRefSchema } },
-        async (req, reply) => sendPage(reply, await readByRef(req.query, true)),
+        async (req, reply) => sendPage(reply, await readByRef(req.query, true, true)),
     );
 
     app.get<{ Params: { id: string } }>(
@@ -103,7 +103,7 @@ export const pageRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
         { preHandler: requireRole(UserRole.EDIT), schema: { body: pageRefSchema } },
         async (req, reply) => {
             await commandBus.dispatch(new EnsurePageCommand(crypto.randomUUID(), req.body.pageType, req.body.pageRef));
-            return sendPage(reply, await readByRef(req.body, true));
+            return sendPage(reply, await readByRef(req.body, true, true));
         },
     );
 

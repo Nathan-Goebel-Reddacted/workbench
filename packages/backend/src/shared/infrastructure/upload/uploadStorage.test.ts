@@ -130,3 +130,46 @@ describe('UploadStorage — balayage des orphelins', () => {
         expect(await sweeper(join(dir, 'absent'), new Set()).purgeUnreferenced(new Date())).toEqual([]);
     });
 });
+
+describe('UploadStorage — présence des fichiers', () => {
+    it('ne signale que les fichiers locaux absents du disque', async () => {
+        const dir = await mkdtemp(join(tmpdir(), 'uploads-'));
+        await writeFile(join(dir, 'present.png'), 'x');
+        const em = { getConnection: () => ({ execute: vi.fn() }) } as unknown as EntityManager;
+
+        const missing = await new UploadStorage(em, SOURCES, dir).missing([
+            '/uploads/present.png',
+            '/uploads/absent.png',
+            'https://example.com/uploads/absent.png',
+        ]);
+
+        expect([...missing]).toEqual(['/uploads/absent.png']);
+    });
+});
+
+describe('UploadStorage — libération', () => {
+    async function storageOn(referenced: boolean) {
+        const dir = await mkdtemp(join(tmpdir(), 'uploads-'));
+        await writeFile(join(dir, 'a.png'), 'x');
+        const em = {
+            getConnection: () => ({ execute: vi.fn(async () => [{ referenced }]) }),
+        } as unknown as EntityManager;
+        return { dir, storage: new UploadStorage(em, SOURCES, dir) };
+    }
+
+    it('garde un fichier qu’une autre donnée cite encore', async () => {
+        const { dir, storage: uploads } = await storageOn(true);
+
+        await uploads.releaseFromContent({ url: '/uploads/a.png' });
+
+        expect(await readdir(dir)).toEqual(['a.png']);
+    });
+
+    it('supprime un fichier que plus rien ne cite', async () => {
+        const { dir, storage: uploads } = await storageOn(false);
+
+        await uploads.releaseFromContent({ url: '/uploads/a.png' });
+
+        expect(await readdir(dir)).toEqual([]);
+    });
+});

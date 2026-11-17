@@ -8,6 +8,7 @@ import { IPageRepository, PageVersionConflictError } from '../domain/repository/
 import type { IUploadStorage } from '@shared/application/port/iUploadStorage.js';
 import type { IPageVisibility } from '../domain/port/iPageVisibility.js';
 import type { IProjectDestinations, LinkDestination } from '../domain/port/iProjectDestinations.js';
+import type { PageReaders } from './query/pageDtoMapper.js';
 import { NotFoundError } from '@shared/application/errors/notFoundError.js';
 import { PageMutator } from './command/pageMutator.js';
 import { EnsurePageHandler } from './command/ensurePage/ensurePageHandler.js';
@@ -77,6 +78,13 @@ function destinations(known: Record<string, LinkDestination> = {}): IProjectDest
             return new Map(projectIds.flatMap(id => (known[id] ? [[id, known[id]] as const] : [])));
         },
     };
+}
+
+function readers(
+    destinationsPort: IProjectDestinations = destinations(),
+    missing: readonly string[] = [],
+): PageReaders {
+    return { destinations: destinationsPort, presence: { missing: async () => new Set(missing) } };
 }
 
 async function pageWithElement() {
@@ -225,7 +233,7 @@ describe('GetPageByRefHandler', () => {
     }
 
     it('rend la Page publique avec sa largeur de référence', async () => {
-        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(true), destinations());
+        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(true), readers());
 
         const dto = await handler.handle(new GetPageByRefQuery('project', PAGE_REF));
 
@@ -234,7 +242,7 @@ describe('GetPageByRefHandler', () => {
 
     it('dit qu’une Page a du contenu dès qu’un Element en porte un, comme la destination des projets', async () => {
         const { repository, mutator, pageId } = await pageWithElement();
-        const handler = new GetPageByRefHandler(repository, visibility(true), destinations());
+        const handler = new GetPageByRefHandler(repository, visibility(true), readers());
         const read = () => handler.handle(new GetPageByRefQuery('portfolio', PAGE_REF));
 
         expect((await read())?.hasContent).toBe(false);
@@ -245,14 +253,14 @@ describe('GetPageByRefHandler', () => {
     });
 
     it('tait une Page masquée', async () => {
-        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(false), destinations());
+        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(false), readers());
 
         expect(await handler.handle(new GetPageByRefQuery('project', PAGE_REF))).toBeNull();
     });
 
     it('rend une Page masquée à la lecture privée', async () => {
         const hidden = visibility(false);
-        const handler = new GetPageByRefHandler(await repositoryWithPage(), hidden, destinations());
+        const handler = new GetPageByRefHandler(await repositoryWithPage(), hidden, readers());
 
         const dto = await handler.handle(new GetPageByRefQuery('project', PAGE_REF, true));
 
@@ -261,7 +269,7 @@ describe('GetPageByRefHandler', () => {
     });
 
     it('refuse un type de Page inconnu', async () => {
-        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(true), destinations());
+        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(true), readers());
 
         await expect(handler.handle(new GetPageByRefQuery('galerie', PAGE_REF))).rejects.toThrow();
     });
@@ -275,7 +283,7 @@ describe('destination des Links vers un projet', () => {
         const { repository, mutator, pageId } = await pageWithElement();
         await new SetComponentHandler(mutator).handle(new SetComponentCommand(pageId, ELEMENT, 'link', link));
         const port = destinations(known);
-        const dto = await new GetPageByRefHandler(repository, { isPublic: async () => true }, port).handle(
+        const dto = await new GetPageByRefHandler(repository, { isPublic: async () => true }, readers(port)).handle(
             new GetPageByRefQuery('portfolio', PAGE_REF),
         );
         return { link: dto?.elements[0].components.link, port };
@@ -304,5 +312,66 @@ describe('destination des Links vers un projet', () => {
         const { link } = await readWithLink({ url: 'https://example.com' }, {});
 
         expect(link).toMatchObject({ url: 'https://example.com/', destination: null });
+    });
+});
+
+describe('fichiers manquants', () => {
+    async function pageWith(kind: string, value: Record<string, unknown>) {
+        const setup = await pageWithElement();
+        await new SetComponentHandler(setup.mutator).handle(
+            new SetComponentCommand(setup.pageId, ELEMENT, kind, value),
+        );
+        return setup;
+    }
+
+    function read(repository: InMemoryPageRepository, missing: string[], forEditor: boolean) {
+        return new GetPageByRefHandler(
+            repository,
+            { isPublic: async () => true },
+            readers(destinations(), missing),
+        ).handle(new GetPageByRefQuery('portfolio', PAGE_REF, forEditor, forEditor));
+    }
+
+    it('retire du site public un Media dont le fichier manque, et le signale à l’éditeur', async () => {
+        const { repository } = await pageWith('media', { url: '/uploads/a.png' });
+
+        expect((await read(repository, ['/uploads/a.png'], false))?.elements).toEqual([]);
+
+        const editor = await read(repository, ['/uploads/a.png'], true);
+        expect(editor?.elements[0]).toMatchObject({
+            components: { media: { url: '/uploads/a.png' } },
+            issues: [{ kind: 'missingFile', url: '/uploads/a.png' }],
+        });
+    });
+
+    it('retire les slides perdues d’un Carousel, puis l’Element quand il n’en reste aucune', async () => {
+        const { repository } = await pageWith('carousel', {
+            items: [{ url: '/uploads/a.png' }, { url: '/uploads/b.png' }],
+        });
+
+        const partial = await read(repository, ['/uploads/a.png'], false);
+        expect(partial?.elements[0].components.carousel).toEqual({ items: [{ url: '/uploads/b.png', caption: '' }] });
+
+        const none = await read(repository, ['/uploads/a.png', '/uploads/b.png'], false);
+        expect(none?.elements).toEqual([]);
+    });
+
+    it('garde tel quel un Element dont les fichiers sont présents', async () => {
+        const { repository } = await pageWith('media', { url: 'https://example.com/a.png' });
+
+        const dto = await read(repository, [], false);
+
+        expect(dto?.elements[0]).toMatchObject({
+            components: { media: { url: 'https://example.com/a.png' } },
+            issues: [],
+        });
+    });
+
+    it('confie au stockage le fichier d’un Media retiré, qui le garde s’il est encore cité ailleurs', async () => {
+        const { mutator, uploads, pageId } = await pageWith('media', { url: '/uploads/a.png' });
+
+        await new RemoveComponentHandler(mutator).handle(new RemoveComponentCommand(pageId, ELEMENT, 'media'));
+
+        expect(uploads.released).toEqual([[{ url: '/uploads/a.png', alt: '', fit: 'contain', position: 'center' }]]);
     });
 });

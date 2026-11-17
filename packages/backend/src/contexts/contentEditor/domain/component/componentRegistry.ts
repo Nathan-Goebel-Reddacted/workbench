@@ -11,13 +11,39 @@ export type ComponentDescriptor = Readonly<{
     flow: 'text' | 'visual';
     normalize: (component: ComponentReader) => ComponentValue;
     describe: string;
+    files?: (value: ComponentValue) => string[];
+    withoutFiles?: (value: ComponentValue, missing: ReadonlySet<string>) => ComponentValue | null;
 }>;
 
 export const TEXT_SCALES = ['normal', 'large', 'display'] as const;
+export const IMAGE_FITS = ['contain', 'cover', 'fill'] as const;
+export const IMAGE_POSITIONS = [
+    'top left',
+    'top',
+    'top right',
+    'left',
+    'center',
+    'right',
+    'bottom left',
+    'bottom',
+    'bottom right',
+] as const;
+export const MAX_CAROUSEL_ITEMS = 50;
 export const MAX_BORDER_WIDTH = 32;
 export const MAX_RADIUS = 256;
 
 const COLOR = '{ theme: "--color-…" } | { hex: "#rrggbb" } | null';
+const URL_SHAPE = 'http(s) URL | /uploads/… | null';
+
+type CarouselItem = Readonly<{ url: string | null; caption: string }>;
+
+function urlOf(value: ComponentValue): string[] {
+    return typeof value.url === 'string' ? [value.url] : [];
+}
+
+function itemsOf(value: ComponentValue): CarouselItem[] {
+    return Array.isArray(value.items) ? (value.items as CarouselItem[]) : [];
+}
 
 export const COMPONENT_REGISTRY = {
     text: {
@@ -30,6 +56,47 @@ export const COMPONENT_REGISTRY = {
             color: component.color('color'),
         }),
         describe: `Rich text. { html: string (TipTap HTML), scale: ${TEXT_SCALES.join(' | ')}, color: ${COLOR} }`,
+    },
+    media: {
+        role: 'content',
+        interactive: false,
+        flow: 'visual',
+        normalize: component => ({
+            url: component.safeUrl('url'),
+            alt: component.string('alt'),
+            fit: component.oneOf('fit', IMAGE_FITS, 'contain'),
+            position: component.oneOf('position', IMAGE_POSITIONS, 'center'),
+        }),
+        describe:
+            `An image, a video, a PDF or a mindmap, chosen by its file. { url: ${URL_SHAPE}, alt: string, ` +
+            `fit: ${IMAGE_FITS.join(' | ')}, position: ${IMAGE_POSITIONS.join(' | ')} }`,
+        files: urlOf,
+        withoutFiles: (value, missing) => (urlOf(value).some(url => missing.has(url)) ? null : value),
+    },
+    carousel: {
+        role: 'content',
+        interactive: false,
+        flow: 'visual',
+        normalize: component => {
+            const items = component.list('items').map(item => ({
+                url: item.safeUrl('url'),
+                caption: item.string('caption'),
+            }));
+            if (items.length > MAX_CAROUSEL_ITEMS) {
+                return component.invalid('items', `at most ${MAX_CAROUSEL_ITEMS} items`, {
+                    items: items.slice(0, MAX_CAROUSEL_ITEMS),
+                });
+            }
+            return { items };
+        },
+        describe: `A row of captioned images. { items: [{ url: ${URL_SHAPE}, caption: string }] (at most ${MAX_CAROUSEL_ITEMS}) }`,
+        files: value => itemsOf(value).flatMap(item => (item.url ? [item.url] : [])),
+        withoutFiles: (value, missing) => {
+            const items = itemsOf(value);
+            const kept = items.filter(item => !item.url || !missing.has(item.url));
+            if (kept.length === items.length) return value;
+            return kept.some(item => item.url) ? { ...value, items: kept } : null;
+        },
     },
     surface: {
         role: 'facet',
