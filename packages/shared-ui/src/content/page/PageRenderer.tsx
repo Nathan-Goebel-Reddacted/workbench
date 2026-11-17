@@ -7,10 +7,11 @@ import { useContainerWidth } from './useContainerWidth'
 type Props = {
   page: PageDto
   overlay?: (element: PageElement, scale: number) => ReactNode
+  foreground?: (scale: number) => ReactNode
   extraHeight?: number
 }
 
-export function PageRenderer({ page, overlay, extraHeight = 0 }: Props) {
+export function PageRenderer({ page, overlay, foreground, extraHeight = 0 }: Props) {
   const { ref, width } = useContainerWidth<HTMLDivElement>()
   const { referenceWidth, elements } = page
   const scale = pageScale(width, referenceWidth)
@@ -26,6 +27,7 @@ export function PageRenderer({ page, overlay, extraHeight = 0 }: Props) {
             {overlay?.(element, scale)}
           </div>
         ))}
+        {foreground && <div style={{ ...foregroundStyle, zIndex: elements.length + 1 }}>{foreground(scale)}</div>}
       </div>
     </div>
   )
@@ -41,6 +43,8 @@ const frameStyle: CSSProperties = {
   margin: '0 auto',
   overflow: 'hidden',
 }
+
+const foregroundStyle: CSSProperties = { position: 'absolute', inset: 0, pointerEvents: 'none' }
 
 const canvasStyle: CSSProperties = {
   position: 'absolute',

@@ -7,6 +7,8 @@ export type TicketMedia = { ticketId: string; reference: string; title: string; 
 export type FeatureMedia = { featureId: string; featureName: string; images: MediaItem[]; tickets: TicketMedia[] }
 export type ProjectMedia = { projectId: string; projectName: string; images: MediaItem[]; features: FeatureMedia[] }
 
+export type ReorderDirection = 'forward' | 'backward'
+
 export type MediaKind = 'image' | 'video' | 'mindmap' | 'document'
 
 export type BindableProject = { id: string; name: string }

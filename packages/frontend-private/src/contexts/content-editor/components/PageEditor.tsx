@@ -4,6 +4,7 @@ import { PageRenderer, pageScale, type ElementTransform, type PageElement } from
 import { usePage } from '../hooks/usePage'
 import type { PageType } from '../widgets'
 import { ElementFrame } from './canvas/ElementFrame'
+import { collectGuides, type GuideLines } from './canvas/canvasGestures'
 import { ElementInspector } from './inspector/ElementInspector'
 
 const EDITING_ROOM = 320
@@ -11,12 +12,10 @@ const EDITING_ROOM = 320
 type Props = { pageType: PageType; pageRef: string }
 
 export function PageEditor({ pageType, pageRef }: Props) {
-  const { page, status, revision, canEdit, beginInteraction, add, move, set, unset, remove } = usePage(
-    pageType,
-    pageRef,
-  )
+  const { page, status, revision, canEdit, beginInteraction, add, move, reorder, duplicate, set, unset, remove } =
+    usePage(pageType, pageRef)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [preview, setPreview] = useState<{ id: string; transform: ElementTransform } | null>(null)
+  const [preview, setPreview] = useState<{ id: string; transform: ElementTransform; lines: GuideLines } | null>(null)
   const scroller = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLDivElement>(null)
 
@@ -48,11 +47,27 @@ export function PageEditor({ pageType, pageRef }: Props) {
       selected={element.id === selected?.id}
       editable={canEdit}
       onSelect={() => setSelectedId(element.id)}
-      onPreview={transform => setPreview({ id: element.id, transform })}
+      guides={() =>
+        collectGuides(
+          page.elements.filter(other => other.id !== element.id).map(other => other.transform),
+          page.referenceWidth,
+        )
+      }
+      onPreview={({ transform, lines }) => setPreview({ id: element.id, transform, lines })}
       onCommit={transform => void move(element.id, transform).finally(() => setPreview(null))}
       beginInteraction={beginInteraction}
     />
   )
+
+  const guideLines = (scale: number) =>
+    preview && (
+      <>
+        {preview.lines.x !== null && <div style={{ ...verticalLineStyle, left: preview.lines.x, width: 1 / scale }} />}
+        {preview.lines.y !== null && (
+          <div style={{ ...horizontalLineStyle, top: preview.lines.y, height: 1 / scale }} />
+        )}
+      </>
+    )
 
   return (
     <div style={layoutStyle}>
@@ -70,7 +85,13 @@ export function PageEditor({ pageType, pageRef }: Props) {
           </p>
         )}
         <div ref={canvas} style={{ ...canvasStyle, maxWidth: page.referenceWidth }}>
-          <PageRenderer key={revision} page={shown} overlay={overlay} extraHeight={canEdit ? EDITING_ROOM : 0} />
+          <PageRenderer
+            key={revision}
+            page={shown}
+            overlay={overlay}
+            foreground={guideLines}
+            extraHeight={canEdit ? EDITING_ROOM : 0}
+          />
         </div>
       </div>
       {selected && (
@@ -84,6 +105,8 @@ export function PageEditor({ pageType, pageRef }: Props) {
               setSelectedId(null)
               void remove(selected.id)
             }}
+            onDuplicate={() => void duplicate(selected.id).then(copy => copy && setSelectedId(copy))}
+            onReorder={direction => void reorder(selected.id, direction)}
             beginInteraction={beginInteraction}
           />
         </div>
@@ -108,6 +131,18 @@ const canvasStyle: CSSProperties = {
   width: '100%',
   margin: '0 auto',
   outline: '1px solid var(--color-border)',
+}
+const verticalLineStyle: CSSProperties = {
+  position: 'absolute',
+  top: 0,
+  bottom: 0,
+  backgroundColor: 'var(--color-primary)',
+}
+const horizontalLineStyle: CSSProperties = {
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  backgroundColor: 'var(--color-primary)',
 }
 const inspectorSlotStyle: CSSProperties = { display: 'flex', minHeight: 0 }
 const inviteStyle: CSSProperties = { margin: 0, fontSize: '0.875rem', color: 'var(--color-text-muted)' }

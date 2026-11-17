@@ -1,7 +1,8 @@
 import { useRef, type CSSProperties, type PointerEvent } from 'react'
 import type { ElementTransform } from '@content'
+import { drag, resize, type GestureResult, type Guides, type Handle as GestureHandle } from './canvasGestures'
 
-type Handle = { dx: -1 | 0 | 1; dy: -1 | 0 | 1; cursor: string }
+type Handle = GestureHandle & { cursor: string }
 
 const HANDLES: Handle[] = [
   { dx: -1, dy: -1, cursor: 'nwse-resize' },
@@ -16,7 +17,14 @@ const HANDLES: Handle[] = [
 
 const HANDLE_SIZE = 10
 
-type Gesture = { startX: number; startY: number; origin: ElementTransform; handle: Handle | null; end: () => void }
+type Gesture = {
+  startX: number
+  startY: number
+  origin: ElementTransform
+  handle: Handle | null
+  guides: Guides
+  end: () => void
+}
 
 type Props = {
   transform: ElementTransform
@@ -25,7 +33,8 @@ type Props = {
   selected: boolean
   editable: boolean
   onSelect: () => void
-  onPreview: (transform: ElementTransform) => void
+  guides: () => Guides
+  onPreview: (result: GestureResult) => void
   onCommit: (transform: ElementTransform) => void
   beginInteraction: () => () => void
 }
@@ -47,6 +56,7 @@ export function ElementFrame(props: Props) {
       startY: event.clientY,
       origin: transform,
       handle,
+      guides: props.guides(),
       end: props.beginInteraction(),
     }
   }
@@ -56,10 +66,11 @@ export function ElementFrame(props: Props) {
     if (!current) return
     const dx = Math.round((event.clientX - current.startX) / scale)
     const dy = Math.round((event.clientY - current.startY) / scale)
+    const guides = event.altKey ? null : current.guides
     const next = current.handle
-      ? resize(current.origin, current.handle, dx, dy, props.referenceWidth)
-      : drag(current.origin, dx, dy, props.referenceWidth)
-    latest.current = next
+      ? resize(current.origin, current.handle, dx, dy, props.referenceWidth, guides)
+      : drag(current.origin, dx, dy, props.referenceWidth, guides)
+    latest.current = next.transform
     props.onPreview(next)
   }
 
@@ -99,39 +110,6 @@ export function ElementFrame(props: Props) {
         ))}
     </div>
   )
-}
-
-function drag(origin: ElementTransform, dx: number, dy: number, referenceWidth: number): ElementTransform {
-  return {
-    ...origin,
-    x: clamp(origin.x + dx, 0, referenceWidth - origin.w),
-    y: Math.max(0, origin.y + dy),
-  }
-}
-
-function resize(
-  origin: ElementTransform,
-  handle: Handle,
-  dx: number,
-  dy: number,
-  referenceWidth: number,
-): ElementTransform {
-  let { x, y, w, h } = origin
-  if (handle.dx === 1) w = clamp(origin.w + dx, 1, referenceWidth - origin.x)
-  if (handle.dx === -1) {
-    x = clamp(origin.x + dx, 0, origin.x + origin.w - 1)
-    w = origin.w + origin.x - x
-  }
-  if (handle.dy === 1) h = Math.max(1, origin.h + dy)
-  if (handle.dy === -1) {
-    y = clamp(origin.y + dy, 0, origin.y + origin.h - 1)
-    h = origin.h + origin.y - y
-  }
-  return { x, y, w, h }
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
 }
 
 function sameTransform(a: ElementTransform, b: ElementTransform): boolean {

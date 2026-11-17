@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { Button, ConfirmDeleteButton } from '@atelier/shared-ui'
 import type { ComponentKind, ElementComponents, PageElement } from '@content'
+import type { ReorderDirection } from '../../types'
 import { COMPONENT_KINDS, COMPONENT_REGISTRY } from '../componentRegistry'
 
 type Props = {
@@ -8,10 +9,13 @@ type Props = {
   onSet: (kind: ComponentKind, value: object) => void
   onUnset: (kind: ComponentKind) => void
   onDelete: () => void
+  onDuplicate: () => void
+  onReorder: (direction: ReorderDirection) => void
   beginInteraction: () => () => void
 }
 
-export function ElementInspector({ element, onSet, onUnset, onDelete, beginInteraction }: Props) {
+export function ElementInspector(props: Props) {
+  const { element, onSet, onUnset, onDelete, onDuplicate, onReorder, beginInteraction } = props
   const present = COMPONENT_KINDS.filter(kind => element.components[kind])
   const absent = COMPONENT_KINDS.filter(kind => !element.components[kind])
 
@@ -21,6 +25,17 @@ export function ElementInspector({ element, onSet, onUnset, onDelete, beginInter
         <h2 style={titleStyle}>Element</h2>
         <ConfirmDeleteButton onConfirm={onDelete} label="Delete" confirmLabel="Confirm" />
       </header>
+      <div style={addRowStyle}>
+        <Button variant="secondary" onClick={onDuplicate}>
+          Duplicate
+        </Button>
+        <Button variant="ghost" onClick={() => onReorder('forward')}>
+          Bring forward
+        </Button>
+        <Button variant="ghost" onClick={() => onReorder('backward')}>
+          Send backward
+        </Button>
+      </div>
 
       {present.map(kind => (
         <section key={`${element.id}-${kind}`} style={sectionStyle}>

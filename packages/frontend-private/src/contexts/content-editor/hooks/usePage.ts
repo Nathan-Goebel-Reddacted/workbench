@@ -3,8 +3,18 @@ import { useShowPopup } from '@atelier/shared-ui'
 import { clearBindingCache, type ComponentKind, type ElementTransform, type PageElement } from '@content'
 import { errorDetailOr } from '../../../shared/api/errors'
 import { useCanEdit } from '../../../shared/auth/EditPermissionContext'
-import { addElement, deleteElement, ensurePage, moveElement, readPage, removeComponent, setComponent } from '../api'
-import type { Page } from '../types'
+import {
+  addElement,
+  deleteElement,
+  duplicateElement,
+  ensurePage,
+  moveElement,
+  readPage,
+  removeComponent,
+  reorderElement,
+  setComponent,
+} from '../api'
+import type { Page, ReorderDirection } from '../types'
 import type { PageType } from '../widgets'
 
 type Status = 'loading' | 'ready' | 'error'
@@ -79,6 +89,17 @@ export function usePage(pageType: PageType, pageRef: string) {
     return run(() => moveElement(pageId, elementId, transform), 'Could not move the element.')
   }
 
+  const reorder = (elementId: string, direction: ReorderDirection) =>
+    run(() => reorderElement(pageId, elementId, direction), 'Could not reorder the element.')
+
+  const duplicate = async (elementId: string): Promise<string | null> => {
+    let copy: string | null = null
+    await run(async () => {
+      copy = (await duplicateElement(pageId, elementId)).id
+    }, 'Could not duplicate the element.')
+    return copy
+  }
+
   const set = (elementId: string, kind: ComponentKind, value: object) =>
     run(() => setComponent(pageId, elementId, kind, value), 'Could not save the component.')
 
@@ -87,5 +108,5 @@ export function usePage(pageType: PageType, pageRef: string) {
 
   const remove = (elementId: string) => run(() => deleteElement(pageId, elementId), 'Could not delete the element.')
 
-  return { page, status, revision, canEdit, beginInteraction, add, move, set, unset, remove }
+  return { page, status, revision, canEdit, beginInteraction, add, move, reorder, duplicate, set, unset, remove }
 }

@@ -1,6 +1,6 @@
 import type { ComponentKind, ElementTransform, PageType } from '@content'
 import { HttpError, getJson, send, sendJson } from '../../shared/api/http'
-import type { MediaKind, Page, ProjectMedia } from './types'
+import type { MediaKind, Page, ProjectMedia, ReorderDirection } from './types'
 
 const MEDIA_ENDPOINTS: Record<MediaKind, string> = {
   image: '/media/images',
@@ -29,6 +29,14 @@ export function addElement(pageId: string, visibleTop: number): Promise<{ id: st
 
 export function moveElement(pageId: string, elementId: string, transform: ElementTransform): Promise<void> {
   return send(`/pages/${pageId}/elements/${elementId}/transform`, { method: 'PATCH', body: transform })
+}
+
+export function reorderElement(pageId: string, elementId: string, direction: ReorderDirection): Promise<void> {
+  return send(`/pages/${pageId}/elements/${elementId}/reorder`, { method: 'POST', body: { direction } })
+}
+
+export function duplicateElement(pageId: string, elementId: string): Promise<{ id: string }> {
+  return sendJson<{ id: string }>(`/pages/${pageId}/elements/${elementId}/duplicate`, { method: 'POST' })
 }
 
 export function setComponent(pageId: string, elementId: string, kind: ComponentKind, value: object): Promise<void> {
