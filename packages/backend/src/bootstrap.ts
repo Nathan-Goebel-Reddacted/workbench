@@ -330,6 +330,7 @@ import { SearchErrorLogHandler } from '@contexts/errorLog/application/query/sear
 import { MediaLibrary } from '@contexts/contentEditor/infrastructure/gateway/mediaLibrary';
 import { PageVisibility } from '@contexts/contentEditor/infrastructure/gateway/pageVisibility';
 import { ProjectDestinations } from '@contexts/contentEditor/infrastructure/gateway/projectDestinations';
+import { SiteOrigins } from '@contexts/contentEditor/domain/valueObject/siteOrigins';
 import { ProjectPageGateway } from '@contexts/project/infrastructure/gateway/projectPageGateway';
 
 // --- Registre des fichiers uploadés ---
@@ -567,7 +568,10 @@ export function bootstrap(
     commandBus.register(MoveElementCommand.commandName, new MoveElementHandler(pages));
     commandBus.register(ReorderElementCommand.commandName, new ReorderElementHandler(pages));
     commandBus.register(DuplicateElementCommand.commandName, new DuplicateElementHandler(pages));
-    commandBus.register(SetComponentCommand.commandName, new SetComponentHandler(pages));
+    commandBus.register(
+        SetComponentCommand.commandName,
+        new SetComponentHandler(pages, new SiteOrigins([env.FRONTEND_PUBLIC_URL, env.FRONTEND_PRIVATE_URL])),
+    );
     commandBus.register(RemoveComponentCommand.commandName, new RemoveComponentHandler(pages));
     commandBus.register(DeleteElementCommand.commandName, new DeleteElementHandler(pages));
     const pageReaders = { destinations: new ProjectDestinations(repos.project, repos.page), presence: uploads };

@@ -11,6 +11,7 @@ import {
     normalizeComponent,
 } from '../component/componentRegistry';
 import { ContentAlreadyPresentException } from '../exception/contentAlreadyPresent';
+import { SiteOrigins } from '../valueObject/siteOrigins';
 import { LinkOnInteractiveContentException } from '../exception/linkOnInteractiveContent';
 
 export type ElementComponents = Partial<Record<ComponentKind, ComponentValue>>;
@@ -63,13 +64,17 @@ export class Element {
         this.transform = transform;
     }
 
-    setComponent(kind: ComponentKind, raw: unknown): ComponentValue | null {
+    setComponent(
+        kind: ComponentKind,
+        raw: unknown,
+        siteOrigins: SiteOrigins = SiteOrigins.none(),
+    ): ComponentValue | null {
         const kinds = Element.kindsOf(this.components);
         const present = contentConflict(kinds, kind, COMPONENT_REGISTRY);
         if (present) throw new ContentAlreadyPresentException(present, kind);
         const interactive = linkConflict(kinds, kind, COMPONENT_REGISTRY, LINK_KIND);
         if (interactive) throw new LinkOnInteractiveContentException(interactive);
-        const value = normalizeComponent(kind, raw, true) as ComponentValue;
+        const value = normalizeComponent(kind, raw, true, siteOrigins) as ComponentValue;
         const previous = this.components[kind] ?? null;
         this.components = { ...this.components, [kind]: value };
         return previous;

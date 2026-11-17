@@ -2,6 +2,7 @@ import { ComponentReader } from './componentReader';
 import { InvalidComponentException } from '../exception/invalidComponent';
 import { UnknownComponentKindException } from '../exception/unknownComponentKind';
 import { sanitizeInlineColors } from './inlineColors';
+import { SiteOrigins } from '../valueObject/siteOrigins';
 
 export type ComponentValue = Readonly<Record<string, unknown>>;
 
@@ -29,6 +30,8 @@ export const IMAGE_POSITIONS = [
     'bottom right',
 ] as const;
 export const MAX_CAROUSEL_ITEMS = 50;
+export const MAX_LINK_LIST_ITEMS = 50;
+export const LINK_LIST_STYLES = ['link', 'solid', 'outline'] as const;
 export const MAX_BORDER_WIDTH = 32;
 export const MAX_RADIUS = 256;
 
@@ -98,6 +101,54 @@ export const COMPONENT_REGISTRY = {
             return kept.some(item => item.url) ? { ...value, items: kept } : null;
         },
     },
+    code: {
+        role: 'content',
+        interactive: false,
+        flow: 'text',
+        normalize: component => ({
+            code: component.string('code'),
+            language: component.string('language'),
+            wrap: component.boolean('wrap', false),
+        }),
+        describe: 'A code snippet, shown as is. { code: string, language: string (label only), wrap: boolean }',
+    },
+    embed: {
+        role: 'content',
+        interactive: true,
+        flow: 'visual',
+        normalize: component => ({
+            url: component.embedUrl('url'),
+            title: component.string('title'),
+        }),
+        describe: 'An external page in a sandboxed frame. { url: https URL of another site | null, title: string }',
+    },
+    linkList: {
+        role: 'content',
+        interactive: true,
+        flow: 'text',
+        normalize: component => {
+            const links = component.list('links').map(link => ({
+                url: link.safeUrl('url'),
+                label: link.string('label'),
+                logo: link.safeUrl('logo'),
+                newTab: link.boolean('newTab', true),
+            }));
+            const value = {
+                links: links.slice(0, MAX_LINK_LIST_ITEMS),
+                style: component.oneOf('style', LINK_LIST_STYLES, 'link'),
+                color: component.color('color'),
+                fill: component.color('fill'),
+            };
+            if (links.length > MAX_LINK_LIST_ITEMS) {
+                return component.invalid('links', `at most ${MAX_LINK_LIST_ITEMS} links`, value);
+            }
+            return value;
+        },
+        describe:
+            `A list of external links with logos. { links: [{ url: ${URL_SHAPE}, label: string, logo: ${URL_SHAPE}, ` +
+            `newTab: boolean }] (at most ${MAX_LINK_LIST_ITEMS}), style: ${LINK_LIST_STYLES.join(' | ')}, ` +
+            `color: ${COLOR} (text and outline), fill: ${COLOR} (solid buttons) }`,
+    },
     surface: {
         role: 'facet',
         interactive: false,
@@ -147,12 +198,19 @@ export function parseComponentKind(kind: string): ComponentKind {
     return kind;
 }
 
-export function normalizeComponent(kind: ComponentKind, raw: unknown, strict: boolean): ComponentValue | null {
+export function normalizeComponent(
+    kind: ComponentKind,
+    raw: unknown,
+    strict: boolean,
+    siteOrigins: SiteOrigins = SiteOrigins.none(),
+): ComponentValue | null {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
         if (strict) throw new InvalidComponentException(kind, 'an object');
         return null;
     }
-    return COMPONENT_REGISTRY[kind].normalize(new ComponentReader(raw as Record<string, unknown>, strict, kind));
+    return COMPONENT_REGISTRY[kind].normalize(
+        new ComponentReader(raw as Record<string, unknown>, strict, kind, siteOrigins),
+    );
 }
 
 export function linkConflict<K extends string>(

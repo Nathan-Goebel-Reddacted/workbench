@@ -11,6 +11,7 @@ import type { IProjectDestinations, LinkDestination } from '../domain/port/iProj
 import type { PageReaders } from './query/pageDtoMapper.js';
 import { NotFoundError } from '@shared/application/errors/notFoundError.js';
 import { PageMutator } from './command/pageMutator.js';
+import { SiteOrigins } from '../domain/valueObject/siteOrigins.js';
 import { EnsurePageHandler } from './command/ensurePage/ensurePageHandler.js';
 import { EnsurePageCommand } from './command/ensurePage/ensurePageCommand.js';
 import { AddElementHandler } from './command/addElement/addElementHandler.js';
@@ -154,7 +155,7 @@ describe('commandes sur les Elements', () => {
 
     it('libère l’ancien contenu quand on le remplace, pas à la première pose', async () => {
         const { mutator, uploads, pageId } = await pageWithElement();
-        const handler = new SetComponentHandler(mutator);
+        const handler = new SetComponentHandler(mutator, SiteOrigins.none());
 
         await handler.handle(new SetComponentCommand(pageId, ELEMENT, 'text', { html: '<img src="/uploads/a.png">' }));
         expect(uploads.released).toEqual([]);
@@ -165,7 +166,7 @@ describe('commandes sur les Elements', () => {
 
     it('libère le contenu retiré', async () => {
         const { mutator, uploads, pageId, elements } = await pageWithElement();
-        await new SetComponentHandler(mutator).handle(
+        await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
             new SetComponentCommand(pageId, ELEMENT, 'text', { html: '/uploads/a.png' }),
         );
 
@@ -177,7 +178,7 @@ describe('commandes sur les Elements', () => {
 
     it('libère les Components d’un Element supprimé', async () => {
         const { mutator, uploads, pageId, elements } = await pageWithElement();
-        await new SetComponentHandler(mutator).handle(
+        await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
             new SetComponentCommand(pageId, ELEMENT, 'text', { html: '/uploads/a.png' }),
         );
 
@@ -204,7 +205,9 @@ describe('ListPageRefsWithContentHandler', () => {
         await new EnsurePageHandler(repository, new PageFactory()).handle(
             new EnsurePageCommand(crypto.randomUUID(), PageType.PORTFOLIO, empty),
         );
-        await new SetComponentHandler(mutator).handle(new SetComponentCommand(pageId, ELEMENT, 'text', {}));
+        await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
+            new SetComponentCommand(pageId, ELEMENT, 'text', {}),
+        );
         const handler = new ListPageRefsWithContentHandler(repository);
 
         const refs = await handler.handle(new ListPageRefsWithContentQuery('portfolio', [PAGE_REF, empty, missing]));
@@ -247,7 +250,9 @@ describe('GetPageByRefHandler', () => {
 
         expect((await read())?.hasContent).toBe(false);
 
-        await new SetComponentHandler(mutator).handle(new SetComponentCommand(pageId, ELEMENT, 'text', {}));
+        await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
+            new SetComponentCommand(pageId, ELEMENT, 'text', {}),
+        );
 
         expect((await read())?.hasContent).toBe(true);
     });
@@ -281,7 +286,9 @@ describe('destination des Links vers un projet', () => {
 
     async function readWithLink(link: Record<string, unknown>, known: Record<string, LinkDestination>) {
         const { repository, mutator, pageId } = await pageWithElement();
-        await new SetComponentHandler(mutator).handle(new SetComponentCommand(pageId, ELEMENT, 'link', link));
+        await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
+            new SetComponentCommand(pageId, ELEMENT, 'link', link),
+        );
         const port = destinations(known);
         const dto = await new GetPageByRefHandler(repository, { isPublic: async () => true }, readers(port)).handle(
             new GetPageByRefQuery('portfolio', PAGE_REF),
@@ -318,7 +325,7 @@ describe('destination des Links vers un projet', () => {
 describe('fichiers manquants', () => {
     async function pageWith(kind: string, value: Record<string, unknown>) {
         const setup = await pageWithElement();
-        await new SetComponentHandler(setup.mutator).handle(
+        await new SetComponentHandler(setup.mutator, SiteOrigins.none()).handle(
             new SetComponentCommand(setup.pageId, ELEMENT, kind, value),
         );
         return setup;

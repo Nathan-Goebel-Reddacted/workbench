@@ -7,6 +7,7 @@ import { Element } from './entity/element';
 import { ComponentValue, parseComponentKind } from './component/componentRegistry';
 import { ElementNotFoundException } from './exception/elementNotFound';
 import { TooManyElementsException } from './exception/tooManyElements';
+import { SiteOrigins } from './valueObject/siteOrigins';
 
 export const MAX_ELEMENTS = 200;
 export const NEW_ELEMENT_WIDTH = 480;
@@ -91,9 +92,14 @@ export class Page {
         return element;
     }
 
-    setComponent(id: ElementId, kind: string, raw: unknown): ComponentValue | null {
+    setComponent(
+        id: ElementId,
+        kind: string,
+        raw: unknown,
+        siteOrigins: SiteOrigins = SiteOrigins.none(),
+    ): ComponentValue | null {
         const element = this.find(id);
-        return element.setComponent(parseComponentKind(kind), raw);
+        return element.setComponent(parseComponentKind(kind), raw, siteOrigins);
     }
 
     removeComponent(id: ElementId, kind: string): ComponentValue | null {

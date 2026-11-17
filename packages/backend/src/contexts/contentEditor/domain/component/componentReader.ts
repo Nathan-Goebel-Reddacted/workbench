@@ -1,6 +1,7 @@
 import { InvalidComponentException } from '../exception/invalidComponent';
 import { ColorValue, parseColor } from '../valueObject/color';
 import { parseSafeUrl } from '../valueObject/safeUrl';
+import { SiteOrigins } from '../valueObject/siteOrigins';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -11,6 +12,7 @@ export class ComponentReader {
         private readonly raw: Raw,
         private readonly strict: boolean,
         private readonly path: string,
+        private readonly siteOrigins: SiteOrigins = SiteOrigins.none(),
     ) {}
 
     isStrict(): boolean {
@@ -72,6 +74,13 @@ export class ComponentReader {
         return parseSafeUrl(value) ?? this.invalid(key, 'an http(s) URL, an /uploads/ path or a project page', null);
     }
 
+    embedUrl(key: string): string | null {
+        const url = this.safeUrl(key);
+        if (url === null) return null;
+        if (url.startsWith('https://') && !this.siteOrigins.contains(url)) return url;
+        return this.invalid(key, 'an https URL from another site', null);
+    }
+
     uuid(key: string): string | null {
         const value = this.string(key);
         if (value === '') return null;
@@ -91,7 +100,9 @@ export class ComponentReader {
         if (!Array.isArray(value)) return this.invalid(key, 'a list', []);
         return value.flatMap((item, index) => {
             if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
-                return [new ComponentReader(item as Raw, this.strict, `${this.field(key)}[${index}]`)];
+                return [
+                    new ComponentReader(item as Raw, this.strict, `${this.field(key)}[${index}]`, this.siteOrigins),
+                ];
             }
             return this.invalid(`${key}[${index}]`, 'an object', []);
         });

@@ -12,6 +12,8 @@ import { InvalidTransformException } from './exception/invalidTransform.js';
 import { InvalidComponentException } from './exception/invalidComponent.js';
 import { UnknownComponentKindException } from './exception/unknownComponentKind.js';
 import { TooManyElementsException } from './exception/tooManyElements.js';
+import { LinkOnInteractiveContentException } from './exception/linkOnInteractiveContent.js';
+import { SiteOrigins } from './valueObject/siteOrigins.js';
 import { MAX_ELEMENTS } from './pageAggregate.js';
 
 function page(elements: Element[] = []): Page {
@@ -496,5 +498,77 @@ describe('Media et Carousel', () => {
         target.setComponent('media', {});
 
         expect(() => target.setComponent('carousel', {})).toThrow();
+    });
+});
+
+describe('Code, Embed et LinkList', () => {
+    const site = new SiteOrigins(['https://goebel.test', 'https://admin.goebel.test']);
+
+    it('normalise un Code', () => {
+        const target = element();
+
+        target.setComponent('code', { code: 'const a = 1', language: 'ts' });
+
+        expect(target.getComponents().code).toEqual({ code: 'const a = 1', language: 'ts', wrap: false });
+    });
+
+    it('intègre une page https d’un autre site', () => {
+        const target = element();
+
+        target.setComponent('embed', { url: 'https://www.youtube.com/embed/x', title: 'Vidéo' }, site);
+
+        expect(target.getComponents().embed).toEqual({ url: 'https://www.youtube.com/embed/x', title: 'Vidéo' });
+    });
+
+    it.each([
+        'http://example.com',
+        'https://goebel.test/projects',
+        'https://admin.goebel.test',
+        '/uploads/a.pdf',
+        'javascript:alert(1)',
+    ])('refuse d’intégrer %s', url => {
+        expect(() => element().setComponent('embed', { url }, site)).toThrow(InvalidComponentException);
+    });
+
+    it('normalise une LinkList avec ses couleurs', () => {
+        const target = element();
+
+        target.setComponent('linkList', {
+            links: [{ url: 'https://github.com/x', label: 'GitHub', logo: '/uploads/gh.svg' }],
+            style: 'solid',
+            fill: { theme: '--color-primary' },
+        });
+
+        expect(target.getComponents().linkList).toEqual({
+            links: [{ url: 'https://github.com/x', label: 'GitHub', logo: '/uploads/gh.svg', newTab: true }],
+            style: 'solid',
+            color: null,
+            fill: { theme: '--color-primary' },
+        });
+    });
+
+    it.each([
+        [{ links: [{ url: 'javascript:alert(1)' }] }],
+        [{ links: [{ logo: 'data:image/svg+xml,x' }] }],
+        [{ style: 'big' }],
+    ])('refuse la LinkList %j', raw => {
+        expect(() => element().setComponent('linkList', raw)).toThrow(InvalidComponentException);
+    });
+
+    it.each(['embed', 'linkList'] as const)('refuse un Link sur un %s, dans les deux ordres', kind => {
+        const contentFirst = element();
+        contentFirst.setComponent(kind, {});
+        expect(() => contentFirst.setComponent('link', {})).toThrow(LinkOnInteractiveContentException);
+
+        const linkFirst = element();
+        linkFirst.setComponent('link', {});
+        expect(() => linkFirst.setComponent(kind, {})).toThrow(LinkOnInteractiveContentException);
+    });
+
+    it('accepte un Link sur un Code', () => {
+        const target = element();
+        target.setComponent('code', {});
+
+        expect(() => target.setComponent('link', {})).not.toThrow();
     });
 });
