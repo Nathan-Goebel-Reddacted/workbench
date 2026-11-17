@@ -330,6 +330,7 @@ import { SearchErrorLogHandler } from '@contexts/errorLog/application/query/sear
 import { MediaLibrary } from '@contexts/contentEditor/infrastructure/gateway/mediaLibrary';
 import { PageVisibility } from '@contexts/contentEditor/infrastructure/gateway/pageVisibility';
 import { ProjectReferences } from '@contexts/contentEditor/infrastructure/gateway/projectReferences';
+import { BindingTargets } from '@contexts/contentEditor/infrastructure/gateway/bindingTargets';
 import { SiteOrigins } from '@contexts/contentEditor/domain/valueObject/siteOrigins';
 import { ProjectPageGateway } from '@contexts/project/infrastructure/gateway/projectPageGateway';
 
@@ -574,7 +575,11 @@ export function bootstrap(
     );
     commandBus.register(RemoveComponentCommand.commandName, new RemoveComponentHandler(pages));
     commandBus.register(DeleteElementCommand.commandName, new DeleteElementHandler(pages));
-    const pageReaders = { projects: new ProjectReferences(repos.project, repos.page), presence: uploads };
+    const pageReaders = {
+        projects: new ProjectReferences(repos.project, repos.page),
+        presence: uploads,
+        bindings: new BindingTargets(repos.project, repos.feature, repos.ticket),
+    };
     queryBus.register(GetPageByIdQuery.queryName, new GetPageByIdHandler(repos.page, pageReaders));
     queryBus.register(GetPageByRefQuery.queryName, new GetPageByRefHandler(repos.page, pageVisibility, pageReaders));
     queryBus.register(ListPageRefsWithContentQuery.queryName, new ListPageRefsWithContentHandler(repos.page));

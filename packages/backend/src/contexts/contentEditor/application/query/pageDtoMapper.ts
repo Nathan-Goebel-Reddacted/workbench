@@ -9,22 +9,34 @@ import {
     ComponentValue,
 } from '../../domain/component/componentRegistry';
 import { IProjectReferences, LinkDestination, ProjectSummary } from '../../domain/port/iProjectReferences';
+import { IBindingTargets } from '../../domain/port/iBindingTargets';
+import { BindingRef, bindingKey } from '../../domain/component/bindings';
 import { ElementDto, ElementIssue, PageDto } from './pageDto';
 
-export type PageReaders = Readonly<{ projects: IProjectReferences; presence: IUploadPresence }>;
+export type PageReaders = Readonly<{
+    projects: IProjectReferences;
+    presence: IUploadPresence;
+    bindings: IBindingTargets;
+}>;
 
 export type Audience = 'public' | 'editor';
 
-type Cited = Readonly<{ missing: ReadonlySet<string>; projects: ReadonlyMap<string, ProjectSummary> }>;
+type Cited = Readonly<{
+    missing: ReadonlySet<string>;
+    projects: ReadonlyMap<string, ProjectSummary>;
+    missingBindings: ReadonlySet<string>;
+}>;
 
 export async function toPageDto(page: Page, readers: PageReaders, audience: Audience): Promise<PageDto> {
     const elements = page.getElements();
     const components = elements.map(e => e.getComponents());
-    const [missing, projects] = await Promise.all([
+    const bindings = audience === 'editor' ? components.flatMap(bindingsOf) : [];
+    const [missing, projects, missingBindings] = await Promise.all([
         readers.presence.missing(components.flatMap(c => cited(c, 'files').filter(isLocalFile))),
         readers.projects.summariesOf(components.flatMap(c => cited(c, 'projects'))),
+        bindings.length > 0 ? readers.bindings.missing(bindings) : new Set<string>(),
     ]);
-    const known: Cited = { missing, projects };
+    const known: Cited = { missing, projects, missingBindings };
 
     const dtos = elements.flatMap((element, index): ElementDto[] => {
         const issues = issuesOf(components[index], known);
@@ -64,6 +76,10 @@ function cited(components: ElementComponents, what: 'files' | 'projects'): strin
     return entries(components).flatMap(([kind, value]) => descriptorOf(kind)[what]?.(value) ?? []);
 }
 
+function bindingsOf(components: ElementComponents): BindingRef[] {
+    return entries(components).flatMap(([kind, value]) => descriptorOf(kind).bindings?.(value) ?? []);
+}
+
 function isLocalFile(url: string): boolean {
     return url.startsWith('/uploads/');
 }
@@ -79,7 +95,10 @@ function issuesOf(components: ElementComponents, known: Cited): ElementIssue[] {
     const projects = cited(components, 'projects')
         .filter(projectId => !isAvailable(projectId, known))
         .map((projectId): ElementIssue => ({ kind: 'projectUnavailable', projectId }));
-    return [...files, ...projects];
+    const bindings = bindingsOf(components)
+        .filter(ref => known.missingBindings.has(bindingKey(ref)))
+        .map((ref): ElementIssue => ({ kind: 'missingBinding', entity: ref.entity, id: ref.id }));
+    return [...files, ...projects, ...bindings];
 }
 
 function withoutBrokenReferences(components: ElementComponents, known: Cited): ElementComponents | null {

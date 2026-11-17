@@ -11,6 +11,7 @@ import {
     formFields,
 } from './contactForm';
 import { SiteOrigins } from '../valueObject/siteOrigins';
+import { BindingRef, bindingsIn } from './bindings';
 
 export type ComponentValue = Readonly<Record<string, unknown>>;
 
@@ -22,6 +23,7 @@ export type ComponentDescriptor = Readonly<{
     describe: string;
     files?: (value: ComponentValue) => string[];
     projects?: (value: ComponentValue) => string[];
+    bindings?: (value: ComponentValue) => BindingRef[];
     withoutFiles?: (value: ComponentValue, missing: ReadonlySet<string>) => ComponentValue | null;
 }>;
 
@@ -68,6 +70,7 @@ export const COMPONENT_REGISTRY = {
             color: component.color('color'),
         }),
         describe: `Rich text. { html: string (TipTap HTML), scale: ${TEXT_SCALES.join(' | ')}, color: ${COLOR} }`,
+        bindings: value => (typeof value.html === 'string' ? bindingsIn(value.html) : []),
     },
     media: {
         role: 'content',

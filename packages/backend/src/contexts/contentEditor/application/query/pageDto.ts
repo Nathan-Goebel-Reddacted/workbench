@@ -1,6 +1,9 @@
+import { BindingEntity } from '../../domain/component/bindings';
+
 export type ElementIssue =
     | Readonly<{ kind: 'missingFile'; url: string }>
-    | Readonly<{ kind: 'projectUnavailable'; projectId: string }>;
+    | Readonly<{ kind: 'projectUnavailable'; projectId: string }>
+    | Readonly<{ kind: 'missingBinding'; entity: BindingEntity; id: string }>;
 
 export type ElementDto = Readonly<{
     id: string;

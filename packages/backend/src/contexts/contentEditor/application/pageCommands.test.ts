@@ -86,7 +86,11 @@ function projects(known: Record<string, ProjectSummary> = {}): IProjectReference
 }
 
 function readers(projectsPort: IProjectReferences = projects(), missing: readonly string[] = []): PageReaders {
-    return { projects: projectsPort, presence: { missing: async () => new Set(missing) } };
+    return {
+        projects: projectsPort,
+        presence: { missing: async () => new Set(missing) },
+        bindings: { missing: async () => new Set<string>() },
+    };
 }
 
 async function pageWithElement() {
@@ -448,5 +452,50 @@ describe('projets cités', () => {
         );
 
         expect(port.asked).toEqual([[PROJECT, PROJECT]]);
+    });
+});
+
+describe('insertions liées', () => {
+    const FEATURE = '44444444-4444-4444-8444-444444444444';
+    const html = `<p><span data-binding data-entity="feature" data-id="${FEATURE}" data-field="name"></span></p>`;
+
+    async function readText(missingBindings: readonly string[], forEditor: boolean) {
+        const { repository, mutator, pageId } = await pageWithElement();
+        await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
+            new SetComponentCommand(pageId, ELEMENT, 'text', { html }),
+        );
+        let asked: unknown[] = [];
+        const bindingReaders = {
+            ...readers(),
+            bindings: {
+                missing: async (refs: readonly unknown[]) => {
+                    asked = [...refs];
+                    return new Set(missingBindings);
+                },
+            },
+        };
+        const dto = await new GetPageByRefHandler(repository, { isPublic: async () => true }, bindingReaders).handle(
+            new GetPageByRefQuery('portfolio', PAGE_REF, forEditor, forEditor),
+        );
+        return { dto, asked };
+    }
+
+    it('signale à l’éditeur une insertion dont la cible n’existe plus', async () => {
+        const { dto } = await readText([`feature:${FEATURE}`], true);
+
+        expect(dto?.elements[0].issues).toEqual([{ kind: 'missingBinding', entity: 'feature', id: FEATURE }]);
+    });
+
+    it('ne signale rien quand la cible existe', async () => {
+        const { dto } = await readText([], true);
+
+        expect(dto?.elements[0].issues).toEqual([]);
+    });
+
+    it('ne vérifie pas les insertions pour le site public', async () => {
+        const { dto, asked } = await readText([`feature:${FEATURE}`], false);
+
+        expect(asked).toEqual([]);
+        expect(dto?.elements[0].issues).toEqual([]);
     });
 });
