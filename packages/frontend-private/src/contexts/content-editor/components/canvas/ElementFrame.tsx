@@ -31,6 +31,7 @@ type Props = {
   scale: number
   referenceWidth: number
   selected: boolean
+  flagged: boolean
   editable: boolean
   onSelect: () => void
   guides: () => Guides
@@ -40,7 +41,7 @@ type Props = {
 }
 
 export function ElementFrame(props: Props) {
-  const { transform, scale, selected, editable, onSelect } = props
+  const { transform, scale, selected, flagged, editable, onSelect } = props
   const gesture = useRef<Gesture | null>(null)
   const latest = useRef(transform)
 
@@ -96,6 +97,11 @@ export function ElementFrame(props: Props) {
       onPointerUp={finish}
       onPointerCancel={finish}
     >
+      {flagged && (
+        <span style={badgeStyle(scale)} title="This element needs attention">
+          !
+        </span>
+      )}
       {editable &&
         selected &&
         HANDLES.map(handle => (
@@ -128,6 +134,26 @@ function handleStyle({ dx, dy, cursor }: Handle, size: number): CSSProperties {
     border: `${size / HANDLE_SIZE}px solid var(--color-primary)`,
     borderRadius: '2px',
     touchAction: 'none',
+  }
+}
+
+function badgeStyle(scale: number): CSSProperties {
+  const size = 18 / scale
+  return {
+    position: 'absolute',
+    top: -size / 2,
+    right: -size / 2,
+    width: size,
+    height: size,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 12 / scale,
+    fontWeight: 700,
+    color: 'var(--color-bg)',
+    backgroundColor: 'var(--color-primary)',
+    pointerEvents: 'none',
   }
 }
 

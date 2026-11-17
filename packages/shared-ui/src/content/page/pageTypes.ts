@@ -1,5 +1,5 @@
 import type { PageType } from '../section/sectionTypes'
-import type { FormField, ImageFit, ImagePosition, TextScale } from '../section/types'
+import type { BindingEntity, FormField, ImageFit, ImagePosition, TextScale } from '../section/types'
 
 export type ElementTransform = Readonly<{ x: number; y: number; w: number; h: number }>
 
@@ -98,6 +98,7 @@ export type ComponentKind = keyof ElementComponents
 export type ElementIssue =
   | Readonly<{ kind: 'missingFile'; url: string }>
   | Readonly<{ kind: 'projectUnavailable'; projectId: string }>
+  | Readonly<{ kind: 'missingBinding'; entity: BindingEntity; id: string }>
 
 export type PageElement = Readonly<{
   id: string

@@ -6,8 +6,18 @@ import type { PageType } from '../widgets'
 import { ElementFrame } from './canvas/ElementFrame'
 import { collectGuides, type GuideLines } from './canvas/canvasGestures'
 import { ElementInspector } from './inspector/ElementInspector'
+import { useClippedElements } from './canvas/useClippedElements'
+import { PageAlerts, flaggedElements } from './PageAlerts'
 
 const EDITING_ROOM = 320
+
+const PREVIEWS = [
+  { label: '1440', width: 1440 },
+  { label: '1280', width: 1280 },
+  { label: '1024', width: 1024 },
+  { label: 'Tablet', width: 768 },
+  { label: 'Mobile', width: 375 },
+]
 
 type Props = { pageType: PageType; pageRef: string }
 
@@ -15,9 +25,11 @@ export function PageEditor({ pageType, pageRef }: Props) {
   const { page, status, revision, canEdit, beginInteraction, add, move, reorder, duplicate, set, unset, remove } =
     usePage(pageType, pageRef)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [previewWidth, setPreviewWidth] = useState<number | null>(null)
   const [preview, setPreview] = useState<{ id: string; transform: ElementTransform; lines: GuideLines } | null>(null)
   const scroller = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLDivElement>(null)
+  const clipped = useClippedElements(canvas, page !== null && previewWidth === null)
 
   if (status === 'loading') return <p style={mutedStyle}>Loading page…</p>
   if (status === 'error') return <p style={mutedStyle}>The page could not be loaded.</p>
@@ -29,7 +41,16 @@ export function PageEditor({ pageType, pageRef }: Props) {
       preview?.id === element.id ? { ...element, transform: preview.transform } : element,
     ),
   }
-  const selected = canEdit ? page.elements.find(element => element.id === selectedId) : undefined
+  const selected =
+    canEdit && previewWidth === null ? page.elements.find(element => element.id === selectedId) : undefined
+  const flagged = new Set(flaggedElements(page.elements, clipped).map(element => element.id))
+
+  const reveal = (elementId: string) => {
+    setSelectedId(elementId)
+    canvas.current
+      ?.querySelector(`[data-element-surface="${elementId}"]`)
+      ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }
 
   const visibleTop = () => {
     const top = scroller.current?.getBoundingClientRect().top ?? 0
@@ -45,6 +66,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
       scale={scale}
       referenceWidth={page.referenceWidth}
       selected={element.id === selected?.id}
+      flagged={flagged.has(element.id)}
       editable={canEdit}
       onSelect={() => setSelectedId(element.id)}
       guides={() =>
@@ -72,34 +94,61 @@ export function PageEditor({ pageType, pageRef }: Props) {
   return (
     <div style={layoutStyle}>
       <div ref={scroller} style={scrollerStyle} onPointerDown={() => setSelectedId(null)}>
-        {canEdit && (
-          <div style={toolbarStyle} onPointerDown={event => event.stopPropagation()}>
+        <div style={toolbarStyle} onPointerDown={event => event.stopPropagation()}>
+          {canEdit && previewWidth === null && (
             <Button variant="primary" onClick={() => void add(visibleTop())}>
               Add element
             </Button>
+          )}
+          <div style={previewBarStyle} role="group" aria-label="Preview">
+            <Button variant={previewWidth === null ? 'secondary' : 'ghost'} onClick={() => setPreviewWidth(null)}>
+              {canEdit ? 'Edit' : 'Page'}
+            </Button>
+            {PREVIEWS.map(({ label, width }) => (
+              <Button
+                key={width}
+                variant={previewWidth === width ? 'secondary' : 'ghost'}
+                onClick={() => setPreviewWidth(width)}
+              >
+                {label}
+              </Button>
+            ))}
           </div>
-        )}
-        {page.elements.length === 0 && (
-          <p style={inviteStyle}>
-            {canEdit ? 'This page is empty. Add a first element to start composing it.' : 'This page is empty.'}
-          </p>
-        )}
-        <div ref={canvas} style={{ ...canvasStyle, maxWidth: page.referenceWidth }}>
-          <PageRenderer
-            key={revision}
-            page={shown}
-            overlay={overlay}
-            foreground={guideLines}
-            editing
-            extraHeight={canEdit ? EDITING_ROOM : 0}
-          />
         </div>
+        {previewWidth !== null ? (
+          <div style={previewScrollStyle}>
+            <div style={{ ...previewFrameStyle, width: previewWidth }}>
+              <PageRenderer page={page} editing />
+            </div>
+          </div>
+        ) : (
+          <>
+            <PageAlerts elements={page.elements} clipped={clipped} onSelect={reveal} />
+            {page.elements.length === 0 && (
+              <p style={inviteStyle}>
+                {canEdit ? 'This page is empty. Add a first element to start composing it.' : 'This page is empty.'}
+              </p>
+            )}
+            <div ref={canvas} style={{ ...canvasStyle, maxWidth: page.referenceWidth }}>
+              <PageRenderer
+                key={revision}
+                page={shown}
+                overlay={overlay}
+                foreground={guideLines}
+                editing
+                stacking={false}
+                extraHeight={canEdit ? EDITING_ROOM : 0}
+              />
+            </div>
+          </>
+        )}
       </div>
       {selected && (
         <div onPointerDown={event => event.stopPropagation()} style={inspectorSlotStyle}>
           <ElementInspector
             key={selected.id}
             element={selected}
+            clipped={clipped.has(selected.id)}
             onSet={(kind, value) => void set(selected.id, kind, value)}
             onUnset={kind => void unset(selected.id, kind)}
             onDelete={() => {
@@ -127,7 +176,14 @@ const scrollerStyle: CSSProperties = {
   gap: '1rem',
   backgroundColor: 'var(--color-bg)',
 }
-const toolbarStyle: CSSProperties = { display: 'flex', gap: '0.5rem', alignSelf: 'flex-start' }
+const toolbarStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }
+const previewBarStyle: CSSProperties = { display: 'flex', gap: '0.25rem', marginLeft: 'auto' }
+const previewScrollStyle: CSSProperties = { overflowX: 'auto' }
+const previewFrameStyle: CSSProperties = {
+  margin: '0 auto',
+  outline: '1px solid var(--color-border)',
+  backgroundColor: 'var(--color-bg)',
+}
 const canvasStyle: CSSProperties = {
   width: '100%',
   margin: '0 auto',

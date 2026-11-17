@@ -1,11 +1,12 @@
 import type { CSSProperties } from 'react'
 import { Button, ConfirmDeleteButton } from '@atelier/shared-ui'
-import type { ComponentKind, ElementComponents, PageElement } from '@content'
+import type { ComponentKind, ElementComponents, ElementIssue, PageElement } from '@content'
 import type { ReorderDirection } from '../../types'
 import { COMPONENT_KINDS, COMPONENT_REGISTRY } from '../componentRegistry'
 
 type Props = {
   element: PageElement
+  clipped: boolean
   onSet: (kind: ComponentKind, value: object) => void
   onUnset: (kind: ComponentKind) => void
   onDelete: () => void
@@ -15,7 +16,7 @@ type Props = {
 }
 
 export function ElementInspector(props: Props) {
-  const { element, onSet, onUnset, onDelete, onDuplicate, onReorder, beginInteraction } = props
+  const { element, clipped, onSet, onUnset, onDelete, onDuplicate, onReorder, beginInteraction } = props
   const present = COMPONENT_KINDS.filter(kind => element.components[kind])
   const absent = COMPONENT_KINDS.filter(kind => !element.components[kind])
   const issues = element.issues ?? []
@@ -38,15 +39,12 @@ export function ElementInspector(props: Props) {
         </Button>
       </div>
 
-      {issues.length > 0 && (
+      {(issues.length > 0 || clipped) && (
         <ul style={issuesStyle}>
-          {issues.map(issue =>
-            issue.kind === 'missingFile' ? (
-              <li key={issue.url}>Missing file, hidden on the public page: {issue.url}</li>
-            ) : (
-              <li key={issue.projectId}>This project is private or deleted: hidden or inactive on the public page.</li>
-            ),
-          )}
+          {clipped && <li>The content is larger than its box: part of it is cut. Enlarge the element.</li>}
+          {issues.map(issue => (
+            <li key={issueKey(issue)}>{issueMessage(issue)}</li>
+          ))}
         </ul>
       )}
 
@@ -81,6 +79,20 @@ export function ElementInspector(props: Props) {
       )}
     </aside>
   )
+}
+
+export function issueKey(issue: ElementIssue): string {
+  if (issue.kind === 'missingFile') return `file:${issue.url}`
+  if (issue.kind === 'projectUnavailable') return `project:${issue.projectId}`
+  return `binding:${issue.entity}:${issue.id}`
+}
+
+export function issueMessage(issue: ElementIssue): string {
+  if (issue.kind === 'missingFile') return `Missing file, hidden on the public page: ${issue.url}`
+  if (issue.kind === 'projectUnavailable') {
+    return 'This project is private or deleted: hidden or inactive on the public page.'
+  }
+  return `A linked insertion points to a deleted ${issue.entity}: the public page shows ⚠ in its place.`
 }
 
 function ComponentPanel<K extends ComponentKind>({
