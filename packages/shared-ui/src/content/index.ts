@@ -17,6 +17,10 @@ export type {
   SurfaceComponent,
   LinkComponent,
   LinkDestination,
+  MediaComponent,
+  CarouselComponent,
+  CarouselItem,
+  ElementIssue,
 } from './page/pageTypes'
 export { buildRichTextExtensions } from './richText/richTextExtensions'
 
@@ -68,5 +72,11 @@ export {
 export { mindmapStroke, mindmapText, mindmapFill } from './mindmap/mindmapTheme'
 
 export type { PageType } from './section/sectionTypes'
-export type { TextScale, BindingEntity, BindingField, DataBindingAttrs } from './section/types'
-export { TEXT_SCALE_OPTIONS, BINDING_FIELDS, BINDING_ENTITY_LABELS } from './section/types'
+export type { TextScale, BindingEntity, BindingField, DataBindingAttrs, ImageFit, ImagePosition } from './section/types'
+export {
+  TEXT_SCALE_OPTIONS,
+  BINDING_FIELDS,
+  BINDING_ENTITY_LABELS,
+  IMAGE_FIT_OPTIONS,
+  IMAGE_POSITION_OPTIONS,
+} from './section/types'

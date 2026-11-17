@@ -18,6 +18,7 @@ export function ElementInspector(props: Props) {
   const { element, onSet, onUnset, onDelete, onDuplicate, onReorder, beginInteraction } = props
   const present = COMPONENT_KINDS.filter(kind => element.components[kind])
   const absent = COMPONENT_KINDS.filter(kind => !element.components[kind])
+  const issues = element.issues ?? []
 
   return (
     <aside style={inspectorStyle}>
@@ -36,6 +37,14 @@ export function ElementInspector(props: Props) {
           Send backward
         </Button>
       </div>
+
+      {issues.length > 0 && (
+        <ul style={issuesStyle}>
+          {issues.map(issue => (
+            <li key={issue.url}>Missing file, hidden on the public page: {issue.url}</li>
+          ))}
+        </ul>
+      )}
 
       {present.map(kind => (
         <section key={`${element.id}-${kind}`} style={sectionStyle}>
@@ -109,4 +118,12 @@ const subtitleStyle: CSSProperties = {
   letterSpacing: '0.05em',
 }
 const sectionStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: '0.75rem' }
+const issuesStyle: CSSProperties = {
+  margin: 0,
+  padding: '0.5rem 0.75rem 0.5rem 1.5rem',
+  fontSize: '0.8125rem',
+  color: 'var(--color-text)',
+  border: '1px solid var(--color-primary)',
+  borderRadius: '6px',
+}
 const addRowStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }

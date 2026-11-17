@@ -1,5 +1,5 @@
 import type { PageType } from '../section/sectionTypes'
-import type { TextScale } from '../section/types'
+import type { ImageFit, ImagePosition, TextScale } from '../section/types'
 
 export type ElementTransform = Readonly<{ x: number; y: number; w: number; h: number }>
 
@@ -26,8 +26,21 @@ export type LinkComponent = Readonly<{
   destination?: LinkDestination | null
 }>
 
+export type MediaComponent = Readonly<{
+  url: string | null
+  alt: string
+  fit: ImageFit
+  position: ImagePosition
+}>
+
+export type CarouselItem = Readonly<{ url: string | null; caption: string }>
+
+export type CarouselComponent = Readonly<{ items: readonly CarouselItem[] }>
+
 export type ContentComponents = Readonly<{
   text?: TextComponent
+  media?: MediaComponent
+  carousel?: CarouselComponent
 }>
 
 export type FacetComponents = Readonly<{
@@ -41,10 +54,13 @@ export type ContentKind = keyof ContentComponents
 
 export type ComponentKind = keyof ElementComponents
 
+export type ElementIssue = Readonly<{ kind: 'missingFile'; url: string }>
+
 export type PageElement = Readonly<{
   id: string
   transform: ElementTransform
   components: ElementComponents
+  issues?: readonly ElementIssue[]
 }>
 
 export type PageDto = Readonly<{
