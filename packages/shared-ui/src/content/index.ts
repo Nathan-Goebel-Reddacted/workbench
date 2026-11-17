@@ -1,6 +1,7 @@
 export { MindmapView } from './mindmap/MindmapView'
 export { PageRenderer } from './page/PageRenderer'
 export { CONTENT_RENDERERS, type ContentRenderers } from './page/contentRenderers'
+export { cssColor } from './page/color'
 export { clearBindingCache } from './richText/dataBinding'
 export { PAGE_BOTTOM_MARGIN, readingRows, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
 export type {
@@ -9,7 +10,10 @@ export type {
   ElementTransform,
   ElementComponents,
   ComponentKind,
+  ContentKind,
+  ColorValue,
   TextComponent,
+  SurfaceComponent,
 } from './page/pageTypes'
 export { buildRichTextExtensions } from './richText/richTextExtensions'
 

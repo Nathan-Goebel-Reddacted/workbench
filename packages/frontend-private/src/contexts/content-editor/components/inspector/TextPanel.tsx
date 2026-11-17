@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type FocusEvent } from 'react'
 import { TEXT_SCALE_OPTIONS, type TextComponent, type TextScale } from '@content'
 import { RichTextEditor } from '../RichTextEditor'
+import { ColorChoice } from './ColorChoice'
 import type { PanelProps } from './panelProps'
 
 const SAVE_DELAY_MS = 800
@@ -72,6 +73,7 @@ export function TextPanel({ value, onChange, beginInteraction }: PanelProps<'tex
           ))}
         </select>
       </label>
+      <ColorChoice label="Text colour" value={draft.color} onChange={color => schedule({ ...latest.current, color })} />
       <RichTextEditor html={draft.html} onChange={html => schedule({ ...latest.current, html })} />
     </div>
   )
