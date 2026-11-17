@@ -118,7 +118,7 @@ describe('PageMutator', () => {
             'conflict v1',
             'read v2',
             'save v2',
-            'release [{"text":{"html":"/uploads/a.png","scale":"normal"}}]',
+            'release [{"text":{"html":"/uploads/a.png","scale":"normal","color":null}}]',
         ]);
     });
 

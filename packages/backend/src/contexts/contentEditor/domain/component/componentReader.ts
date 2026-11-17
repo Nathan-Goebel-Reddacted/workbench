@@ -1,4 +1,5 @@
 import { InvalidComponentException } from '../exception/invalidComponent';
+import { ColorValue, parseColor } from '../valueObject/color';
 
 type Raw = Record<string, unknown>;
 
@@ -47,6 +48,19 @@ export class ComponentReader {
         }
         const parsed = Number(value);
         return Number.isFinite(parsed) ? Math.min(Math.max(parsed, min), max) : fallback;
+    }
+
+    integer(key: string, fallback: number, min: number, max: number): number {
+        const value = this.number(key, fallback, min, max);
+        if (Number.isInteger(value)) return value;
+        if (this.strict) throw new InvalidComponentException(this.field(key), `an integer between ${min} and ${max}`);
+        return Math.round(value);
+    }
+
+    color(key: string): ColorValue | null {
+        const value = this.raw[key];
+        if (value === undefined || value === null) return null;
+        return parseColor(value) ?? this.invalid(key, 'a colour { theme: "--color-…" } or { hex: "#rrggbb" }', null);
     }
 
     oneOf<T extends string>(key: string, allowed: readonly T[], fallback: T): T {

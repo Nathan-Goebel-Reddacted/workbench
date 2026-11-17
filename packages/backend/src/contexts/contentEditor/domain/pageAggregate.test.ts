@@ -127,7 +127,7 @@ describe('Page — Components', () => {
 
         p.setComponent(target.getId(), 'text', { html: '<p>Bonjour</p>' });
 
-        expect(target.getComponents()).toEqual({ text: { html: '<p>Bonjour</p>', scale: 'normal' } });
+        expect(target.getComponents()).toEqual({ text: { html: '<p>Bonjour</p>', scale: 'normal', color: null } });
     });
 
     it('remplace un Component de la même sorte et rend l’ancien', () => {
@@ -136,8 +136,8 @@ describe('Page — Components', () => {
 
         const previous = p.setComponent(target.getId(), 'text', { html: '<p>Après</p>' });
 
-        expect(previous).toEqual({ html: '<p>Avant</p>', scale: 'normal' });
-        expect(target.getComponents().text).toEqual({ html: '<p>Après</p>', scale: 'normal' });
+        expect(previous).toEqual({ html: '<p>Avant</p>', scale: 'normal', color: null });
+        expect(target.getComponents().text).toEqual({ html: '<p>Après</p>', scale: 'normal', color: null });
     });
 
     it('refuse une valeur invalide à l’écriture', () => {
@@ -168,7 +168,7 @@ describe('Page — Components', () => {
 
         const removed = p.removeComponent(target.getId(), 'text');
 
-        expect(removed).toEqual({ html: '<p>x</p>', scale: 'normal' });
+        expect(removed).toEqual({ html: '<p>x</p>', scale: 'normal', color: null });
         expect(target.getComponents()).toEqual({});
     });
 
@@ -200,7 +200,7 @@ describe('Element — lecture tolérante', () => {
     it('répare une valeur invalide en base au lieu de lever', () => {
         const e = element(undefined, { text: { html: 42, scale: 'énorme' } });
 
-        expect(e.getComponents().text).toEqual({ html: '', scale: 'normal' });
+        expect(e.getComponents().text).toEqual({ html: '', scale: 'normal', color: null });
     });
 
     it('ignore une valeur qui n’est pas un objet', () => {
@@ -312,5 +312,68 @@ describe('Page — duplication', () => {
         const p = page(elements);
 
         expect(() => p.duplicateElement(elements[0].getId(), new ElementId())).toThrow(TooManyElementsException);
+    });
+});
+
+describe('Surface', () => {
+    it('normalise une Surface avec ses valeurs par défaut', () => {
+        const target = element();
+
+        target.setComponent('surface', { background: { theme: '--color-surface' } });
+
+        expect(target.getComponents().surface).toEqual({
+            background: { theme: '--color-surface' },
+            borderWidth: 0,
+            borderColor: null,
+            radius: 0,
+        });
+    });
+
+    it('cohabite avec un contenu sans en être un', () => {
+        const target = element();
+
+        target.setComponent('surface', {});
+        expect(target.hasContent()).toBe(false);
+
+        target.setComponent('text', { html: '<p>a</p>' });
+        expect(target.hasContent()).toBe(true);
+    });
+
+    it.each([
+        [{ radius: 257 }],
+        [{ radius: 1.5 }],
+        [{ borderWidth: 33 }],
+        [{ background: 'red' }],
+        [{ borderColor: { hex: 'url(x)' } }],
+    ])('refuse %j à l’écriture', raw => {
+        expect(() => element().setComponent('surface', raw)).toThrow(InvalidComponentException);
+    });
+
+    it('répare en lecture une Surface invalide en base', () => {
+        const target = element(undefined, { surface: { radius: 999, background: 'red', borderWidth: 2.4 } });
+
+        expect(target.getComponents().surface).toEqual({
+            background: null,
+            borderWidth: 2,
+            borderColor: null,
+            radius: 256,
+        });
+    });
+});
+
+describe('Text — couleurs', () => {
+    it('porte sa couleur de base et assainit les couleurs inline', () => {
+        const target = element();
+
+        target.setComponent('text', {
+            html: '<span style="color: url(x)">a</span>',
+            color: { hex: '#123456' },
+        });
+
+        expect(target.getComponents().text).toEqual({
+            html: '<span style="">a</span>',
+            scale: 'normal',
+            color: { hex: '#123456' },
+        });
     });
 });

@@ -141,7 +141,7 @@ describe('commandes sur les Elements', () => {
         expect(uploads.released).toEqual([]);
 
         await handler.handle(new SetComponentCommand(pageId, ELEMENT, 'text', { html: '<p>b</p>' }));
-        expect(uploads.released).toEqual([[{ html: '<img src="/uploads/a.png">', scale: 'normal' }]]);
+        expect(uploads.released).toEqual([[{ html: '<img src="/uploads/a.png">', scale: 'normal', color: null }]]);
     });
 
     it('libère le contenu retiré', async () => {
@@ -152,7 +152,7 @@ describe('commandes sur les Elements', () => {
 
         await new RemoveComponentHandler(mutator).handle(new RemoveComponentCommand(pageId, ELEMENT, 'text'));
 
-        expect(uploads.released).toEqual([[{ html: '/uploads/a.png', scale: 'normal' }]]);
+        expect(uploads.released).toEqual([[{ html: '/uploads/a.png', scale: 'normal', color: null }]]);
         expect((await elements())[0].getComponents()).toEqual({});
     });
 
@@ -164,7 +164,7 @@ describe('commandes sur les Elements', () => {
 
         await new DeleteElementHandler(mutator).handle(new DeleteElementCommand(pageId, ELEMENT));
 
-        expect(uploads.released).toEqual([[{ text: { html: '/uploads/a.png', scale: 'normal' } }]]);
+        expect(uploads.released).toEqual([[{ text: { html: '/uploads/a.png', scale: 'normal', color: null } }]]);
         expect(await elements()).toEqual([]);
     });
 

@@ -1,6 +1,7 @@
 import { ComponentReader } from './componentReader';
 import { InvalidComponentException } from '../exception/invalidComponent';
 import { UnknownComponentKindException } from '../exception/unknownComponentKind';
+import { sanitizeInlineColors } from './inlineColors';
 
 export type ComponentValue = Readonly<Record<string, unknown>>;
 
@@ -13,6 +14,10 @@ export type ComponentDescriptor = Readonly<{
 }>;
 
 export const TEXT_SCALES = ['normal', 'large', 'display'] as const;
+export const MAX_BORDER_WIDTH = 32;
+export const MAX_RADIUS = 256;
+
+const COLOR = '{ theme: "--color-…" } | { hex: "#rrggbb" } | null';
 
 export const COMPONENT_REGISTRY = {
     text: {
@@ -20,10 +25,25 @@ export const COMPONENT_REGISTRY = {
         interactive: false,
         flow: 'text',
         normalize: component => ({
-            html: component.string('html'),
+            html: sanitizeInlineColors(component.string('html')),
             scale: component.oneOf('scale', TEXT_SCALES, 'normal'),
+            color: component.color('color'),
         }),
-        describe: `Rich text. { html: string (TipTap HTML), scale: ${TEXT_SCALES.join(' | ')} }`,
+        describe: `Rich text. { html: string (TipTap HTML), scale: ${TEXT_SCALES.join(' | ')}, color: ${COLOR} }`,
+    },
+    surface: {
+        role: 'facet',
+        interactive: false,
+        flow: 'visual',
+        normalize: component => ({
+            background: component.color('background'),
+            borderWidth: component.integer('borderWidth', 0, 0, MAX_BORDER_WIDTH),
+            borderColor: component.color('borderColor'),
+            radius: component.integer('radius', 0, 0, MAX_RADIUS),
+        }),
+        describe:
+            `Box styling around the content. { background: ${COLOR}, borderWidth: 0-${MAX_BORDER_WIDTH}, ` +
+            `borderColor: ${COLOR}, radius: 0-${MAX_RADIUS} }`,
     },
 } as const satisfies Record<string, ComponentDescriptor>;
 
