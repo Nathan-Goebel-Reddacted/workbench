@@ -572,3 +572,37 @@ describe('Code, Embed et LinkList', () => {
         expect(() => target.setComponent('link', {})).not.toThrow();
     });
 });
+
+describe('ProjectCard et ContactForm', () => {
+    it('normalise une ProjectCard', () => {
+        const target = element();
+
+        target.setComponent('projectCard', { projectId: '11111111-1111-4111-8111-111111111111' });
+
+        expect(target.getComponents().projectCard).toEqual({ projectId: '11111111-1111-4111-8111-111111111111' });
+    });
+
+    it('pose un ContactForm avec ses champs par défaut et ses couleurs', () => {
+        const target = element();
+
+        target.setComponent('contactForm', { buttonColor: { theme: '--color-primary' } });
+
+        expect(target.getComponents().contactForm).toMatchObject({
+            title: 'Me contacter',
+            fields: [{ id: 'name' }, { id: 'email' }, { id: 'message' }],
+            submitLabel: 'Envoyer',
+            textColor: null,
+            buttonColor: { theme: '--color-primary' },
+        });
+    });
+
+    it.each(['contactForm', 'projectCard'] as const)('refuse un Link sur un %s, dans les deux ordres', kind => {
+        const contentFirst = element();
+        contentFirst.setComponent(kind, {});
+        expect(() => contentFirst.setComponent('link', {})).toThrow(LinkOnInteractiveContentException);
+
+        const linkFirst = element();
+        linkFirst.setComponent('link', {});
+        expect(() => linkFirst.setComponent(kind, {})).toThrow(LinkOnInteractiveContentException);
+    });
+});

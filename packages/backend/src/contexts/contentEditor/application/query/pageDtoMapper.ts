@@ -8,31 +8,34 @@ import {
     ComponentKind,
     ComponentValue,
 } from '../../domain/component/componentRegistry';
-import { IProjectDestinations, LinkDestination } from '../../domain/port/iProjectDestinations';
+import { IProjectReferences, LinkDestination, ProjectSummary } from '../../domain/port/iProjectReferences';
 import { ElementDto, ElementIssue, PageDto } from './pageDto';
 
-export type PageReaders = Readonly<{ destinations: IProjectDestinations; presence: IUploadPresence }>;
+export type PageReaders = Readonly<{ projects: IProjectReferences; presence: IUploadPresence }>;
 
 export type Audience = 'public' | 'editor';
+
+type Cited = Readonly<{ missing: ReadonlySet<string>; projects: ReadonlyMap<string, ProjectSummary> }>;
 
 export async function toPageDto(page: Page, readers: PageReaders, audience: Audience): Promise<PageDto> {
     const elements = page.getElements();
     const components = elements.map(e => e.getComponents());
-    const [destinations, missing] = await Promise.all([
-        readers.destinations.destinationsOf(components.flatMap(c => linkedProject(c) ?? [])),
-        readers.presence.missing(components.flatMap(localFiles)),
+    const [missing, projects] = await Promise.all([
+        readers.presence.missing(components.flatMap(c => cited(c, 'files').filter(isLocalFile))),
+        readers.projects.summariesOf(components.flatMap(c => cited(c, 'projects'))),
     ]);
+    const known: Cited = { missing, projects };
 
     const dtos = elements.flatMap((element, index): ElementDto[] => {
-        const issues = missingIssues(components[index], missing);
-        const shown = audience === 'public' ? withoutMissingFiles(components[index], missing) : components[index];
+        const issues = issuesOf(components[index], known);
+        const shown = audience === 'public' ? withoutBrokenReferences(components[index], known) : components[index];
         if (shown === null) return [];
         const t = element.getTransform();
         return [
             {
                 id: element.getId().getValue(),
                 transform: { x: t.getX(), y: t.getY(), w: t.getW(), h: t.getH() },
-                components: withDestination(shown, destinations),
+                components: withProjects(shown, known),
                 issues: audience === 'editor' ? issues : [],
             },
         ];
@@ -53,48 +56,71 @@ function entries(components: ElementComponents): Array<[ComponentKind, Component
     return Object.entries(components) as Array<[ComponentKind, ComponentValue]>;
 }
 
-function filesOf(kind: ComponentKind, value: ComponentValue): string[] {
-    const descriptor: ComponentDescriptor = COMPONENT_REGISTRY[kind];
-    return descriptor.files?.(value) ?? [];
+function descriptorOf(kind: ComponentKind): ComponentDescriptor {
+    return COMPONENT_REGISTRY[kind];
 }
 
-function localFiles(components: ElementComponents): string[] {
-    return entries(components).flatMap(([kind, value]) => filesOf(kind, value).filter(isLocalFile));
+function cited(components: ElementComponents, what: 'files' | 'projects'): string[] {
+    return entries(components).flatMap(([kind, value]) => descriptorOf(kind)[what]?.(value) ?? []);
 }
 
 function isLocalFile(url: string): boolean {
     return url.startsWith('/uploads/');
 }
 
-function missingIssues(components: ElementComponents, missing: ReadonlySet<string>): ElementIssue[] {
-    return localFiles(components)
-        .filter(url => missing.has(url))
-        .map(url => ({ kind: 'missingFile', url }));
+function isAvailable(projectId: string, known: Cited): boolean {
+    return known.projects.get(projectId)?.visible === true;
 }
 
-function withoutMissingFiles(components: ElementComponents, missing: ReadonlySet<string>): ElementComponents | null {
-    if (missing.size === 0) return components;
+function issuesOf(components: ElementComponents, known: Cited): ElementIssue[] {
+    const files = cited(components, 'files')
+        .filter(url => isLocalFile(url) && known.missing.has(url))
+        .map((url): ElementIssue => ({ kind: 'missingFile', url }));
+    const projects = cited(components, 'projects')
+        .filter(projectId => !isAvailable(projectId, known))
+        .map((projectId): ElementIssue => ({ kind: 'projectUnavailable', projectId }));
+    return [...files, ...projects];
+}
+
+function withoutBrokenReferences(components: ElementComponents, known: Cited): ElementComponents | null {
+    const card = components.projectCard?.projectId;
+    if (typeof card === 'string' && !isAvailable(card, known)) return null;
+    if (known.missing.size === 0) return components;
     const kept: ElementComponents = {};
     for (const [kind, value] of entries(components)) {
-        const descriptor: ComponentDescriptor = COMPONENT_REGISTRY[kind];
-        const pruned = descriptor.withoutFiles ? descriptor.withoutFiles(value, missing) : value;
+        const { withoutFiles } = descriptorOf(kind);
+        const pruned = withoutFiles ? withoutFiles(value, known.missing) : value;
         if (pruned === null) return null;
         kept[kind] = pruned;
     }
     return kept;
 }
 
-function linkedProject(components: ElementComponents): string | null {
-    const projectId = components.link?.projectId;
-    return typeof projectId === 'string' ? projectId : null;
+function destinationOf(projectId: unknown, known: Cited): LinkDestination | null {
+    if (typeof projectId !== 'string') return null;
+    const summary = known.projects.get(projectId);
+    return summary?.visible ? summary.destination : { kind: 'none' };
 }
 
-function withDestination(
-    components: ElementComponents,
-    resolved: ReadonlyMap<string, LinkDestination>,
-): ElementComponents {
-    if (!components.link) return components;
-    const projectId = linkedProject(components);
-    const destination: LinkDestination | null = projectId ? (resolved.get(projectId) ?? { kind: 'none' }) : null;
-    return { ...components, link: { ...components.link, destination } };
+function withProjects(components: ElementComponents, known: Cited): ElementComponents {
+    const result: ElementComponents = { ...components };
+    if (components.link) {
+        result.link = { ...components.link, destination: destinationOf(components.link.projectId, known) };
+    }
+    if (components.projectCard) {
+        const projectId = components.projectCard.projectId;
+        const summary = typeof projectId === 'string' ? known.projects.get(projectId) : undefined;
+        result.projectCard = {
+            ...components.projectCard,
+            project: summary
+                ? {
+                      name: summary.name,
+                      description: summary.description,
+                      image: summary.image,
+                      destination: destinationOf(projectId, known),
+                  }
+                : null,
+        };
+    }
+    return result;
 }

@@ -2,6 +2,14 @@ import { ComponentReader } from './componentReader';
 import { InvalidComponentException } from '../exception/invalidComponent';
 import { UnknownComponentKindException } from '../exception/unknownComponentKind';
 import { sanitizeInlineColors } from './inlineColors';
+import {
+    DEFAULT_FORM_TITLE,
+    DEFAULT_SUBMIT_LABEL,
+    DEFAULT_SUCCESS_MESSAGE,
+    FORM_FIELD_TYPES,
+    MAX_FORM_FIELDS,
+    formFields,
+} from './contactForm';
 import { SiteOrigins } from '../valueObject/siteOrigins';
 
 export type ComponentValue = Readonly<Record<string, unknown>>;
@@ -13,6 +21,7 @@ export type ComponentDescriptor = Readonly<{
     normalize: (component: ComponentReader) => ComponentValue;
     describe: string;
     files?: (value: ComponentValue) => string[];
+    projects?: (value: ComponentValue) => string[];
     withoutFiles?: (value: ComponentValue, missing: ReadonlySet<string>) => ComponentValue | null;
 }>;
 
@@ -149,6 +158,33 @@ export const COMPONENT_REGISTRY = {
             `newTab: boolean }] (at most ${MAX_LINK_LIST_ITEMS}), style: ${LINK_LIST_STYLES.join(' | ')}, ` +
             `color: ${COLOR} (text and outline), fill: ${COLOR} (solid buttons) }`,
     },
+    projectCard: {
+        role: 'content',
+        interactive: true,
+        flow: 'visual',
+        normalize: component => ({ projectId: component.uuid('projectId') }),
+        describe:
+            'The card of a project, leading to its destination; hidden on the public page while the project ' +
+            'is private or missing. { projectId: project id | null }',
+        projects: value => (typeof value.projectId === 'string' ? [value.projectId] : []),
+    },
+    contactForm: {
+        role: 'content',
+        interactive: true,
+        flow: 'text',
+        normalize: component => ({
+            title: component.string('title', DEFAULT_FORM_TITLE),
+            fields: formFields(component),
+            submitLabel: component.nonEmptyString('submitLabel', DEFAULT_SUBMIT_LABEL),
+            successMessage: component.nonEmptyString('successMessage', DEFAULT_SUCCESS_MESSAGE),
+            textColor: component.color('textColor'),
+            buttonColor: component.color('buttonColor'),
+        }),
+        describe:
+            `The contact form. { title: string, fields: [{ id: string, label: string, type: ` +
+            `${FORM_FIELD_TYPES.join(' | ')}, required: boolean }] (at most ${MAX_FORM_FIELDS}), submitLabel: string, ` +
+            `successMessage: string, textColor: ${COLOR}, buttonColor: ${COLOR} }`,
+    },
     surface: {
         role: 'facet',
         interactive: false,
@@ -176,6 +212,7 @@ export const COMPONENT_REGISTRY = {
             }
             return { url, projectId, newTab };
         },
+        projects: value => (typeof value.projectId === 'string' ? [value.projectId] : []),
         describe:
             'Makes the whole element clickable. { url: http(s) URL | /uploads/… | /projects/<id> | null, ' +
             'projectId: project id | null (follows the project destination), newTab: boolean } — at most one ' +

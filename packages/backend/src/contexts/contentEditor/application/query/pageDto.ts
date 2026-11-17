@@ -1,4 +1,6 @@
-export type ElementIssue = Readonly<{ kind: 'missingFile'; url: string }>;
+export type ElementIssue =
+    | Readonly<{ kind: 'missingFile'; url: string }>
+    | Readonly<{ kind: 'projectUnavailable'; projectId: string }>;
 
 export type ElementDto = Readonly<{
     id: string;

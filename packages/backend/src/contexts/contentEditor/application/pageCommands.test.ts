@@ -7,7 +7,7 @@ import { PageFactory } from '../domain/factory/pageFactory.js';
 import { IPageRepository, PageVersionConflictError } from '../domain/repository/iPageRepository.js';
 import type { IUploadStorage } from '@shared/application/port/iUploadStorage.js';
 import type { IPageVisibility } from '../domain/port/iPageVisibility.js';
-import type { IProjectDestinations, LinkDestination } from '../domain/port/iProjectDestinations.js';
+import type { IProjectReferences, LinkDestination, ProjectSummary } from '../domain/port/iProjectReferences.js';
 import type { PageReaders } from './query/pageDtoMapper.js';
 import { NotFoundError } from '@shared/application/errors/notFoundError.js';
 import { PageMutator } from './command/pageMutator.js';
@@ -71,21 +71,22 @@ class SpyUploads implements IUploadStorage {
     }
 }
 
-function destinations(known: Record<string, LinkDestination> = {}): IProjectDestinations & { asked: string[][] } {
+function summary(destination: LinkDestination, visible = true): ProjectSummary {
+    return { name: 'Atelier', description: 'Un projet', image: '/uploads/cover.png', visible, destination };
+}
+
+function projects(known: Record<string, ProjectSummary> = {}): IProjectReferences & { asked: string[][] } {
     return {
         asked: [],
-        async destinationsOf(projectIds) {
+        async summariesOf(projectIds) {
             this.asked.push([...projectIds]);
             return new Map(projectIds.flatMap(id => (known[id] ? [[id, known[id]] as const] : [])));
         },
     };
 }
 
-function readers(
-    destinationsPort: IProjectDestinations = destinations(),
-    missing: readonly string[] = [],
-): PageReaders {
-    return { destinations: destinationsPort, presence: { missing: async () => new Set(missing) } };
+function readers(projectsPort: IProjectReferences = projects(), missing: readonly string[] = []): PageReaders {
+    return { projects: projectsPort, presence: { missing: async () => new Set(missing) } };
 }
 
 async function pageWithElement() {
@@ -284,12 +285,12 @@ describe('destination des Links vers un projet', () => {
     const PROJECT = '66666666-6666-4666-8666-666666666666';
     const UNKNOWN = '77777777-7777-4777-8777-777777777777';
 
-    async function readWithLink(link: Record<string, unknown>, known: Record<string, LinkDestination>) {
+    async function readWithLink(link: Record<string, unknown>, known: Record<string, ProjectSummary>) {
         const { repository, mutator, pageId } = await pageWithElement();
         await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
             new SetComponentCommand(pageId, ELEMENT, 'link', link),
         );
-        const port = destinations(known);
+        const port = projects(known);
         const dto = await new GetPageByRefHandler(repository, { isPublic: async () => true }, readers(port)).handle(
             new GetPageByRefQuery('portfolio', PAGE_REF),
         );
@@ -299,7 +300,7 @@ describe('destination des Links vers un projet', () => {
     it('joint la destination du projet visé', async () => {
         const { link, port } = await readWithLink(
             { projectId: PROJECT },
-            { [PROJECT]: { kind: 'external', url: 'https://example.com/' } },
+            { [PROJECT]: summary({ kind: 'external', url: 'https://example.com/' }) },
         );
 
         expect(link).toMatchObject({
@@ -332,11 +333,9 @@ describe('fichiers manquants', () => {
     }
 
     function read(repository: InMemoryPageRepository, missing: string[], forEditor: boolean) {
-        return new GetPageByRefHandler(
-            repository,
-            { isPublic: async () => true },
-            readers(destinations(), missing),
-        ).handle(new GetPageByRefQuery('portfolio', PAGE_REF, forEditor, forEditor));
+        return new GetPageByRefHandler(repository, { isPublic: async () => true }, readers(projects(), missing)).handle(
+            new GetPageByRefQuery('portfolio', PAGE_REF, forEditor, forEditor),
+        );
     }
 
     it('retire du site public un Media dont le fichier manque, et le signale à l’éditeur', async () => {
@@ -380,5 +379,74 @@ describe('fichiers manquants', () => {
         await new RemoveComponentHandler(mutator).handle(new RemoveComponentCommand(pageId, ELEMENT, 'media'));
 
         expect(uploads.released).toEqual([[{ url: '/uploads/a.png', alt: '', fit: 'contain', position: 'center' }]]);
+    });
+});
+
+describe('projets cités', () => {
+    const PROJECT = '88888888-8888-4888-8888-888888888888';
+
+    async function readCard(known: Record<string, ProjectSummary>, forEditor: boolean) {
+        const { repository, mutator, pageId } = await pageWithElement();
+        await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
+            new SetComponentCommand(pageId, ELEMENT, 'projectCard', { projectId: PROJECT }),
+        );
+        return new GetPageByRefHandler(repository, { isPublic: async () => true }, readers(projects(known))).handle(
+            new GetPageByRefQuery('portfolio', PAGE_REF, forEditor, forEditor),
+        );
+    }
+
+    it('joint à la carte le résumé et la destination d’un projet public', async () => {
+        const dto = await readCard({ [PROJECT]: summary({ kind: 'page', projectId: PROJECT }) }, false);
+
+        expect(dto?.elements[0].components.projectCard).toEqual({
+            projectId: PROJECT,
+            project: {
+                name: 'Atelier',
+                description: 'Un projet',
+                image: '/uploads/cover.png',
+                destination: { kind: 'page', projectId: PROJECT },
+            },
+        });
+    });
+
+    it.each([
+        ['privé', { [PROJECT]: summary({ kind: 'page', projectId: PROJECT }, false) }],
+        ['introuvable', {}],
+    ])('retire du site public la carte d’un projet %s, et la signale à l’éditeur', async (_label, known) => {
+        expect((await readCard(known, false))?.elements).toEqual([]);
+
+        const editor = await readCard(known, true);
+        expect(editor?.elements[0].issues).toEqual([{ kind: 'projectUnavailable', projectId: PROJECT }]);
+    });
+
+    it('neutralise un Link vers un projet privé et le signale à l’éditeur', async () => {
+        const { repository, mutator, pageId } = await pageWithElement();
+        await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
+            new SetComponentCommand(pageId, ELEMENT, 'link', { projectId: PROJECT }),
+        );
+        const known = { [PROJECT]: summary({ kind: 'external', url: 'https://x.test/' }, false) };
+        const read = (forEditor: boolean) =>
+            new GetPageByRefHandler(repository, { isPublic: async () => true }, readers(projects(known))).handle(
+                new GetPageByRefQuery('portfolio', PAGE_REF, forEditor, forEditor),
+            );
+
+        expect((await read(false))?.elements[0].components.link).toMatchObject({ destination: { kind: 'none' } });
+        expect((await read(true))?.elements[0].issues).toEqual([{ kind: 'projectUnavailable', projectId: PROJECT }]);
+    });
+
+    it('demande tous les projets cités d’une Page en un seul appel', async () => {
+        const { repository, mutator, pageId } = await pageWithElement();
+        const second = crypto.randomUUID();
+        await new AddElementHandler(mutator).handle(new AddElementCommand(pageId, second, null));
+        const handler = new SetComponentHandler(mutator, SiteOrigins.none());
+        await handler.handle(new SetComponentCommand(pageId, ELEMENT, 'projectCard', { projectId: PROJECT }));
+        await handler.handle(new SetComponentCommand(pageId, second, 'link', { projectId: PROJECT }));
+        const port = projects();
+
+        await new GetPageByRefHandler(repository, { isPublic: async () => true }, readers(port)).handle(
+            new GetPageByRefQuery('portfolio', PAGE_REF),
+        );
+
+        expect(port.asked).toEqual([[PROJECT, PROJECT]]);
     });
 });
