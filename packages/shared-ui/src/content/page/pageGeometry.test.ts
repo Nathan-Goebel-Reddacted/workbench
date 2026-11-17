@@ -14,10 +14,22 @@ describe('readingRows', () => {
     expect(rows.map(ids)).toEqual([['a', 'b'], ['c']])
   })
 
-  it('range dans la même rangée un Element qui chevauche verticalement la rangée en cours', () => {
-    const rows = readingRows([at('a', 0, 0, 100, 200), at('b', 600, 150), at('c', 300, 220)])
+  it('range ensemble deux Elements dont les hauteurs se recouvrent sur plus de la moitié de la plus petite', () => {
+    const rows = readingRows([at('a', 0, 0, 100, 200), at('b', 600, 120), at('c', 300, 60)])
 
     expect(rows.map(ids)).toEqual([['a', 'c', 'b']])
+  })
+
+  it('sépare deux Elements qui ne se recouvrent que sur la moitié de la plus petite hauteur, ou moins', () => {
+    const rows = readingRows([at('a', 0, 0, 100, 200), at('b', 600, 150)])
+
+    expect(rows.map(ids)).toEqual([['a'], ['b']])
+  })
+
+  it('rattache un Element à la rangée dès qu’il recouvre assez l’un de ses membres', () => {
+    const rows = readingRows([at('a', 0, 0, 100, 100), at('b', 300, 40, 100, 200), at('c', 600, 160)])
+
+    expect(rows.map(ids)).toEqual([['a', 'b', 'c']])
   })
 
   it('ouvre une nouvelle rangée pour un Element posé pile sous la rangée en cours', () => {
@@ -27,7 +39,7 @@ describe('readingRows', () => {
   })
 
   it('départage deux Elements au même x par leur hauteur sur la Page', () => {
-    const rows = readingRows([at('bas', 0, 50), at('haut', 0, 0)])
+    const rows = readingRows([at('bas', 0, 40), at('haut', 0, 0)])
 
     expect(rows.map(ids)).toEqual([['haut', 'bas']])
   })

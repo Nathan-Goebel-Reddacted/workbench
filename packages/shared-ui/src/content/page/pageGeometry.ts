@@ -1,24 +1,23 @@
 import type { ElementTransform } from './pageTypes'
 
 export const PAGE_BOTTOM_MARGIN = 64
+export const STACK_BELOW = 1024
 
 type Placed = Readonly<{ transform: ElementTransform }>
+
+function overlapsEnough(a: ElementTransform, b: ElementTransform): boolean {
+  const overlap = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)
+  return overlap > Math.min(a.h, b.h) / 2
+}
 
 export function readingRows<T extends Placed>(elements: readonly T[]): T[][] {
   const byTop = [...elements].sort((a, b) => a.transform.y - b.transform.y || a.transform.x - b.transform.x)
   const rows: T[][] = []
-  let rowBottom = -Infinity
 
   for (const element of byTop) {
-    const { y, h } = element.transform
     const row = rows[rows.length - 1]
-    if (row && y < rowBottom) {
-      row.push(element)
-      rowBottom = Math.max(rowBottom, y + h)
-    } else {
-      rows.push([element])
-      rowBottom = y + h
-    }
+    if (row?.some(member => overlapsEnough(member.transform, element.transform))) row.push(element)
+    else rows.push([element])
   }
 
   return rows.map(row => row.sort((a, b) => a.transform.x - b.transform.x || a.transform.y - b.transform.y))

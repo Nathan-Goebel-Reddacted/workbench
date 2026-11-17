@@ -1,10 +1,16 @@
 export { MindmapView } from './mindmap/MindmapView'
 export { PageRenderer } from './page/PageRenderer'
-export { CONTENT_RENDERERS, type ContentRenderers } from './page/contentRenderers'
+export {
+  CONTENT_RENDERERS,
+  CONTENT_FLOW,
+  contentFlowOf,
+  type ContentRenderers,
+  type ContentFlow,
+} from './page/contentRenderers'
 export { cssColor } from './page/color'
 export { linkHref, projectPagePath } from './page/linkHref'
 export { clearBindingCache } from './richText/dataBinding'
-export { PAGE_BOTTOM_MARGIN, readingRows, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
+export { PAGE_BOTTOM_MARGIN, STACK_BELOW, readingRows, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
 export type {
   PageDto,
   PageElement,

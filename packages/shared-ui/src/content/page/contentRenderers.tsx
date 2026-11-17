@@ -26,7 +26,25 @@ export const CONTENT_RENDERERS: ContentRenderers = {
   contactForm: form => <ContactFormView {...form} />,
 }
 
+export type ContentFlow = 'text' | 'visual'
+
+export const CONTENT_FLOW: { [K in ContentKind]: ContentFlow } = {
+  text: 'text',
+  media: 'visual',
+  carousel: 'visual',
+  code: 'text',
+  embed: 'visual',
+  linkList: 'text',
+  projectCard: 'visual',
+  contactForm: 'text',
+}
+
 const KINDS = Object.keys(CONTENT_RENDERERS) as ContentKind[]
+
+export function contentFlowOf(components: ContentComponents): ContentFlow | null {
+  const kind = KINDS.find(k => components[k])
+  return kind ? CONTENT_FLOW[kind] : null
+}
 
 export function renderContent(components: ContentComponents): ReactNode {
   return KINDS.map(kind => <Fragment key={kind}>{renderKind(kind, components)}</Fragment>)
