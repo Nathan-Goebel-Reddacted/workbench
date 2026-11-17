@@ -21,6 +21,11 @@ export type {
   CarouselComponent,
   CarouselItem,
   ElementIssue,
+  CodeComponent,
+  EmbedComponent,
+  LinkListComponent,
+  LinkListItem,
+  LinkListStyle,
 } from './page/pageTypes'
 export { buildRichTextExtensions } from './richText/richTextExtensions'
 

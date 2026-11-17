@@ -37,10 +37,28 @@ export type CarouselItem = Readonly<{ url: string | null; caption: string }>
 
 export type CarouselComponent = Readonly<{ items: readonly CarouselItem[] }>
 
+export type CodeComponent = Readonly<{ code: string; language: string; wrap: boolean }>
+
+export type EmbedComponent = Readonly<{ url: string | null; title: string }>
+
+export type LinkListStyle = 'link' | 'solid' | 'outline'
+
+export type LinkListItem = Readonly<{ url: string | null; label: string; logo: string | null; newTab: boolean }>
+
+export type LinkListComponent = Readonly<{
+  links: readonly LinkListItem[]
+  style: LinkListStyle
+  color: ColorValue | null
+  fill: ColorValue | null
+}>
+
 export type ContentComponents = Readonly<{
   text?: TextComponent
   media?: MediaComponent
   carousel?: CarouselComponent
+  code?: CodeComponent
+  embed?: EmbedComponent
+  linkList?: LinkListComponent
 }>
 
 export type FacetComponents = Readonly<{
