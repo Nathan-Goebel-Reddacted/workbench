@@ -1,5 +1,8 @@
 import { InvalidComponentException } from '../exception/invalidComponent';
 import { ColorValue, parseColor } from '../valueObject/color';
+import { parseSafeUrl } from '../valueObject/safeUrl';
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Raw = Record<string, unknown>;
 
@@ -61,6 +64,18 @@ export class ComponentReader {
         const value = this.raw[key];
         if (value === undefined || value === null) return null;
         return parseColor(value) ?? this.invalid(key, 'a colour { theme: "--color-…" } or { hex: "#rrggbb" }', null);
+    }
+
+    safeUrl(key: string): string | null {
+        const value = this.string(key);
+        if (value === '') return null;
+        return parseSafeUrl(value) ?? this.invalid(key, 'an http(s) URL, an /uploads/ path or a project page', null);
+    }
+
+    uuid(key: string): string | null {
+        const value = this.string(key);
+        if (value === '') return null;
+        return UUID.test(value) ? value.toLowerCase() : this.invalid(key, 'an id', null);
     }
 
     oneOf<T extends string>(key: string, allowed: readonly T[], fallback: T): T {

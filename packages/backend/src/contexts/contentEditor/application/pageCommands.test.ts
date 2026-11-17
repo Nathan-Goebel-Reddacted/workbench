@@ -7,6 +7,7 @@ import { PageFactory } from '../domain/factory/pageFactory.js';
 import { IPageRepository, PageVersionConflictError } from '../domain/repository/iPageRepository.js';
 import type { IUploadStorage } from '@shared/application/port/iUploadStorage.js';
 import type { IPageVisibility } from '../domain/port/iPageVisibility.js';
+import type { IProjectDestinations, LinkDestination } from '../domain/port/iProjectDestinations.js';
 import { NotFoundError } from '@shared/application/errors/notFoundError.js';
 import { PageMutator } from './command/pageMutator.js';
 import { EnsurePageHandler } from './command/ensurePage/ensurePageHandler.js';
@@ -66,6 +67,16 @@ class SpyUploads implements IUploadStorage {
     async releaseFromContent(content: unknown): Promise<void> {
         this.released.push(content);
     }
+}
+
+function destinations(known: Record<string, LinkDestination> = {}): IProjectDestinations & { asked: string[][] } {
+    return {
+        asked: [],
+        async destinationsOf(projectIds) {
+            this.asked.push([...projectIds]);
+            return new Map(projectIds.flatMap(id => (known[id] ? [[id, known[id]] as const] : [])));
+        },
+    };
 }
 
 async function pageWithElement() {
@@ -214,7 +225,7 @@ describe('GetPageByRefHandler', () => {
     }
 
     it('rend la Page publique avec sa largeur de référence', async () => {
-        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(true));
+        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(true), destinations());
 
         const dto = await handler.handle(new GetPageByRefQuery('project', PAGE_REF));
 
@@ -223,7 +234,7 @@ describe('GetPageByRefHandler', () => {
 
     it('dit qu’une Page a du contenu dès qu’un Element en porte un, comme la destination des projets', async () => {
         const { repository, mutator, pageId } = await pageWithElement();
-        const handler = new GetPageByRefHandler(repository, visibility(true));
+        const handler = new GetPageByRefHandler(repository, visibility(true), destinations());
         const read = () => handler.handle(new GetPageByRefQuery('portfolio', PAGE_REF));
 
         expect((await read())?.hasContent).toBe(false);
@@ -234,14 +245,14 @@ describe('GetPageByRefHandler', () => {
     });
 
     it('tait une Page masquée', async () => {
-        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(false));
+        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(false), destinations());
 
         expect(await handler.handle(new GetPageByRefQuery('project', PAGE_REF))).toBeNull();
     });
 
     it('rend une Page masquée à la lecture privée', async () => {
         const hidden = visibility(false);
-        const handler = new GetPageByRefHandler(await repositoryWithPage(), hidden);
+        const handler = new GetPageByRefHandler(await repositoryWithPage(), hidden, destinations());
 
         const dto = await handler.handle(new GetPageByRefQuery('project', PAGE_REF, true));
 
@@ -250,8 +261,48 @@ describe('GetPageByRefHandler', () => {
     });
 
     it('refuse un type de Page inconnu', async () => {
-        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(true));
+        const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(true), destinations());
 
         await expect(handler.handle(new GetPageByRefQuery('galerie', PAGE_REF))).rejects.toThrow();
+    });
+});
+
+describe('destination des Links vers un projet', () => {
+    const PROJECT = '66666666-6666-4666-8666-666666666666';
+    const UNKNOWN = '77777777-7777-4777-8777-777777777777';
+
+    async function readWithLink(link: Record<string, unknown>, known: Record<string, LinkDestination>) {
+        const { repository, mutator, pageId } = await pageWithElement();
+        await new SetComponentHandler(mutator).handle(new SetComponentCommand(pageId, ELEMENT, 'link', link));
+        const port = destinations(known);
+        const dto = await new GetPageByRefHandler(repository, { isPublic: async () => true }, port).handle(
+            new GetPageByRefQuery('portfolio', PAGE_REF),
+        );
+        return { link: dto?.elements[0].components.link, port };
+    }
+
+    it('joint la destination du projet visé', async () => {
+        const { link, port } = await readWithLink(
+            { projectId: PROJECT },
+            { [PROJECT]: { kind: 'external', url: 'https://example.com/' } },
+        );
+
+        expect(link).toMatchObject({
+            projectId: PROJECT,
+            destination: { kind: 'external', url: 'https://example.com/' },
+        });
+        expect(port.asked).toEqual([[PROJECT]]);
+    });
+
+    it('rend inactif un Link vers un projet dont la destination est inconnue', async () => {
+        const { link } = await readWithLink({ projectId: UNKNOWN }, {});
+
+        expect(link).toMatchObject({ destination: { kind: 'none' } });
+    });
+
+    it('ne résout rien pour un Link vers une URL', async () => {
+        const { link } = await readWithLink({ url: 'https://example.com' }, {});
+
+        expect(link).toMatchObject({ url: 'https://example.com/', destination: null });
     });
 });

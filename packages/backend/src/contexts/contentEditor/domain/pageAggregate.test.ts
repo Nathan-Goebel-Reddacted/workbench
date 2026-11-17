@@ -6,7 +6,7 @@ import { PageRef } from './valueObject/pageRef.js';
 import { ElementId } from './valueObject/elementId.js';
 import { MAX_PAGE_HEIGHT, REFERENCE_WIDTH, Transform } from './valueObject/transform.js';
 import { Element } from './entity/element.js';
-import { ComponentDescriptor, contentConflict } from './component/componentRegistry.js';
+import { ComponentDescriptor, contentConflict, linkConflict } from './component/componentRegistry.js';
 import { ElementNotFoundException } from './exception/elementNotFound.js';
 import { InvalidTransformException } from './exception/invalidTransform.js';
 import { InvalidComponentException } from './exception/invalidComponent.js';
@@ -375,5 +375,73 @@ describe('Text — couleurs', () => {
             scale: 'normal',
             color: { hex: '#123456' },
         });
+    });
+});
+
+describe('Link', () => {
+    it('pose un Link vide, inerte', () => {
+        const target = element();
+
+        target.setComponent('link', {});
+
+        expect(target.getComponents().link).toEqual({ url: null, projectId: null, newTab: false });
+    });
+
+    it('vise une URL sûre ou un projet', () => {
+        const target = element();
+
+        target.setComponent('link', { url: 'https://example.com', newTab: true });
+        expect(target.getComponents().link).toEqual({ url: 'https://example.com/', projectId: null, newTab: true });
+
+        target.setComponent('link', { projectId: '11111111-1111-4111-8111-111111111111' });
+        expect(target.getComponents().link).toMatchObject({
+            url: null,
+            projectId: '11111111-1111-4111-8111-111111111111',
+        });
+    });
+
+    it.each([
+        [{ url: 'javascript:alert(1)' }],
+        [{ url: ' JAVASCRIPT:alert(1)' }],
+        [{ projectId: 'abc' }],
+        [{ url: 'https://example.com', projectId: '11111111-1111-4111-8111-111111111111' }],
+    ])('refuse %j', raw => {
+        expect(() => element().setComponent('link', raw)).toThrow(InvalidComponentException);
+    });
+
+    it('neutralise en lecture une URL dangereuse déjà en base', () => {
+        const target = element(undefined, { link: { url: 'javascript:alert(1)', newTab: true } });
+
+        expect(target.getComponents().link).toEqual({ url: null, projectId: null, newTab: true });
+    });
+});
+
+describe('Link sur un contenu interactif', () => {
+    const descriptor = (role: 'content' | 'facet', interactive = false): ComponentDescriptor => ({
+        role,
+        interactive,
+        flow: 'visual',
+        normalize: () => ({}),
+        describe: '',
+    });
+    const registry = {
+        form: descriptor('content', true),
+        text: descriptor('content'),
+        link: descriptor('facet'),
+        surface: descriptor('facet'),
+    };
+
+    it('refuse le Link posé sur un contenu interactif', () => {
+        expect(linkConflict(['form'], 'link', registry, 'link')).toBe('form');
+    });
+
+    it('refuse le contenu interactif posé sous un Link', () => {
+        expect(linkConflict(['link', 'surface'], 'form', registry, 'link')).toBe('form');
+    });
+
+    it('laisse un Link sur un contenu passif et une facette à côté', () => {
+        expect(linkConflict(['text'], 'link', registry, 'link')).toBeNull();
+        expect(linkConflict(['link'], 'text', registry, 'link')).toBeNull();
+        expect(linkConflict(['link'], 'surface', registry, 'link')).toBeNull();
     });
 });

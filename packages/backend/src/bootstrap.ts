@@ -329,6 +329,7 @@ import { SearchErrorLogHandler } from '@contexts/errorLog/application/query/sear
 
 import { MediaLibrary } from '@contexts/contentEditor/infrastructure/gateway/mediaLibrary';
 import { PageVisibility } from '@contexts/contentEditor/infrastructure/gateway/pageVisibility';
+import { ProjectDestinations } from '@contexts/contentEditor/infrastructure/gateway/projectDestinations';
 import { ProjectPageGateway } from '@contexts/project/infrastructure/gateway/projectPageGateway';
 
 // --- Registre des fichiers uploadés ---
@@ -569,8 +570,12 @@ export function bootstrap(
     commandBus.register(SetComponentCommand.commandName, new SetComponentHandler(pages));
     commandBus.register(RemoveComponentCommand.commandName, new RemoveComponentHandler(pages));
     commandBus.register(DeleteElementCommand.commandName, new DeleteElementHandler(pages));
-    queryBus.register(GetPageByIdQuery.queryName, new GetPageByIdHandler(repos.page));
-    queryBus.register(GetPageByRefQuery.queryName, new GetPageByRefHandler(repos.page, pageVisibility));
+    const projectDestinations = new ProjectDestinations(repos.project, repos.page);
+    queryBus.register(GetPageByIdQuery.queryName, new GetPageByIdHandler(repos.page, projectDestinations));
+    queryBus.register(
+        GetPageByRefQuery.queryName,
+        new GetPageByRefHandler(repos.page, pageVisibility, projectDestinations),
+    );
     queryBus.register(ListPageRefsWithContentQuery.queryName, new ListPageRefsWithContentHandler(repos.page));
     // Seul point de contact entre l'éditeur de contenu et les contextes qui détiennent
     // les médias : il pose la question, eux répondent — aucun agrégat étranger ne remonte.

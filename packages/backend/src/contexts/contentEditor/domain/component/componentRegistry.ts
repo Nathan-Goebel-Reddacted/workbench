@@ -45,7 +45,27 @@ export const COMPONENT_REGISTRY = {
             `Box styling around the content. { background: ${COLOR}, borderWidth: 0-${MAX_BORDER_WIDTH}, ` +
             `borderColor: ${COLOR}, radius: 0-${MAX_RADIUS} }`,
     },
+    link: {
+        role: 'facet',
+        interactive: false,
+        flow: 'visual',
+        normalize: component => {
+            const url = component.safeUrl('url');
+            const projectId = component.uuid('projectId');
+            const newTab = component.boolean('newTab', false);
+            if (url !== null && projectId !== null) {
+                return component.invalid('projectId', 'absent when an url is set', { url, projectId: null, newTab });
+            }
+            return { url, projectId, newTab };
+        },
+        describe:
+            'Makes the whole element clickable. { url: http(s) URL | /uploads/… | /projects/<id> | null, ' +
+            'projectId: project id | null (follows the project destination), newTab: boolean } — at most one ' +
+            'target; refused on an interactive content.',
+    },
 } as const satisfies Record<string, ComponentDescriptor>;
+
+export const LINK_KIND = 'link';
 
 export type ComponentKind = keyof typeof COMPONENT_REGISTRY;
 
@@ -66,6 +86,18 @@ export function normalizeComponent(kind: ComponentKind, raw: unknown, strict: bo
         return null;
     }
     return COMPONENT_REGISTRY[kind].normalize(new ComponentReader(raw as Record<string, unknown>, strict, kind));
+}
+
+export function linkConflict<K extends string>(
+    present: readonly K[],
+    incoming: K,
+    registry: Readonly<Record<K, ComponentDescriptor>>,
+    link: K,
+): K | null {
+    const interactive = (kind: K) => registry[kind].role === 'content' && registry[kind].interactive;
+    if (incoming === link) return present.find(interactive) ?? null;
+    if (interactive(incoming) && present.includes(link)) return incoming;
+    return null;
 }
 
 export function contentConflict<K extends string>(

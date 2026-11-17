@@ -6,9 +6,12 @@ import {
     ComponentValue,
     contentConflict,
     isComponentKind,
+    LINK_KIND,
+    linkConflict,
     normalizeComponent,
 } from '../component/componentRegistry';
 import { ContentAlreadyPresentException } from '../exception/contentAlreadyPresent';
+import { LinkOnInteractiveContentException } from '../exception/linkOnInteractiveContent';
 
 export type ElementComponents = Partial<Record<ComponentKind, ComponentValue>>;
 
@@ -27,7 +30,9 @@ export class Element {
         const components: ElementComponents = {};
         for (const [kind, value] of Object.entries(raw)) {
             if (!isComponentKind(kind)) continue;
-            if (contentConflict(Element.kindsOf(components), kind, COMPONENT_REGISTRY)) continue;
+            const kinds = Element.kindsOf(components);
+            if (contentConflict(kinds, kind, COMPONENT_REGISTRY)) continue;
+            if (linkConflict(kinds, kind, COMPONENT_REGISTRY, LINK_KIND)) continue;
             const normalized = normalizeComponent(kind, value, false);
             if (normalized) components[kind] = normalized;
         }
@@ -59,8 +64,11 @@ export class Element {
     }
 
     setComponent(kind: ComponentKind, raw: unknown): ComponentValue | null {
-        const present = contentConflict(Element.kindsOf(this.components), kind, COMPONENT_REGISTRY);
+        const kinds = Element.kindsOf(this.components);
+        const present = contentConflict(kinds, kind, COMPONENT_REGISTRY);
         if (present) throw new ContentAlreadyPresentException(present, kind);
+        const interactive = linkConflict(kinds, kind, COMPONENT_REGISTRY, LINK_KIND);
+        if (interactive) throw new LinkOnInteractiveContentException(interactive);
         const value = normalizeComponent(kind, raw, true) as ComponentValue;
         const previous = this.components[kind] ?? null;
         this.components = { ...this.components, [kind]: value };
