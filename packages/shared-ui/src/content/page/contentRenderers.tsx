@@ -3,6 +3,7 @@ import { StaticRichText } from '../richText/StaticRichText'
 import { TEXT_SCALE_OPTIONS } from '../section/types'
 import { cssColor } from './color'
 import { CodeView, EmbedView, LinkListView } from './blockRenderers'
+import { ContactFormView, ProjectCardView } from './interactiveRenderers'
 import { CarouselView, MediaView } from './mediaRenderers'
 import type { ContentComponents, ContentKind } from './pageTypes'
 
@@ -21,6 +22,8 @@ export const CONTENT_RENDERERS: ContentRenderers = {
   code: code => <CodeView {...code} />,
   embed: embed => <EmbedView {...embed} />,
   linkList: linkList => <LinkListView {...linkList} />,
+  projectCard: card => <ProjectCardView {...card} />,
+  contactForm: form => <ContactFormView {...form} />,
 }
 
 const KINDS = Object.keys(CONTENT_RENDERERS) as ContentKind[]

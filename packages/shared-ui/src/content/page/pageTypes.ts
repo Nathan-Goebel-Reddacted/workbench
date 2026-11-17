@@ -1,5 +1,5 @@
 import type { PageType } from '../section/sectionTypes'
-import type { ImageFit, ImagePosition, TextScale } from '../section/types'
+import type { FormField, ImageFit, ImagePosition, TextScale } from '../section/types'
 
 export type ElementTransform = Readonly<{ x: number; y: number; w: number; h: number }>
 
@@ -52,6 +52,27 @@ export type LinkListComponent = Readonly<{
   fill: ColorValue | null
 }>
 
+export type ProjectCardSummary = Readonly<{
+  name: string
+  description: string
+  image: string | null
+  destination: LinkDestination
+}>
+
+export type ProjectCardComponent = Readonly<{
+  projectId: string | null
+  project?: ProjectCardSummary | null
+}>
+
+export type ContactFormComponent = Readonly<{
+  title: string
+  fields: readonly FormField[]
+  submitLabel: string
+  successMessage: string
+  textColor: ColorValue | null
+  buttonColor: ColorValue | null
+}>
+
 export type ContentComponents = Readonly<{
   text?: TextComponent
   media?: MediaComponent
@@ -59,6 +80,8 @@ export type ContentComponents = Readonly<{
   code?: CodeComponent
   embed?: EmbedComponent
   linkList?: LinkListComponent
+  projectCard?: ProjectCardComponent
+  contactForm?: ContactFormComponent
 }>
 
 export type FacetComponents = Readonly<{
@@ -72,7 +95,9 @@ export type ContentKind = keyof ContentComponents
 
 export type ComponentKind = keyof ElementComponents
 
-export type ElementIssue = Readonly<{ kind: 'missingFile'; url: string }>
+export type ElementIssue =
+  | Readonly<{ kind: 'missingFile'; url: string }>
+  | Readonly<{ kind: 'projectUnavailable'; projectId: string }>
 
 export type PageElement = Readonly<{
   id: string

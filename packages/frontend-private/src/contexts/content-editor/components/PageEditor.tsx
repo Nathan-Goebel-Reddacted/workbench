@@ -90,6 +90,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
             page={shown}
             overlay={overlay}
             foreground={guideLines}
+            editing
             extraHeight={canEdit ? EDITING_ROOM : 0}
           />
         </div>

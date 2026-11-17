@@ -26,6 +26,9 @@ export type {
   LinkListComponent,
   LinkListItem,
   LinkListStyle,
+  ProjectCardComponent,
+  ProjectCardSummary,
+  ContactFormComponent,
 } from './page/pageTypes'
 export { buildRichTextExtensions } from './richText/richTextExtensions'
 

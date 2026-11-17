@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useApiUrl } from '../../config/ApiUrlContext'
 import { cssColor } from './color'
 import { linkHref } from './linkHref'
+import { EditingContext } from './interactiveRenderers'
 import { renderContent } from './contentRenderers'
 import { pageHeight, pageScale, readingOrder } from './pageGeometry'
 import type { LinkComponent, PageDto, PageElement, SurfaceComponent } from './pageTypes'
@@ -12,9 +13,10 @@ type Props = {
   overlay?: (element: PageElement, scale: number) => ReactNode
   foreground?: (scale: number) => ReactNode
   extraHeight?: number
+  editing?: boolean
 }
 
-export function PageRenderer({ page, overlay, foreground, extraHeight = 0 }: Props) {
+export function PageRenderer({ page, overlay, foreground, extraHeight = 0, editing = false }: Props) {
   const { ref, width } = useContainerWidth<HTMLDivElement>()
   const apiUrl = useApiUrl()
   const { referenceWidth, elements } = page
@@ -23,21 +25,23 @@ export function PageRenderer({ page, overlay, foreground, extraHeight = 0 }: Pro
   const layer = new Map(elements.map((element, index) => [element.id, index + 1]))
 
   return (
-    <div ref={ref} style={{ ...frameStyle, maxWidth: referenceWidth, height: height * scale }}>
-      <div style={{ ...canvasStyle, width: referenceWidth, height, transform: `scale(${scale})` }}>
-        {readingOrder(elements).map(element => (
-          <div key={element.id} style={elementStyle(element, layer.get(element.id) ?? 0)}>
-            {wrapInLink(
-              element.components.link,
-              apiUrl,
-              <div style={surfaceStyle(element.components.surface)}>{renderContent(element.components)}</div>,
-            )}
-            {overlay?.(element, scale)}
-          </div>
-        ))}
-        {foreground && <div style={{ ...foregroundStyle, zIndex: elements.length + 1 }}>{foreground(scale)}</div>}
+    <EditingContext.Provider value={editing}>
+      <div ref={ref} style={{ ...frameStyle, maxWidth: referenceWidth, height: height * scale }}>
+        <div style={{ ...canvasStyle, width: referenceWidth, height, transform: `scale(${scale})` }}>
+          {readingOrder(elements).map(element => (
+            <div key={element.id} style={elementStyle(element, layer.get(element.id) ?? 0)}>
+              {wrapInLink(
+                element.components.link,
+                apiUrl,
+                <div style={surfaceStyle(element.components.surface)}>{renderContent(element.components)}</div>,
+              )}
+              {overlay?.(element, scale)}
+            </div>
+          ))}
+          {foreground && <div style={{ ...foregroundStyle, zIndex: elements.length + 1 }}>{foreground(scale)}</div>}
+        </div>
       </div>
-    </div>
+    </EditingContext.Provider>
   )
 }
 

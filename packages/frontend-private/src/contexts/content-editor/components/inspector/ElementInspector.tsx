@@ -40,9 +40,13 @@ export function ElementInspector(props: Props) {
 
       {issues.length > 0 && (
         <ul style={issuesStyle}>
-          {issues.map(issue => (
-            <li key={issue.url}>Missing file, hidden on the public page: {issue.url}</li>
-          ))}
+          {issues.map(issue =>
+            issue.kind === 'missingFile' ? (
+              <li key={issue.url}>Missing file, hidden on the public page: {issue.url}</li>
+            ) : (
+              <li key={issue.projectId}>This project is private or deleted: hidden or inactive on the public page.</li>
+            ),
+          )}
         </ul>
       )}
 

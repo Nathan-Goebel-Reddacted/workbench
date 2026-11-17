@@ -6,6 +6,7 @@ import type { RenderMode } from './renderMode'
 type Props = {
   content: Record<string, unknown>
   mode: RenderMode
+  colors?: { text: string; button: string }
 }
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
@@ -14,7 +15,7 @@ type Status = 'idle' | 'sending' | 'sent' | 'error'
  * Seul widget interactif du catalogue. Dans l'éditeur (`mode === 'edit'`) le formulaire est un
  * aperçu inerte : sans cela, chaque essai dans le Design Lab enverrait un vrai mail.
  */
-export function ContactForm({ content, mode }: Props) {
+export function ContactForm({ content, mode, colors }: Props) {
   const apiUrl = useApiUrl()
   const { title, fields, submitLabel, successMessage } = readContactFormContent(content)
   const isEditing = mode === 'edit'
@@ -56,8 +57,8 @@ export function ContactForm({ content, mode }: Props) {
   }
 
   return (
-    <form style={containerStyle} onSubmit={handleSubmit}>
-      {title !== '' && <h3 style={titleStyle}>{title}</h3>}
+    <form style={{ ...containerStyle, color: colors?.text }} onSubmit={handleSubmit}>
+      {title !== '' && <h3 style={{ ...titleStyle, color: colors?.text ?? titleStyle.color }}>{title}</h3>}
 
       {status === 'sent' && <p style={successStyle}>{successMessage}</p>}
 
@@ -83,7 +84,11 @@ export function ContactForm({ content, mode }: Props) {
         aria-hidden="true"
       />
 
-      <button type="submit" style={buttonStyle} disabled={isEditing || status === 'sending'}>
+      <button
+        type="submit"
+        style={{ ...buttonStyle, backgroundColor: colors?.button ?? buttonStyle.backgroundColor }}
+        disabled={isEditing || status === 'sending'}
+      >
         {status === 'sending' ? 'Envoi…' : submitLabel}
       </button>
 
