@@ -14,12 +14,25 @@ export type SurfaceComponent = Readonly<{
   radius: number
 }>
 
+export type LinkDestination =
+  | Readonly<{ kind: 'page'; projectId: string }>
+  | Readonly<{ kind: 'external'; url: string }>
+  | Readonly<{ kind: 'none' }>
+
+export type LinkComponent = Readonly<{
+  url: string | null
+  projectId: string | null
+  newTab: boolean
+  destination?: LinkDestination | null
+}>
+
 export type ContentComponents = Readonly<{
   text?: TextComponent
 }>
 
 export type FacetComponents = Readonly<{
   surface?: SurfaceComponent
+  link?: LinkComponent
 }>
 
 export type ElementComponents = ContentComponents & FacetComponents

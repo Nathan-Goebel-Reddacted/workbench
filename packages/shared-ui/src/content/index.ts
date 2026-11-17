@@ -2,6 +2,7 @@ export { MindmapView } from './mindmap/MindmapView'
 export { PageRenderer } from './page/PageRenderer'
 export { CONTENT_RENDERERS, type ContentRenderers } from './page/contentRenderers'
 export { cssColor } from './page/color'
+export { linkHref, projectPagePath } from './page/linkHref'
 export { clearBindingCache } from './richText/dataBinding'
 export { PAGE_BOTTOM_MARGIN, readingRows, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
 export type {
@@ -14,6 +15,8 @@ export type {
   ColorValue,
   TextComponent,
   SurfaceComponent,
+  LinkComponent,
+  LinkDestination,
 } from './page/pageTypes'
 export { buildRichTextExtensions } from './richText/richTextExtensions'
 

@@ -1,8 +1,10 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { useApiUrl } from '../../config/ApiUrlContext'
 import { cssColor } from './color'
+import { linkHref } from './linkHref'
 import { renderContent } from './contentRenderers'
 import { pageHeight, pageScale, readingOrder } from './pageGeometry'
-import type { PageDto, PageElement, SurfaceComponent } from './pageTypes'
+import type { LinkComponent, PageDto, PageElement, SurfaceComponent } from './pageTypes'
 import { useContainerWidth } from './useContainerWidth'
 
 type Props = {
@@ -14,6 +16,7 @@ type Props = {
 
 export function PageRenderer({ page, overlay, foreground, extraHeight = 0 }: Props) {
   const { ref, width } = useContainerWidth<HTMLDivElement>()
+  const apiUrl = useApiUrl()
   const { referenceWidth, elements } = page
   const scale = pageScale(width, referenceWidth)
   const height = pageHeight(elements) + extraHeight
@@ -24,7 +27,11 @@ export function PageRenderer({ page, overlay, foreground, extraHeight = 0 }: Pro
       <div style={{ ...canvasStyle, width: referenceWidth, height, transform: `scale(${scale})` }}>
         {readingOrder(elements).map(element => (
           <div key={element.id} style={elementStyle(element, layer.get(element.id) ?? 0)}>
-            <div style={surfaceStyle(element.components.surface)}>{renderContent(element.components)}</div>
+            {wrapInLink(
+              element.components.link,
+              apiUrl,
+              <div style={surfaceStyle(element.components.surface)}>{renderContent(element.components)}</div>,
+            )}
             {overlay?.(element, scale)}
           </div>
         ))}
@@ -37,6 +44,23 @@ export function PageRenderer({ page, overlay, foreground, extraHeight = 0 }: Pro
 function elementStyle({ transform: { x, y, w, h } }: PageElement, zIndex: number): CSSProperties {
   return { position: 'absolute', left: x, top: y, width: w, height: h, zIndex }
 }
+
+function wrapInLink(link: LinkComponent | undefined, apiUrl: string, children: ReactNode): ReactNode {
+  const href = link ? linkHref(link, apiUrl) : null
+  if (!link || !href) return children
+  return (
+    <a
+      href={href}
+      target={link.newTab ? '_blank' : undefined}
+      rel={link.newTab ? 'noopener noreferrer' : undefined}
+      style={linkStyle}
+    >
+      {children}
+    </a>
+  )
+}
+
+const linkStyle: CSSProperties = { position: 'absolute', inset: 0, display: 'block', color: 'inherit' }
 
 function surfaceStyle(surface: SurfaceComponent | undefined): CSSProperties {
   if (!surface) return surfaceBaseStyle
