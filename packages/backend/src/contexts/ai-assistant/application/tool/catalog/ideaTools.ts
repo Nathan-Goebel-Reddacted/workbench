@@ -7,6 +7,9 @@ import { AddIdeaLinkCommand } from '@contexts/idea/application/command/addIdeaLi
 import { RemoveIdeaLinkCommand } from '@contexts/idea/application/command/removeIdeaLink/removeIdeaLinkCommand';
 import { AddIdeaDocumentCommand } from '@contexts/idea/application/command/addIdeaDocument/addIdeaDocumentCommand';
 import { RemoveIdeaDocumentCommand } from '@contexts/idea/application/command/removeIdeaDocument/removeIdeaDocumentCommand';
+import { DeleteIdeaCommand } from '@contexts/idea/application/command/deleteIdea/deleteIdeaCommand';
+import { GetIdeaDeletionImpactQuery } from '@contexts/idea/application/query/getIdeaDeletionImpact/getIdeaDeletionImpactQuery';
+import { IdeaDeletionImpactDto } from '@contexts/idea/application/query/getIdeaDeletionImpact/ideaDeletionImpactDto';
 import { ConvertIdeaToProjectCommand } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectCommand';
 import { CreateIdeaMindmapCommand } from '@contexts/idea/application/command/createIdeaMindmap/createIdeaMindmapCommand';
 import { GetProjectByIdQuery } from '@contexts/project/application/query/getProjectById/getProjectByIdQuery';
@@ -89,6 +92,28 @@ export function createIdeaTools(commandBus: CommandBus, queryBus: QueryBus): Any
             execute: async ({ id, name, description, category }) => {
                 await commandBus.dispatch(new UpdateIdeaCommand(id, name, description, category));
                 return readIdea(id);
+            },
+        }),
+
+        defineTool({
+            name: 'delete_idea',
+            description:
+                'Permanently delete an idea **with its features and their tickets**. Without confirm, nothing is ' +
+                'deleted: the tool returns how many features and tickets would be lost. Call it again with ' +
+                'confirm: true to delete. To keep the work, use convert_idea_to_project instead.',
+            scope: ScopeValue.IDEA,
+            access: 'write',
+            inputSchema: z.object({
+                id: uuidSchema.describe('Id of the idea to delete.'),
+                confirm: z.boolean().optional().describe('true deletes; omitted or false only reports the impact.'),
+            }),
+            execute: async ({ id, confirm }) => {
+                const impact = await queryBus.dispatch<GetIdeaDeletionImpactQuery, IdeaDeletionImpactDto>(
+                    new GetIdeaDeletionImpactQuery(id),
+                );
+                if (!confirm) return { deleted: false, id, wouldDelete: impact };
+                await commandBus.dispatch(new DeleteIdeaCommand(id));
+                return { deleted: true, id, removed: impact };
             },
         }),
 
