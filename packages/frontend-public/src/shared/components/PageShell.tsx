@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react'
 
 // Le gabarit de toute page du site : borné et centré plutôt qu'étalé sur toute la largeur,
-// comme les pages privées. La hauteur de ligne de la grille suit la largeur du conteneur
-// (gridGeometry), donc un bloc garde son rapport quelle que soit la largeur de rendu.
+// comme les pages privées. `canvas` : une Page composée, qui se centre elle-même à la largeur
+// de sa taille d'écran.
 //
 // flex plutôt que 100vh : la NavBar occupe déjà le haut de #root (flex column), sinon la page
 // dépasserait la fenêtre de la hauteur de la barre.

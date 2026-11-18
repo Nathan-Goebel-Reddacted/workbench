@@ -1,8 +1,8 @@
 # Atelier Portfolio
 
 Portfolio et atelier de travail personnels : un site public qui présente projets et CV, et un
-espace privé qui sert à les composer — catalogue de projets, atelier d'idées, éditeur de pages en
-grille, et un serveur MCP par lequel un agent vient lire et écrire dans l'atelier.
+espace privé qui sert à les composer — catalogue de projets, atelier d'idées, éditeur de pages libre
+(Elements placés au pixel, une disposition par taille d'écran), et un serveur MCP par lequel un agent vient lire et écrire dans l'atelier.
 
 ## Sommaire
 
@@ -93,7 +93,7 @@ packages/
 ├── frontend-public/   React — site public               (port 5173)
 ├── frontend-private/  React — espace privé              (port 5174)
 └── shared-ui/         thème, authentification, composants partagés,
-                       et content/ : rendu des grilles partagé par
+                       et content/ : rendu des Pages partagé par
                        l'éditeur et le site public
 
 docker/web/            image nginx qui sert les deux fronts en production
@@ -316,7 +316,7 @@ npm run format:check && npm run lint && npm run typecheck && npm test && npm run
 ```
 
 Les tests ne couvrent pour l'instant que du domaine et des fonctions pures — pas de base, pas de
-serveur HTTP simulé : la géométrie des grilles, le garde de rôles, les références de tickets, et la
+serveur HTTP simulé : les Pages (Components, dispositions par taille d'écran), le garde de rôles, les références de tickets, et la
 génération du script d'import.
 
 ## Glossaire

@@ -6,7 +6,7 @@ export { CONTENT_RENDERERS, CONTENT_FLOW, type ContentRenderers, type ContentFlo
 export { cssColor } from './page/color'
 export { linkHref, projectPagePath } from './page/linkHref'
 export { clearBindingCache } from './richText/dataBinding'
-export { PAGE_BOTTOM_MARGIN, readingRows, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
+export { PAGE_BOTTOM_MARGIN, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
 export type {
   PageDto,
   PageElement,
@@ -35,8 +35,6 @@ export type {
 } from './page/pageTypes'
 export { buildRichTextExtensions } from './richText/richTextExtensions'
 
-export { GAP, rowHeightFor, gridHeightFor, sectionBox, growForType } from './grid/gridGeometry'
-export { DRAGGING_Z, computeBackgroundDepths, backgroundColorForDepth, zIndexFor } from './grid/backgroundStacking'
 export {
   VIDEO_EXTENSIONS,
   IMAGE_EXTENSIONS,
@@ -82,6 +80,12 @@ export {
 } from './mindmap/mindmap'
 export { mindmapStroke, mindmapText, mindmapFill } from './mindmap/mindmapTheme'
 
-export type { PageType } from './section/sectionTypes'
-export type { BindingEntity, BindingField, DataBindingAttrs, ImageFit, ImagePosition } from './section/types'
-export { BINDING_FIELDS, BINDING_ENTITY_LABELS, IMAGE_FIT_OPTIONS, IMAGE_POSITION_OPTIONS } from './section/types'
+export type {
+  PageType,
+  BindingEntity,
+  BindingField,
+  DataBindingAttrs,
+  ImageFit,
+  ImagePosition,
+} from './page/contentOptions'
+export { BINDING_FIELDS, BINDING_ENTITY_LABELS, IMAGE_FIT_OPTIONS, IMAGE_POSITION_OPTIONS } from './page/contentOptions'

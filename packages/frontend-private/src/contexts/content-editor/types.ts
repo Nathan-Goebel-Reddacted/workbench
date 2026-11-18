@@ -1,5 +1,7 @@
 import type { PageDto } from '@content'
 
+export type { PageType } from '@content'
+
 export type Page = PageDto
 
 export type MediaItem = { id: string; name: string; url: string }

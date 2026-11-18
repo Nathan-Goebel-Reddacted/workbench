@@ -144,21 +144,6 @@ import { ListIdeasQuery } from '@contexts/idea/application/query/listIdeas/listI
 import { ListIdeasHandler } from '@contexts/idea/application/query/listIdeas/listIdeasHandler';
 
 // --- ContentEditor ---
-import { PageLayoutFactory } from '@contexts/contentEditor/domain/factory/pageLayoutFactory';
-import { EnsurePageLayoutCommand } from '@contexts/contentEditor/application/command/ensurePageLayout/ensurePageLayoutCommand';
-import { EnsurePageLayoutHandler } from '@contexts/contentEditor/application/command/ensurePageLayout/ensurePageLayoutHandler';
-import { AddSectionCommand } from '@contexts/contentEditor/application/command/addSection/addSectionCommand';
-import { AddSectionHandler } from '@contexts/contentEditor/application/command/addSection/addSectionHandler';
-import { RemoveSectionCommand } from '@contexts/contentEditor/application/command/removeSection/removeSectionCommand';
-import { RemoveSectionHandler } from '@contexts/contentEditor/application/command/removeSection/removeSectionHandler';
-import { MoveSectionCommand } from '@contexts/contentEditor/application/command/moveSection/moveSectionCommand';
-import { MoveSectionHandler } from '@contexts/contentEditor/application/command/moveSection/moveSectionHandler';
-import { UpdateSectionContentCommand } from '@contexts/contentEditor/application/command/updateSectionContent/updateSectionContentCommand';
-import { UpdateSectionContentHandler } from '@contexts/contentEditor/application/command/updateSectionContent/updateSectionContentHandler';
-import { GetPageLayoutByIdQuery } from '@contexts/contentEditor/application/query/getPageLayoutById/getPageLayoutByIdQuery';
-import { GetPageLayoutByIdHandler } from '@contexts/contentEditor/application/query/getPageLayoutById/getPageLayoutByIdHandler';
-import { GetPageLayoutByRefQuery } from '@contexts/contentEditor/application/query/getPageLayoutByRef/getPageLayoutByRefQuery';
-import { GetPageLayoutByRefHandler } from '@contexts/contentEditor/application/query/getPageLayoutByRef/getPageLayoutByRefHandler';
 import { PageFactory } from '@contexts/contentEditor/domain/factory/pageFactory';
 import { PageMutator } from '@contexts/contentEditor/application/command/pageMutator';
 import { EnsurePageCommand } from '@contexts/contentEditor/application/command/ensurePage/ensurePageCommand';
@@ -260,7 +245,6 @@ import { ProjectRepository } from '@contexts/project/infrastructure/repository/p
 import { FeatureRepository } from '@contexts/feature/infrastructure/repository/featureRepository';
 import { TicketRepository } from '@contexts/ticket/infrastructure/repository/ticketRepository';
 import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRepository';
-import { PageLayoutRepository } from '@contexts/contentEditor/infrastructure/repository/pageLayoutRepository';
 import { PageRepository } from '@contexts/contentEditor/infrastructure/repository/pageRepository';
 import { AgentToolRepository } from '@contexts/ai-assistant/infrastructure/repository/agentToolRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
@@ -357,7 +341,6 @@ export function bootstrap(
         feature: new FeatureRepository(em),
         ticket: new TicketRepository(em),
         idea: new IdeaRepository(em),
-        pageLayout: new PageLayoutRepository(em),
         page: new PageRepository(em),
         agentTool: new AgentToolRepository(em),
         pairingRequest: new PairingRequestRepository(em),
@@ -412,7 +395,6 @@ export function bootstrap(
     const featureFactory = new FeatureFactory();
     const ticketFactory = new TicketFactory();
     const ideaFactory = new IdeaFactory();
-    const pageLayoutFactory = new PageLayoutFactory();
     const pageFactory = new PageFactory();
     // Le haché est un choix d'infrastructure : le domaine ne connaît que le port.
     const secretHasher = new BcryptSecretHasher();
@@ -551,22 +533,7 @@ export function bootstrap(
     queryBus.register(GetReferenceTreeQuery.queryName, new GetReferenceTreeHandler(referenceDirectory));
 
     // ContentEditor
-    commandBus.register(
-        EnsurePageLayoutCommand.commandName,
-        new EnsurePageLayoutHandler(repos.pageLayout, pageLayoutFactory),
-    );
-    commandBus.register(AddSectionCommand.commandName, new AddSectionHandler(repos.pageLayout));
-    commandBus.register(RemoveSectionCommand.commandName, new RemoveSectionHandler(repos.pageLayout, uploads));
-    commandBus.register(MoveSectionCommand.commandName, new MoveSectionHandler(repos.pageLayout));
-    commandBus.register(UpdateSectionContentCommand.commandName, new UpdateSectionContentHandler(repos.pageLayout));
-    queryBus.register(GetPageLayoutByIdQuery.queryName, new GetPageLayoutByIdHandler(repos.pageLayout));
-    // Le layout n'est public que si la page qu'il habille l'est : l'éditeur ne sait pas
-    // lire un projet, il demande.
     const pageVisibility = new PageVisibility(repos.project, repos.portfolio);
-    queryBus.register(
-        GetPageLayoutByRefQuery.queryName,
-        new GetPageLayoutByRefHandler(repos.pageLayout, pageVisibility),
-    );
     const pages = new PageMutator(repos.page, uploads);
     commandBus.register(EnsurePageCommand.commandName, new EnsurePageHandler(repos.page, pageFactory));
     commandBus.register(AddElementCommand.commandName, new AddElementHandler(pages));

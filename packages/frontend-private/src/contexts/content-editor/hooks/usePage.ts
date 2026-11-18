@@ -22,8 +22,7 @@ import {
   reorderElement,
   setComponent,
 } from '../api'
-import type { Page, ReorderDirection } from '../types'
-import type { PageType } from '../widgets'
+import type { Page, PageType, ReorderDirection } from '../types'
 
 type Status = 'loading' | 'ready' | 'error'
 

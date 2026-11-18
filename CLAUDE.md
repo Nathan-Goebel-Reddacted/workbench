@@ -64,6 +64,7 @@ Ces variables sont injectées sur `:root` par `ThemeProvider` (shared-ui) et peu
 | `NavBar` | Barre de navigation |
 | `Button` | Bouton générique (variants : `primary`, `secondary`, `ghost`) |
 | `ColorPicker` | Picker couleur simple (hex + swatch) |
+| `PageRenderer` (`@content`) | Rendu d'une Page (Elements, Components, disposition par taille d'écran), partagé par l'éditeur et le site public |
 
 ### Couches d'un contexte (frontend-private)
 

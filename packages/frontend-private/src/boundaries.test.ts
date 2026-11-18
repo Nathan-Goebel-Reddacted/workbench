@@ -94,7 +94,7 @@ describe('frontières entre contextes', () => {
   })
 
   it('garde le modèle d’un contexte indépendant de son interface', () => {
-    const MODEL = /^contexts\/[^/]+\/(types|status|widgets|api|queries)\.ts$/
+    const MODEL = /^contexts\/[^/]+\/(types|status|api|queries)\.ts$/
     const UI = /^contexts\/[^/]+\/(components|pages|hooks)\//
     const offenders = imports.filter(({ file, target }) => MODEL.test(file) && UI.test(target))
 

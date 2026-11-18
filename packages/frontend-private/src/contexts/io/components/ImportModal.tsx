@@ -79,7 +79,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
             <div key={row.table} style={reportRowStyle}>
               <span>{row.table}</span>
               <span style={mutedStyle}>
-                +{row.inserted} inserted · ~{row.updated} updated
+                {row.ignored ? 'retired table, ignored' : `+${row.inserted} inserted · ~${row.updated} updated`}
               </span>
             </div>
           ))}

@@ -67,6 +67,25 @@ describe('redirectToStaging', () => {
         expect(() => redirectToStaging(dump, tables)).toThrow(/legacy_stuff/);
     });
 
+    it('écarte une table retirée, bloc COPY compris, et reprend sur la table suivante', () => {
+        const dump = [
+            'COPY public.page_layouts (id, sections) FROM stdin;',
+            '1\t[]',
+            '\\.',
+            'INSERT INTO public.page_layouts (id) VALUES (2);',
+            'COPY public.projects (id) FROM stdin;',
+            '3',
+            '\\.',
+            '',
+        ].join('\n');
+
+        const out = redirectToStaging(dump, tables);
+
+        expect(out).not.toContain('page_layouts');
+        expect(out).not.toContain('1\t[]');
+        expect(out).toContain('COPY "io_staging".projects (id) FROM stdin;\n3\n\\.');
+    });
+
     it('laisse passer les lignes qui ne sont ni COPY ni INSERT', () => {
         const dump = 'SET statement_timeout = 0;\n-- un commentaire\n';
 
@@ -133,6 +152,14 @@ describe('buildImportScript', () => {
 
         expect(script).toContain('DROP SCHEMA "io_staging" CASCADE;');
         expect(script).not.toContain('ROLLBACK;');
+    });
+
+    it('signale une table retirée du dump par une ligne « ignorée » du rapport', () => {
+        const script = buildImportScript([projects], `COPY public.page_layouts (id) FROM stdin;\n9\n\\.\n${dump}`);
+
+        expect(script).toContain(`INSERT INTO "io_staging"._report VALUES ('page_layouts', 0, 0, true);`);
+        expect(script.indexOf("'page_layouts', 0, 0, true")).toBeLessThan(script.indexOf('_report r;'));
+        expect(buildImportScript([projects], dump)).not.toContain(', true);');
     });
 
     it('annule tout en simulation, une fois le rapport lu', () => {

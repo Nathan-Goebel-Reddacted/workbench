@@ -1,5 +1,4 @@
-import type { PageType } from '../section/sectionTypes'
-import type { BindingEntity, FormField, ImageFit, ImagePosition } from '../section/types'
+import type { BindingEntity, FormField, ImageFit, ImagePosition, PageType } from './contentOptions'
 
 export type ElementTransform = Readonly<{ x: number; y: number; w: number; h: number }>
 

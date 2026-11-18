@@ -14,6 +14,10 @@ export type IoTable = {
 // environnement ne doit pas rouvrir celui-ci.
 const EXCLUDED_TABLES = new Set(['mikro_orm_migrations', 'site_access']);
 
+// Tables dont le code a cessé de lire les données, mais qu'un dump plus ancien porte encore :
+// l'import les ignore (et le dit dans son rapport) au lieu de refuser tout le dump.
+export const RETIRED_TABLES: ReadonlySet<string> = new Set(['page_layouts']);
+
 // Dériver la liste des tables des métadonnées plutôt que de l'énumérer à la main est ce qui
 // fait que l'import/export couvre tous les bounded contexts sans entretien : une nouvelle
 // entité y entre dès qu'elle est déclarée.

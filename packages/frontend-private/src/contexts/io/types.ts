@@ -5,5 +5,5 @@ export type ExportResult = { target: ExportTarget; filename: string; uploads: nu
 export type ImportReport = {
   source: string
   uploadsRestored: boolean
-  tables: { table: string; inserted: number; updated: number }[]
+  tables: { table: string; inserted: number; updated: number; ignored: boolean }[]
 }

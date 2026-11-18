@@ -10,7 +10,7 @@ import {
   type ShownSlide,
 } from '@content'
 import { usePage } from '../hooks/usePage'
-import type { PageType } from '../widgets'
+import type { PageType } from '../types'
 import { ElementFrame } from './canvas/ElementFrame'
 import { collectGuides, type GuideLines } from './canvas/canvasGestures'
 import { ElementInspector } from './inspector/ElementInspector'

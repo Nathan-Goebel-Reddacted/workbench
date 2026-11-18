@@ -5,7 +5,7 @@ import { useApiUrl } from '../../config/ApiUrlContext'
 import { buildRichTextExtensions } from './richTextExtensions'
 import { resolveUploadPaths } from './uploadPaths'
 import { useBindingLabel } from './dataBinding'
-import type { DataBindingAttrs } from '../section/types'
+import type { DataBindingAttrs } from '../page/contentOptions'
 
 type Props = { html: string; style?: CSSProperties }
 

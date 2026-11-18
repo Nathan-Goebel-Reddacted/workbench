@@ -37,7 +37,7 @@ export const featureRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus,
         },
     );
 
-    // Ouverte : le site public la lit via les jetons de liaison des widgets texte
+    // Ouverte : le site public la lit via les jetons de liaison des Text
     // (shared-ui/src/content/richText/dataBinding.tsx). Une feature ne sort d'ici que si son
     // porteur est publiquement visible.
     app.get<{ Params: { id: string } }>(

@@ -1,24 +1,22 @@
 import { useRef, useState, type CSSProperties, type FormEvent } from 'react'
 import { useApiUrl } from '../../config/ApiUrlContext'
-import { readContactFormContent, type FormField } from './types'
-import type { RenderMode } from './renderMode'
+import type { FormField } from './contentOptions'
+import type { ContactFormComponent } from './pageTypes'
 
 type Props = {
-  content: Record<string, unknown>
-  mode: RenderMode
+  form: Pick<ContactFormComponent, 'title' | 'fields' | 'submitLabel' | 'successMessage'>
+  editing: boolean
   colors?: { text: string; button: string }
 }
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 
 /**
- * Seul widget interactif du catalogue. Dans l'éditeur (`mode === 'edit'`) le formulaire est un
- * aperçu inerte : sans cela, chaque essai dans le Design Lab enverrait un vrai mail.
+ * Dans l'éditeur, le formulaire est un aperçu inerte : sans cela, chaque essai enverrait un vrai mail.
  */
-export function ContactForm({ content, mode, colors }: Props) {
+export function ContactForm({ form, editing: isEditing, colors }: Props) {
   const apiUrl = useApiUrl()
-  const { title, fields, submitLabel, successMessage } = readContactFormContent(content)
-  const isEditing = mode === 'edit'
+  const { title, fields, submitLabel, successMessage } = form
 
   // Horodatage du rendu : le backend rejette les soumissions trop rapides pour être humaines.
   const renderedAt = useRef(Date.now())

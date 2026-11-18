@@ -3,7 +3,7 @@
 //
 // Le composant accepte soit un mindmap déjà chargé (`mindmap`), soit une URL de fichier
 // `.mindmap.json` qu'il va chercher lui-même (`url`) — c'est cette seconde forme qu'utilise
-// le widget document, qui ne connaît qu'une URL.
+// un Media, qui ne connaît qu'une URL.
 import type { CSSProperties } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
