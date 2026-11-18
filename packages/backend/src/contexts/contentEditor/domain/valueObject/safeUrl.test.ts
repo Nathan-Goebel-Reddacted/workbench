@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseSafeUrl } from './safeUrl.js';
+import { parseLinkUrl, parseSafeUrl } from './safeUrl.js';
 
 describe('parseSafeUrl', () => {
     it.each([
@@ -31,4 +31,27 @@ describe('parseSafeUrl', () => {
     ])('refuse %s', raw => {
         expect(parseSafeUrl(raw)).toBeNull();
     });
+
+    it.each(['/', '/projects', '/cv'])('refuse la page du site %s, réservée au Link', raw => {
+        expect(parseSafeUrl(raw)).toBeNull();
+    });
+});
+
+describe('parseLinkUrl', () => {
+    it.each([
+        ['/', '/'],
+        [' /projects ', '/projects'],
+        ['/cv', '/cv'],
+        ['/uploads/a-1.png', '/uploads/a-1.png'],
+        ['https://example.com', 'https://example.com/'],
+    ])('accepte %s', (raw, expected) => {
+        expect(parseLinkUrl(raw)).toBe(expected);
+    });
+
+    it.each(['/admin', '/projects/', '/projects/x', '/cv/../admin', '/CV', 'javascript:alert(1)', '//evil.test'])(
+        'refuse %s',
+        raw => {
+            expect(parseLinkUrl(raw)).toBeNull();
+        },
+    );
 });

@@ -11,6 +11,7 @@ import {
     formFields,
 } from './contactForm';
 import { SiteOrigins } from '../valueObject/siteOrigins';
+import { SITE_PAGES } from '../valueObject/safeUrl';
 import { BindingRef, bindingsIn } from './bindings';
 import {
     FONT_SIZE_FLOORS,
@@ -200,7 +201,7 @@ export const COMPONENT_REGISTRY = {
         interactive: false,
         flow: 'visual',
         normalize: component => {
-            const url = component.safeUrl('url');
+            const url = component.linkUrl('url');
             const projectId = component.uuid('projectId');
             const newTab = component.boolean('newTab', false);
             if (url !== null && projectId !== null) {
@@ -210,7 +211,8 @@ export const COMPONENT_REGISTRY = {
         },
         projects: value => (typeof value.projectId === 'string' ? [value.projectId] : []),
         describe:
-            'Makes the whole element clickable. { url: http(s) URL | /uploads/… | /projects/<id> | null, ' +
+            `Makes the whole element clickable. { url: http(s) URL | /uploads/… | /projects/<id> | a site page ` +
+            `(${SITE_PAGES.join(', ')}) | null, ` +
             'projectId: project id | null (follows the project destination), newTab: boolean } — at most one ' +
             'target; refused on an interactive content.',
     },

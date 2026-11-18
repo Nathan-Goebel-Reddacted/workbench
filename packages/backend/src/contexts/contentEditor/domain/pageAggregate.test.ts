@@ -479,9 +479,18 @@ describe('Link', () => {
         });
     });
 
+    it.each(['/', '/projects', '/cv'])('vise la page du site %s', url => {
+        const target = element();
+
+        target.setComponent('link', { url });
+
+        expect(target.getComponents().link).toEqual({ url, projectId: null, newTab: false });
+    });
+
     it.each([
         [{ url: 'javascript:alert(1)' }],
         [{ url: ' JAVASCRIPT:alert(1)' }],
+        [{ url: '/admin' }],
         [{ projectId: 'abc' }],
         [{ url: 'https://example.com', projectId: '11111111-1111-4111-8111-111111111111' }],
     ])('refuse %j', raw => {
@@ -551,6 +560,7 @@ describe('Media', () => {
         [{ files: [{ url: 'javascript:alert(1)' }] }],
         [{ files: [{ url: 'data:image/png;base64,x' }] }],
         [{ files: [{ url: '/uploads/../x' }] }],
+        [{ files: [{ url: '/cv' }] }],
         [{ files: '/uploads/a.png' }],
         [{ files: [{ url: '/uploads/a.png', alt: 'x'.repeat(MAX_ALT_LENGTH + 1) }] }],
         [{ files: Array.from({ length: MAX_MEDIA_FILES + 1 }, () => ({ url: '/uploads/a.png' })) }],

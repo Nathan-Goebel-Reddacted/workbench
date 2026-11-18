@@ -1,6 +1,6 @@
 import { InvalidComponentException } from '../exception/invalidComponent';
 import { ColorValue, parseColor } from '../valueObject/color';
-import { parseSafeUrl } from '../valueObject/safeUrl';
+import { SITE_PAGES, parseLinkUrl, parseSafeUrl } from '../valueObject/safeUrl';
 import { SiteOrigins } from '../valueObject/siteOrigins';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -85,6 +85,19 @@ export class ComponentReader {
         const value = this.string(key);
         if (value === '') return null;
         return parseSafeUrl(value) ?? this.invalid(key, 'an http(s) URL, an /uploads/ path or a project page', null);
+    }
+
+    linkUrl(key: string): string | null {
+        const value = this.string(key);
+        if (value === '') return null;
+        return (
+            parseLinkUrl(value) ??
+            this.invalid(
+                key,
+                `an http(s) URL, an /uploads/ path, a project page or a site page (${SITE_PAGES.join(', ')})`,
+                null,
+            )
+        );
     }
 
     embedUrl(key: string): string | null {

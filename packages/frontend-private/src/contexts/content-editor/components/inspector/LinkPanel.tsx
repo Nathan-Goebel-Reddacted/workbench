@@ -33,7 +33,7 @@ export function LinkPanel({ value, onChange }: PanelProps<'link'>) {
           <input
             type="url"
             style={inputStyle}
-            placeholder="https://…"
+            placeholder="https://… or /projects, /cv, /"
             value={url}
             onChange={e => setUrl(e.target.value)}
             onBlur={commitUrl}
