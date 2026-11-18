@@ -1,6 +1,6 @@
 export { MindmapView } from './mindmap/MindmapView'
 export { PageRenderer, type ShownSlide } from './page/PageRenderer'
-export { pageAt, screenFor, screenScale } from './page/screenPage'
+export { pageAt, screenFor } from './page/screenPage'
 export { TEXT_FONT_OPTIONS, RenderScreenContext } from './page/typography'
 export { CONTENT_RENDERERS, CONTENT_FLOW, type ContentRenderers, type ContentFlow } from './page/contentRenderers'
 export { cssColor } from './page/color'

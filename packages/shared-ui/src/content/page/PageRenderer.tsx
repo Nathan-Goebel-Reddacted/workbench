@@ -4,12 +4,12 @@ import { cssColor } from './color'
 import { linkHref } from './linkHref'
 import { EditingContext } from './interactiveRenderers'
 import { renderContent } from './contentRenderers'
-import { pageHeight, readingOrder } from './pageGeometry'
+import { pageHeight, pageScale, readingOrder } from './pageGeometry'
 import type { LinkComponent, PageDto, PageElement, ScreenPage, ScreenSize, SurfaceComponent } from './pageTypes'
 import { useContainerWidth } from './useContainerWidth'
 import { ShownSlideContext } from './mediaRenderers'
 import { RenderScreenContext } from './typography'
-import { pageAt, screenFor, screenScale } from './screenPage'
+import { pageAt, screenFor } from './screenPage'
 
 type Props = {
   page: PageDto
@@ -41,18 +41,20 @@ export function PageRenderer({
   return (
     <EditingContext.Provider value={editing}>
       <RenderScreenContext.Provider value={rendered}>
-        <div ref={ref} style={{ ...frameStyle, maxWidth: rendered === 'desktop' ? placed.referenceWidth : undefined }}>
-          {width > 0 && (
-            <PlacedPage
-              page={placed}
-              width={width}
-              overlay={overlay}
-              foreground={foreground}
-              extraHeight={extraHeight}
-              editing={editing}
-              shownSlide={shownSlide}
-            />
-          )}
+        <div ref={ref}>
+          <div style={{ ...frameStyle, maxWidth: placed.referenceWidth }}>
+            {width > 0 && (
+              <PlacedPage
+                page={placed}
+                width={width}
+                overlay={overlay}
+                foreground={foreground}
+                extraHeight={extraHeight}
+                editing={editing}
+                shownSlide={shownSlide}
+              />
+            )}
+          </div>
         </div>
       </RenderScreenContext.Provider>
     </EditingContext.Provider>
@@ -65,7 +67,7 @@ type PlacedProps = Required<Pick<Props, 'extraHeight' | 'editing'>> &
 function PlacedPage({ page, width, overlay, foreground, extraHeight, editing, shownSlide }: PlacedProps) {
   const apiUrl = useApiUrl()
   const { referenceWidth, elements } = page
-  const scale = screenScale(width, page.screen, referenceWidth)
+  const scale = pageScale(width, referenceWidth)
   const height = pageHeight(elements) + extraHeight
   const layer = new Map(elements.map((element, index) => [element.id, index + 1]))
 

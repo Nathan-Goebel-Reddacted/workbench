@@ -41,8 +41,10 @@ const SCREEN_LIST = PAGE_SCREENS.map(
 const LAYOUT_GUIDE =
     `A page is a flat list of elements. Each element has one placement per screen size: ${SCREEN_LIST}. A ` +
     `placement is a transform { x, y, w, h } in pixels on the width of its screen size (x + w <= that width), ` +
-    `plus a hidden flag; keep values on multiples of 8. The public site shows desktop from 1024 px, tablet from ` +
-    `600 px and mobile below, each scaled to the window width and centered above its own width. Compose desktop ` +
+    `plus a hidden flag; keep values on multiples of 8. Each width is a minimum: the public site shows desktop ` +
+    `from ${PAGE_SCREEN_WIDTHS.desktop} px, tablet from ${PAGE_SCREEN_WIDTHS.tablet} px and mobile below, each ` +
+    `drawn at its own width, pixel for pixel, and centered with side margins on a wider window; only a window ` +
+    `narrower than mobile scales the mobile layout down. Text is shown at its set size. Compose desktop ` +
     `first: a new element is placed full width at the bottom of tablet and mobile, and its first content sets its ` +
     `tablet and mobile height from its desktop box. regenerate_layout then rebuilds tablet or mobile from desktop ` +
     `(desktop rows read top to bottom and left to right, stacked full width), overwriting that screen size; ` +

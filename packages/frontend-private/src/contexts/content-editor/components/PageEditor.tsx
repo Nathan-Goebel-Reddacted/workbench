@@ -15,18 +15,12 @@ import { ElementFrame } from './canvas/ElementFrame'
 import { collectGuides, type GuideLines } from './canvas/canvasGestures'
 import { ElementInspector } from './inspector/ElementInspector'
 import { ClipProbes } from './canvas/ClipProbes'
-import {
-  EDITED_SCREENS,
-  SCREEN_LABELS,
-  SMALLEST_WIDTHS,
-  layoutWarnings,
-  type ClippedByScreen,
-} from './canvas/screenWarnings'
+import { EDITED_SCREENS, SCREEN_LABELS, layoutWarnings, type ClippedByScreen } from './canvas/screenWarnings'
 import { PageAlerts, flaggedElements } from './PageAlerts'
 
 const EDITING_ROOM = 320
 
-const PREVIEWS = EDITED_SCREENS.map(screen => SMALLEST_WIDTHS[screen])
+const BELOW_MOBILE_PREVIEW = 320
 
 const NOTHING_CLIPPED: ClippedByScreen = { desktop: new Set(), tablet: new Set(), mobile: new Set() }
 
@@ -68,7 +62,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
     ),
   }
   const selected = canEdit && editing ? placed.elements.find(element => element.id === selectedId) : undefined
-  const flagged = new Set(flaggedElements(page.elements, clipped, page.screens).map(element => element.id))
+  const flagged = new Set(flaggedElements(page.elements, clipped).map(element => element.id))
 
   const chooseScreen = (next: ScreenSize) => {
     setScreen(next)
@@ -167,7 +161,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
               ))}
             </div>
             <div style={groupStyle} role="group" aria-label="Preview">
-              {PREVIEWS.map(width => (
+              {[...EDITED_SCREENS.map(option => page.screens[option].width), BELOW_MOBILE_PREVIEW].map(width => (
                 <Button
                   key={width}
                   variant={previewWidth === width ? 'secondary' : 'ghost'}
@@ -187,7 +181,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
           </div>
         ) : (
           <>
-            <PageAlerts elements={page.elements} clipped={clipped} screens={page.screens} onSelect={reveal} />
+            <PageAlerts elements={page.elements} clipped={clipped} onSelect={reveal} />
             {placed.elements.length === 0 && (
               <p style={inviteStyle}>
                 {canEdit ? 'This page is empty. Add a first element to start composing it.' : 'This page is empty.'}
@@ -215,7 +209,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
             key={`${selected.id}-${screen}`}
             element={selected}
             screen={screen}
-            warnings={layoutWarnings(selected, clipped, page.screens)}
+            warnings={layoutWarnings(selected, clipped)}
             onHide={hidden => void hide(selected.id, screen, hidden)}
             onSet={(kind, value) => void set(selected.id, kind, value)}
             onUnset={kind => void unset(selected.id, kind)}

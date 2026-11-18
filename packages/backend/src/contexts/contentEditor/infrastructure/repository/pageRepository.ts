@@ -78,7 +78,7 @@ function layoutOf(row: ElementRow['layout']): Layout {
     const placements = {} as Record<ScreenSize, Placement>;
     for (const screen of SCREENS) {
         const { transform: t, hidden } = row[screen];
-        placements[screen] = { transform: new Transform(screen, t.x, t.y, t.w, t.h), hidden };
+        placements[screen] = { transform: Transform.clamped(screen, t.x, t.y, t.w, t.h), hidden };
     }
     return Layout.of(placements, row.origin && isScreenSize(row.origin) ? row.origin : 'desktop');
 }

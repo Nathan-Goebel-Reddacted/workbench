@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pageAt, screenFor, screenScale } from './screenPage'
+import { pageAt, screenFor } from './screenPage'
 import type { PageDto, PageElementDto } from './pageTypes'
 
 const box = (x: number) => ({ x, y: 0, w: 10, h: 10 })
@@ -23,9 +23,9 @@ const page: PageDto = {
   version: 1,
   hasContent: true,
   screens: {
-    desktop: { width: 1440, maxHeight: 20000, minViewport: 1024 },
-    tablet: { width: 768, maxHeight: 40000, minViewport: 600 },
-    mobile: { width: 375, maxHeight: 80000, minViewport: 0 },
+    desktop: { width: 1280, maxHeight: 20000, minViewport: 1280 },
+    tablet: { width: 768, maxHeight: 40000, minViewport: 768 },
+    mobile: { width: 360, maxHeight: 80000, minViewport: 0 },
   },
   elements: [element('a'), element('b', true)],
 }
@@ -46,25 +46,12 @@ describe('pageAt', () => {
 describe('screenFor', () => {
   it.each([
     [1920, 'desktop'],
-    [1024, 'desktop'],
-    [1023, 'tablet'],
-    [600, 'tablet'],
-    [599, 'mobile'],
+    [1280, 'desktop'],
+    [1279, 'tablet'],
+    [768, 'tablet'],
+    [767, 'mobile'],
     [320, 'mobile'],
   ] as const)('rend %s px en %s', (width, screen) => {
     expect(screenFor(width, page.screens)).toBe(screen)
-  })
-})
-
-describe('screenScale', () => {
-  it('réduit le desktop sans jamais l’agrandir', () => {
-    expect(screenScale(1024, 'desktop', 1440)).toBeCloseTo(0.711, 3)
-    expect(screenScale(1920, 'desktop', 1440)).toBe(1)
-  })
-
-  it('met tablette et mobile à l’échelle de la largeur, vers le haut comme vers le bas', () => {
-    expect(screenScale(1023, 'tablet', 768)).toBeCloseTo(1.332, 3)
-    expect(screenScale(599, 'mobile', 375)).toBeCloseTo(1.597, 3)
-    expect(screenScale(320, 'mobile', 375)).toBeCloseTo(0.853, 3)
   })
 })

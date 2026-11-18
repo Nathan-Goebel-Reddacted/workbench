@@ -156,7 +156,7 @@ describe('Outils MCP des Pages', () => {
             components: {},
             issues: [],
         });
-        expect(element.layout.mobile.transform).toMatchObject({ x: 16, w: 343 });
+        expect(element.layout.mobile.transform).toMatchObject({ x: 16, w: 328 });
     });
 
     it('place un Element sans transform sous le plus bas', async () => {
@@ -269,7 +269,7 @@ describe('Outils MCP des Pages', () => {
             page: HOME,
             elementId: element.id,
             screen: 'mobile',
-            transform: { x: 16, y: 40, w: 343, h: 120 },
+            transform: { x: 16, y: 40, w: 328, h: 120 },
         });
         const tooWide = await call('move_element', {
             page: HOME,
@@ -278,7 +278,7 @@ describe('Outils MCP des Pages', () => {
             transform: { x: 0, y: 0, w: 480, h: 160 },
         });
 
-        expect(saved.layout.mobile.transform).toEqual({ x: 16, y: 40, w: 343, h: 120 });
+        expect(saved.layout.mobile.transform).toEqual({ x: 16, y: 40, w: 328, h: 120 });
         expect(saved.layout.desktop.transform).toEqual({ x: 0, y: 0, w: 480, h: 160 });
         expect(tooWide.ok).toBe(false);
         if (!tooWide.ok) expect(tooWide.error.code).toBe('invalid_input');
@@ -340,7 +340,7 @@ describe('Outils MCP des Pages', () => {
         expect(page).toMatchObject({
             pageType: 'portfolio',
             pageRef: PORTFOLIO_ID,
-            screens: { desktop: { width: 1440 } },
+            screens: { desktop: { width: 1280 } },
         });
         expect(page.elements.map(e => e.id)).toEqual([first.id, second.id]);
     });
@@ -406,7 +406,7 @@ describe('Catalogue des outils de Page', () => {
 
         for (const kind of COMPONENT_KINDS) expect(description).toContain(`${kind} (`);
         expect(description).toMatch(/link component is refused on an interactive content \(.*contactForm/);
-        expect(named('move_element').description).toContain('1440');
-        expect(named('move_element').description).toContain('375');
+        expect(named('move_element').description).toContain('1280');
+        expect(named('move_element').description).toContain('360');
     });
 });

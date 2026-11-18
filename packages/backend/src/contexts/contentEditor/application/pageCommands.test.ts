@@ -189,7 +189,7 @@ describe('commandes sur les Elements', () => {
 
         await handler.handle(new RegenerateLayoutCommand(pageId, 'mobile'));
 
-        expect((await elements())[0].transform('mobile').getW()).toBe(343);
+        expect((await elements())[0].transform('mobile').getW()).toBe(328);
         await expect(handler.handle(new RegenerateLayoutCommand(pageId, 'desktop'))).rejects.toThrow(
             UnknownScreenSizeException,
         );
@@ -330,9 +330,9 @@ describe('GetPageByRefHandler', () => {
         expect(dto).toMatchObject({
             pageRef: PAGE_REF,
             screens: {
-                desktop: { width: 1440, minViewport: 1024 },
-                tablet: { width: 768, minViewport: 600 },
-                mobile: { width: 375, minViewport: 0 },
+                desktop: { width: 1280, minViewport: 1280 },
+                tablet: { width: 768, minViewport: 768 },
+                mobile: { width: 360, minViewport: 0 },
             },
             hasContent: false,
             elements: [],

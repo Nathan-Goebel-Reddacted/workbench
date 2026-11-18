@@ -6,12 +6,6 @@ export function screenFor(width: number, screens: Readonly<Record<ScreenSize, Sc
   return WIDEST_FIRST.find(screen => width >= screens[screen].minViewport) ?? 'mobile'
 }
 
-export function screenScale(width: number, screen: ScreenSize, referenceWidth: number): number {
-  if (width <= 0 || referenceWidth <= 0) return 1
-  const scale = width / referenceWidth
-  return screen === 'desktop' ? Math.min(1, scale) : scale
-}
-
 export function pageAt(page: PageDto, screen: ScreenSize, keepHidden = false): ScreenPage {
   return {
     ...page,

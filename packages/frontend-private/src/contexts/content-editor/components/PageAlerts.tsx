@@ -2,25 +2,20 @@ import type { CSSProperties } from 'react'
 import type { PageElementDto } from '@content'
 import { COMPONENT_KINDS, COMPONENT_REGISTRY } from './componentRegistry'
 import { issueMessage } from './inspector/ElementInspector'
-import { layoutWarnings, type ClippedByScreen, type Screens } from './canvas/screenWarnings'
+import { layoutWarnings, type ClippedByScreen } from './canvas/screenWarnings'
 
 type Props = {
   elements: readonly PageElementDto[]
   clipped: ClippedByScreen
-  screens: Screens
   onSelect: (elementId: string) => void
 }
 
-export function problemsOf(element: PageElementDto, clipped: ClippedByScreen, screens: Screens): string[] {
-  return [...layoutWarnings(element, clipped, screens), ...(element.issues ?? []).map(issueMessage)]
+export function problemsOf(element: PageElementDto, clipped: ClippedByScreen): string[] {
+  return [...layoutWarnings(element, clipped), ...(element.issues ?? []).map(issueMessage)]
 }
 
-export function flaggedElements(
-  elements: readonly PageElementDto[],
-  clipped: ClippedByScreen,
-  screens: Screens,
-): PageElementDto[] {
-  return elements.filter(element => problemsOf(element, clipped, screens).length > 0)
+export function flaggedElements(elements: readonly PageElementDto[], clipped: ClippedByScreen): PageElementDto[] {
+  return elements.filter(element => problemsOf(element, clipped).length > 0)
 }
 
 function labelOf(element: PageElementDto): string {
@@ -28,8 +23,8 @@ function labelOf(element: PageElementDto): string {
   return content ? COMPONENT_REGISTRY[content].label : 'Empty element'
 }
 
-export function PageAlerts({ elements, clipped, screens, onSelect }: Props) {
-  const flagged = flaggedElements(elements, clipped, screens)
+export function PageAlerts({ elements, clipped, onSelect }: Props) {
+  const flagged = flaggedElements(elements, clipped)
   if (flagged.length === 0) return null
 
   return (
@@ -42,7 +37,7 @@ export function PageAlerts({ elements, clipped, screens, onSelect }: Props) {
           <li key={element.id}>
             <button type="button" style={itemStyle} onClick={() => onSelect(element.id)}>
               <strong style={labelStyle}>{labelOf(element)}</strong>
-              <span>{problemsOf(element, clipped, screens).join(' ')}</span>
+              <span>{problemsOf(element, clipped).join(' ')}</span>
             </button>
           </li>
         ))}

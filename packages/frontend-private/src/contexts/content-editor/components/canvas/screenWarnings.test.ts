@@ -2,11 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type { PageElementDto, TextComponent } from '@content'
 import { clippedOn, layoutWarnings, unreadableOn } from './screenWarnings'
 
-const screens = {
-  desktop: { width: 1440, maxHeight: 20000, minViewport: 1024 },
-  tablet: { width: 768, maxHeight: 40000, minViewport: 600 },
-  mobile: { width: 375, maxHeight: 80000, minViewport: 0 },
-}
 const box = { transform: { x: 0, y: 0, w: 10, h: 10 }, hidden: false }
 
 function textElement(fontSize: TextComponent['fontSize'], hiddenOnMobile = false): PageElementDto {
@@ -20,13 +15,13 @@ function textElement(fontSize: TextComponent['fontSize'], hiddenOnMobile = false
 }
 
 describe('unreadableOn', () => {
-  it('mesure chaque taille à la plus petite largeur de sa tranche', () => {
-    expect(unreadableOn(textElement({ desktop: 15, tablet: 14, mobile: 13 }), screens)).toEqual(['desktop', 'tablet'])
-    expect(unreadableOn(textElement({ desktop: 16, tablet: 15, mobile: 12 }), screens)).toEqual(['mobile'])
+  it('compare la taille réglée de chaque taille d’écran à 11 px', () => {
+    expect(unreadableOn(textElement({ desktop: 10, tablet: 11, mobile: 12 }))).toEqual(['desktop'])
+    expect(unreadableOn(textElement({ desktop: 13, tablet: 12, mobile: 10 }))).toEqual(['mobile'])
   })
 
   it('ignore une taille où le Text est masqué', () => {
-    expect(unreadableOn(textElement({ desktop: 16, tablet: 15, mobile: 8 }, true), screens)).toEqual([])
+    expect(unreadableOn(textElement({ desktop: 16, tablet: 15, mobile: 8 }, true))).toEqual([])
   })
 })
 
@@ -43,9 +38,9 @@ describe('layoutWarnings', () => {
   it('nomme les tailles touchées', () => {
     const clipped = { desktop: new Set<string>(), tablet: new Set(['a']), mobile: new Set(['a']) }
 
-    expect(layoutWarnings(textElement({ desktop: 16, tablet: 15, mobile: 12 }), clipped, screens)).toEqual([
+    expect(layoutWarnings(textElement({ desktop: 16, tablet: 15, mobile: 10 }), clipped)).toEqual([
       'Content cut by its box on tablet, mobile: enlarge the element there.',
-      'Text below 11 px on mobile at 320 px wide: raise its mobile size.',
+      'Text below 11 px on mobile: raise its mobile size.',
     ])
   })
 })

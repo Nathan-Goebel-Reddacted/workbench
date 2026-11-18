@@ -42,7 +42,7 @@ function layoutOf(desktop: Transform, hidden: Partial<Record<ScreenSize, boolean
     return Layout.of({
         desktop: { transform: desktop, hidden: hidden.desktop ?? false },
         tablet: { transform: t(16, 0, 736, 100, 'tablet'), hidden: hidden.tablet ?? false },
-        mobile: { transform: t(16, 0, 343, 100, 'mobile'), hidden: hidden.mobile ?? false },
+        mobile: { transform: t(16, 0, 328, 100, 'mobile'), hidden: hidden.mobile ?? false },
     });
 }
 
@@ -694,14 +694,14 @@ describe('Disposition par taille d’écran', () => {
 
     it('crée un Element complet, posé en bas de la tablette et du mobile, sans toucher les autres', () => {
         const other = element();
-        other.moveTo(t(16, 400, 343, 200, 'mobile'));
+        other.moveTo(t(16, 400, 328, 200, 'mobile'));
         const p = page([other]);
 
         const added = p.addElement(new ElementId());
 
-        expect(added.transform('mobile')).toMatchObject({ x: 16, y: 600 + 24, w: 343 });
+        expect(added.transform('mobile')).toMatchObject({ x: 16, y: 600 + 24, w: 328 });
         expect(added.transform('tablet')).toMatchObject({ x: 16, y: 100 + 24, w: 736 });
-        expect(other.transform('mobile').equals(t(16, 400, 343, 200, 'mobile'))).toBe(true);
+        expect(other.transform('mobile').equals(t(16, 400, 328, 200, 'mobile'))).toBe(true);
     });
 
     it('crée un Element depuis le mobile au haut visible, et garde sa hauteur mobile au premier contenu', () => {
@@ -711,7 +711,7 @@ describe('Disposition par taille d’écran', () => {
         const mobile = added.transform('mobile');
         p.setComponent(added.getId(), 'media', {});
 
-        expect(mobile).toMatchObject({ x: 16, y: 640, w: 343 });
+        expect(mobile).toMatchObject({ x: 16, y: 640, w: 328 });
         expect(added.transform('mobile').equals(mobile)).toBe(true);
         expect(added.transform('tablet').getH()).toBe(Math.round((736 * 160) / 480));
         expect(added.transform('desktop').getY()).toBe(360 + 40);
@@ -719,7 +719,7 @@ describe('Disposition par taille d’écran', () => {
 
     it('ignore un Element masqué pour trouver le bas d’une taille', () => {
         const hidden = element();
-        hidden.moveTo(t(16, 5000, 343, 100, 'mobile'));
+        hidden.moveTo(t(16, 5000, 328, 100, 'mobile'));
         hidden.hide('mobile', true);
 
         const added = page([hidden]).addElement(new ElementId());
@@ -744,9 +744,9 @@ describe('Disposition par taille d’écran', () => {
         const p = page([target]);
 
         p.setComponent(target.getId(), 'text', { fontSize: 28 });
-        expect(target.transform('mobile').getH()).toBe(Math.round(((100 * 686) / 343) * (14 / 28) ** 2));
+        expect(target.transform('mobile').getH()).toBe(Math.round(((100 * 686) / 328) * (14 / 28) ** 2));
 
-        target.moveTo(t(16, 0, 343, 64, 'mobile'));
+        target.moveTo(t(16, 0, 328, 64, 'mobile'));
         p.setComponent(target.getId(), 'text', { html: '<p>x</p>' });
         expect(target.transform('mobile').getH()).toBe(64);
     });
@@ -754,7 +754,7 @@ describe('Disposition par taille d’écran', () => {
     it('régénère une taille depuis les rangées de lecture du desktop', () => {
         const right = element(t(800, 0, 400, 200));
         const left = element(t(0, 20, 400, 200));
-        const below = element(t(0, 400, 1440, 100));
+        const below = element(t(0, 400, 1280, 100));
         const hidden = element(t(0, 0, 100, 100));
         hidden.hide('desktop', true);
         const p = page([right, hidden, below, left]);
@@ -763,14 +763,14 @@ describe('Disposition par taille d’écran', () => {
 
         const order = [left, right, below, hidden].map(e => e.transform('mobile').getY());
         expect(order).toEqual([...order].sort((a, b) => a - b));
-        expect(left.transform('mobile')).toMatchObject({ x: 16, y: 24, w: 343, h: 172 });
+        expect(left.transform('mobile')).toMatchObject({ x: 16, y: 24, w: 328, h: 164 });
         expect(hidden.getLayout().isHidden('mobile')).toBe(true);
         expect(left.transform('tablet').getW()).toBe(736);
     });
 
     it('régénère une Page de 200 Elements sans dépasser la hauteur maximale', () => {
         const elements = Array.from({ length: MAX_ELEMENTS }, (_, i) =>
-            element(t(0, i * 90, 1440, 2000 > MAX_PAGE_HEIGHT - i * 90 ? 80 : 2000), { text: {} }),
+            element(t(0, i * 90, 1280, 2000 > MAX_PAGE_HEIGHT - i * 90 ? 80 : 2000), { text: {} }),
         );
         const p = page(elements);
 
@@ -793,25 +793,25 @@ describe('Disposition par taille d’écran', () => {
     });
 
     it('duplique chaque placement avec son décalage, borné à sa taille', () => {
-        const source = element(t(1400, 0, 40, 40));
-        source.moveTo(t(16, 0, 343, 40, 'mobile'));
+        const source = element(t(1240, 0, 40, 40));
+        source.moveTo(t(16, 0, 328, 40, 'mobile'));
         const p = page([source]);
 
         const copy = p.duplicateElement(source.getId(), new ElementId());
 
-        expect(copy.transform('desktop')).toMatchObject({ x: 1400, y: 20 });
-        expect(copy.transform('mobile')).toMatchObject({ x: 32, y: 20, w: 343 });
+        expect(copy.transform('desktop')).toMatchObject({ x: 1240, y: 20 });
+        expect(copy.transform('mobile')).toMatchObject({ x: 32, y: 20, w: 328 });
     });
 
     it('supprime un Element sans déplacer les autres', () => {
         const kept = element();
-        kept.moveTo(t(16, 500, 343, 40, 'mobile'));
+        kept.moveTo(t(16, 500, 328, 40, 'mobile'));
         const removed = element();
         const p = page([removed, kept]);
 
         p.removeElement(removed.getId());
 
-        expect(kept.transform('mobile').equals(t(16, 500, 343, 40, 'mobile'))).toBe(true);
+        expect(kept.transform('mobile').equals(t(16, 500, 328, 40, 'mobile'))).toBe(true);
     });
 });
 
@@ -824,7 +824,7 @@ describe('Typographie du Text', () => {
         const body = element();
         body.setComponent('text', { fontSize: 18 });
 
-        expect(sizesOf(title)).toEqual({ desktop: 76, tablet: 41, mobile: 20 });
+        expect(sizesOf(title)).toEqual({ desktop: 76, tablet: 46, mobile: 21 });
         expect(sizesOf(body)).toEqual({ desktop: 18, tablet: 15, mobile: 14 });
     });
 
@@ -844,7 +844,7 @@ describe('Typographie du Text', () => {
         expect(sizesOf(target)).toEqual({ desktop: 76, tablet: 48, mobile: 24 });
 
         target.setComponent('text', { fontSize: { desktop: 64, tablet: 48, mobile: 22 } });
-        expect(sizesOf(target)).toEqual({ desktop: 64, tablet: 34, mobile: 22 });
+        expect(sizesOf(target)).toEqual({ desktop: 64, tablet: 38, mobile: 22 });
     });
 
     it('recalcule la taille de police d’une taille d’écran régénérée', () => {
@@ -854,7 +854,7 @@ describe('Typographie du Text', () => {
 
         page([target]).regenerateLayout('mobile');
 
-        expect(sizesOf(target)).toEqual({ desktop: 76, tablet: 60, mobile: 20 });
+        expect(sizesOf(target)).toEqual({ desktop: 76, tablet: 60, mobile: 21 });
     });
 
     it('pose la police, les capitales et l’espacement, et refuse les valeurs hors bornes', () => {
