@@ -7,6 +7,10 @@ import { ScopeValue } from '../../domain/valueObject/scope';
  */
 export type ToolAccess = 'read' | 'write';
 
+export const ANY_SCOPE = 'any';
+
+export type ToolScope = ScopeValue | typeof ANY_SCOPE;
+
 /** Identity of the agent behind a tool call, resolved from its token by the transport layer. */
 export type ToolContext = Readonly<{
     agentToolId: string;
@@ -36,7 +40,7 @@ export type ToolResult = Readonly<{ ok: true; data: unknown }> | Readonly<{ ok: 
 export interface ToolDescriptor<TInput extends ZodType = ZodType> {
     readonly name: string;
     readonly description: string;
-    readonly scope: ScopeValue;
+    readonly scope: ToolScope;
     readonly access: ToolAccess;
     readonly inputSchema: TInput;
     execute(input: z.infer<TInput>, context: ToolContext): Promise<unknown>;

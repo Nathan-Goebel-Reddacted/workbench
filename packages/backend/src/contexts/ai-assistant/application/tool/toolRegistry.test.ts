@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { ToolRegistry } from './toolRegistry.js';
-import { defineTool } from './toolDescriptor.js';
+import { ANY_SCOPE, ToolScope, defineTool } from './toolDescriptor.js';
 import { AgentTool } from '../../domain/agentToolAggregate.js';
 import { AgentToolId } from '../../domain/valueObject/agentToolId.js';
 import { UserId } from '../../domain/valueObject/userId.js';
@@ -30,7 +30,7 @@ function agent(scopes: ScopeValue[], permission: PermissionValue): AgentTool {
     );
 }
 
-function tool(name: string, scope: ScopeValue, access: 'read' | 'write', execute = async () => ({ ok: 1 })) {
+function tool(name: string, scope: ToolScope, access: 'read' | 'write', execute = async () => ({ ok: 1 })) {
     return defineTool({
         name,
         description: 'un outil',
@@ -89,6 +89,15 @@ describe('ToolRegistry — périmètre', () => {
         expect(forbidden.error.code).toBe('unknown_tool');
         expect(forbidden.error.message).toBe('Unknown tool: tickets.list');
         expect(unknown.error.message).toBe('Unknown tool: nexiste.pas');
+    });
+
+    it('expose un outil de tout périmètre à tout agent en écriture', () => {
+        const instance = registry(tool('upload', ANY_SCOPE, 'write'));
+
+        expect(instance.listFor(agent([ScopeValue.TICKET], PermissionValue.READ_WRITE)).map(t => t.name)).toEqual([
+            'upload',
+        ]);
+        expect(instance.listFor(agent([ScopeValue.TICKET], PermissionValue.READ))).toEqual([]);
     });
 
     it('refuse deux outils portant le même nom', () => {

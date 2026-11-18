@@ -110,8 +110,8 @@ export function createFeatureTools(commandBus: CommandBus, queryBus: QueryBus): 
         defineTool({
             name: 'add_feature_document',
             description:
-                'Attach a document (pdf, image or video) to a feature. The document must already be hosted ' +
-                'somewhere: this tool records its URL, it does not upload a file.',
+                'Attach a document (pdf, image or video) to a feature. This tool records a URL: to attach a local ' +
+                'file, store it first with upload_file.',
             scope: ScopeValue.FEATURE,
             access: 'write',
             inputSchema: documentSchema.extend({

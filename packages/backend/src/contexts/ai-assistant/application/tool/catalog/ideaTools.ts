@@ -8,13 +8,14 @@ import { RemoveIdeaLinkCommand } from '@contexts/idea/application/command/remove
 import { AddIdeaDocumentCommand } from '@contexts/idea/application/command/addIdeaDocument/addIdeaDocumentCommand';
 import { RemoveIdeaDocumentCommand } from '@contexts/idea/application/command/removeIdeaDocument/removeIdeaDocumentCommand';
 import { ConvertIdeaToProjectCommand } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectCommand';
+import { CreateIdeaMindmapCommand } from '@contexts/idea/application/command/createIdeaMindmap/createIdeaMindmapCommand';
 import { GetProjectByIdQuery } from '@contexts/project/application/query/getProjectById/getProjectByIdQuery';
 import { GetIdeaByIdQuery } from '@contexts/idea/application/query/getIdeaById/getIdeaByIdQuery';
 import { ListIdeasQuery } from '@contexts/idea/application/query/listIdeas/listIdeasQuery';
 import { Category } from '@contexts/idea/application/command/createIdea/createIdeaCommand';
 import { ScopeValue } from '../../../domain/valueObject/scope';
 import { AnyToolDescriptor, defineTool } from '../toolDescriptor';
-import { documentSchema, linkSchema, uuidSchema, withGeneratedIds } from './sharedSchemas';
+import { documentSchema, linkSchema, mindmapSchema, uuidSchema, withGeneratedIds } from './sharedSchemas';
 
 export function createIdeaTools(commandBus: CommandBus, queryBus: QueryBus): AnyToolDescriptor[] {
     const readIdea = (id: string) => queryBus.dispatch(new GetIdeaByIdQuery(id));
@@ -147,8 +148,8 @@ export function createIdeaTools(commandBus: CommandBus, queryBus: QueryBus): Any
         defineTool({
             name: 'add_idea_document',
             description:
-                'Attach a document (pdf, image or video) to an idea. The document must already be hosted ' +
-                'somewhere: this tool records its URL, it does not upload a file.',
+                'Attach a document (pdf, image or video) to an idea. This tool records a URL: to attach a local ' +
+                'file, store it first with upload_file.',
             scope: ScopeValue.IDEA,
             access: 'write',
             inputSchema: documentSchema.extend({
@@ -156,6 +157,24 @@ export function createIdeaTools(commandBus: CommandBus, queryBus: QueryBus): Any
             }),
             execute: async ({ id, name, url }) => {
                 await commandBus.dispatch(new AddIdeaDocumentCommand(id, crypto.randomUUID(), name, url));
+                return readIdea(id);
+            },
+        }),
+
+        defineTool({
+            name: 'create_idea_mindmap',
+            description:
+                'Draw a new mindmap and attach it to an idea as a document. Returns the updated idea; ' +
+                'the mindmap URL is in its documents. Edit it later with update_mindmap.',
+            scope: ScopeValue.IDEA,
+            access: 'write',
+            inputSchema: z.object({
+                id: uuidSchema.describe('Id of the idea.'),
+                name: z.string().min(1).describe('Document name shown in the interface.'),
+                content: mindmapSchema,
+            }),
+            execute: async ({ id, name, content }) => {
+                await commandBus.dispatch(new CreateIdeaMindmapCommand(id, crypto.randomUUID(), name, content));
                 return readIdea(id);
             },
         }),

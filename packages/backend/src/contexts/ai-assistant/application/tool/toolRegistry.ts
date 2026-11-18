@@ -1,6 +1,6 @@
 import { DomainException } from '@shared/domain/domainException';
 import { AgentTool } from '../../domain/agentToolAggregate';
-import { AnyToolDescriptor, ToolContext, ToolErrorCode, ToolResult } from './toolDescriptor';
+import { ANY_SCOPE, AnyToolDescriptor, ToolContext, ToolErrorCode, ToolResult } from './toolDescriptor';
 import { ILogger } from '@shared/application/port/iLogger';
 
 function failure(code: ToolErrorCode, message: string): ToolResult {
@@ -59,7 +59,7 @@ export class ToolRegistry {
     }
 
     private isAllowed(tool: AnyToolDescriptor, agent: AgentTool): boolean {
-        const inScope = agent.getScopes().some(scope => scope.getValue() === tool.scope);
+        const inScope = tool.scope === ANY_SCOPE || agent.getScopes().some(scope => scope.getValue() === tool.scope);
         if (!inScope) return false;
 
         const permission = agent.getPermission();

@@ -8,6 +8,7 @@ import { createIdeaTools } from './ideaTools';
 import { createPortfolioTools } from './portfolioTools';
 import { createPageTools } from './pageTools';
 import { createReferenceTools } from './referenceTools';
+import { createUploadTools } from './uploadTools';
 import { ILogger } from '@shared/application/port/iLogger';
 
 /** Builds the single registry shared by every MCP transport. */
@@ -22,6 +23,7 @@ export function createToolRegistry(commandBus: CommandBus, queryBus: QueryBus, l
         ...createPortfolioTools(commandBus, queryBus),
         ...createPageTools(commandBus, queryBus),
         ...createReferenceTools(queryBus),
+        ...createUploadTools(commandBus, queryBus),
     );
 
     return registry;
