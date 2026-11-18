@@ -26,6 +26,11 @@ mobile).
   tard sans toucher aux Elements qui ne le portent pas.
 - **Coordonnées en pourcentage** : écartées, la hauteur ne pouvant suivre la largeur sans
   déformation.
+- **Chaque disposition mise à l'échelle de la largeur de la fenêtre** (seuils 1024 / 600,
+  facteur ≈ 0,71 à 1,6) : retenu le 2026-11-17, écarté le 2026-11-18 en composant l'accueil. Le
+  texte rétrécissait avec la disposition : à 1024 px, un surtitre de 13 px de la maquette en
+  rendait 9, et la règle de lisibilité imposait ≥ 16 px en desktop. Les largeurs deviennent des
+  minimums, rendus au pixel.
 - **Un empilement automatique sous 1024 px, sans disposition éditée** : retenu le 2026-11-13
   « pour démarrer », écarté le 2026-11-17 en composant l'accueil. Les rangées de lecture du
   desktop ne disent ni ce qu'on veut voir en premier sur un téléphone, ni ce qu'on y masque, ni
@@ -68,9 +73,8 @@ mobile).
 
 ### Rendu desktop
 
-- Le `Transform` s'exprime en pixels sur la largeur de sa taille d'écran (desktop 1440 px) :
-  l'éditeur montre exactement ce qui est publié. Au-dessus de sa largeur, la Page se centre ;
-  en dessous, elle est mise à l'échelle de la fenêtre.
+- Le `Transform` s'exprime en pixels sur la largeur de sa taille d'écran (desktop 1280 px) :
+  l'éditeur montre exactement ce qui est publié. Au-dessus de sa largeur, la Page se centre.
 - La hauteur de la Page suit l'Element le plus bas, plus une marge fixe.
 - L'ordre d'affichage est explicite et réglé par l'utilisateur, sans couches calculées : une
   zone cliquable placée devant un texte lui prend ses clics. Cet ordre est la position de
@@ -88,15 +92,24 @@ mobile).
   son `Link` sur le site public. C'est le backend qui en décide en construisant la Page publique ;
   le front public n'applique aucune règle.
 
-### Disposition par taille d'écran (révision 2026-11-17)
+### Disposition par taille d'écran (révision 2026-11-17, largeurs 2026-11-18)
 
-- Trois tailles d'écran : desktop 1440 px, tablette 768 px, mobile 375 px. Chaque Element porte
+- Trois tailles d'écran : desktop 1280 px, tablette 768 px, mobile 360 px. Chaque Element porte
   une **disposition** : un placement par taille (un `Transform` borné par la largeur de sa taille,
   et un drapeau « masqué »), toujours complète. Hauteur maximale : 20 000 px en desktop,
   40 000 px en tablette, 80 000 px en mobile, où les Elements s'empilent.
-- Rendu public par seuils de largeur de fenêtre : desktop dès 1024 px, tablette de 600 à
-  1023 px, mobile sous 600 px ; chaque disposition est mise à l'échelle de la fenêtre et se
-  centre au-dessus de sa largeur. Les seuils vivent dans le domaine backend et passent par le DTO.
+- Chaque largeur est un **minimum**. Rendu public par seuils de largeur de fenêtre : desktop dès
+  1280 px, tablette de 768 à 1279 px, mobile sous 768 px. Chaque disposition est rendue à sa
+  largeur, au pixel, et se centre au-dessus ; les marges latérales prennent le fond du site (un
+  fond pleine largeur s'arrête au bord de la disposition). Seule une fenêtre plus étroite que le
+  mobile réduit la disposition mobile à l'échelle. Les seuils vivent dans le domaine backend et
+  passent par le DTO.
+- La taille d'un Text est donc celle rendue à l'écran. Elle se règle par taille d'écran ;
+  tablette et mobile se calculent depuis le desktop (rapport des largeurs, plancher 15 / 14 px)
+  puis se retouchent. L'éditeur signale un Text réglé sous 11 px dans une taille où il est
+  affiché.
+- Un placement stocké hors des bornes de sa taille (Page composée avec d'anciennes largeurs) est
+  ramené dans la largeur à la lecture, jamais refusé.
 - Masquer garde la boîte. Un Element masqué ne compte ni dans la hauteur ni dans l'ordre de
   lecture de sa taille ; masqué dans les trois tailles, son contenu ne publie plus de page projet.
 - Composer le desktop d'abord : un Element se crée pleine largeur (gouttière 16 px) en bas de la

@@ -339,8 +339,9 @@ Component de chaque sorte.
 _Avoid_ : propriété, réglage, widget
 
 **Taille d'écran** :
-Une des trois largeurs pour lesquelles une Page est disposée : desktop (1440 px), tablette
-(768 px), mobile (375 px). Le site public choisit la taille selon la largeur de la fenêtre.
+Une des trois largeurs minimales pour lesquelles une Page est disposée : desktop (1280 px),
+tablette (768 px), mobile (360 px). Le site public prend la plus large qui tient dans la fenêtre
+et la rend au pixel, centrée ; seul le mobile se réduit sous 360 px.
 _Avoid_ : breakpoint, viewport, résolution
 
 **Disposition** :
