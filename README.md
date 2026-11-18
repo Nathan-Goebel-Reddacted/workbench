@@ -338,9 +338,19 @@ Une facette d'un Element (sa position, son habillage, son contenu…). Un Elemen
 Component de chaque sorte.
 _Avoid_ : propriété, réglage, widget
 
+**Taille d'écran** :
+Une des trois largeurs pour lesquelles une Page est disposée : desktop (1440 px), tablette
+(768 px), mobile (375 px). Le site public choisit la taille selon la largeur de la fenêtre.
+_Avoid_ : breakpoint, viewport, résolution
+
+**Disposition** :
+Ce qui situe un Element dans chaque taille d'écran : un Transform par taille, et s'il y est
+masqué. Tout Element en porte une, complète. Tablette et mobile se calculent depuis le desktop,
+puis se retouchent à la main.
+_Avoid_ : layout (pour l'utilisateur), responsive
+
 **Transform** :
-Le Component qui situe un Element sur la Page : sa position et sa taille. Tout Element en porte
-un.
+La position et la taille d'un Element dans une taille d'écran, en pixels sur sa largeur.
 _Avoid_ : position, grid position, cellule
 
 **Surface** :
@@ -354,14 +364,15 @@ _Avoid_ : link area, zone de lien
 
 **Contenu** :
 Le Component qui donne à un Element ce qu'il montre. Un Element porte au plus un contenu ; un
-Element sans contenu est un fond ou une zone cliquable.
+Element sans contenu est un fond ou une zone cliquable. Une carte, une pastille ou une liste de
+liens ne sont pas des contenus : elles se composent de plusieurs Elements.
 _Avoid_ : widget, type de section
 
 ### Contenus
 
 **Text** :
-Un texte riche, avec sa couleur et sa taille, qui peut insérer des champs vivants issus d'un
-projet.
+Un texte riche, avec sa police (titre ou corps), sa taille par taille d'écran, ses capitales, son
+espacement et sa couleur, qui peut insérer des champs vivants issus d'un projet.
 _Avoid_ : paragraphe, bloc texte
 
 **Insertion liée** :
@@ -370,28 +381,18 @@ d'origine au lieu d'en être une copie.
 _Avoid_ : variable, data binding (pour l'utilisateur)
 
 **Media** :
-Une image, une vidéo, un PDF ou une mindmap affiché sur la Page, avec son cadrage.
+Un ou plusieurs fichiers (image, vidéo, PDF, mindmap) affichés sur la Page avec un cadrage
+commun ; s'ils sont plusieurs, ils défilent. Une légende n'en fait pas partie : c'est un Text
+placé à côté.
 _Avoid_ : document, image (pour le Component)
 
 **Code** :
 Un extrait de code source affiché avec son langage.
 _Avoid_ : snippet
 
-**LinkList** :
-Une liste de liens externes, chacun avec son libellé et son logo.
-_Avoid_ : link, liens
-
 **Embed** :
 Une page externe intégrée telle quelle dans la Page (vidéo hébergée, démo en ligne…).
 _Avoid_ : iframe
-
-**Carousel** :
-Une suite d'images légendées qui défilent.
-_Avoid_ : galerie, slider
-
-**ProjectCard** :
-La vignette d'un projet du catalogue, qui renvoie à sa page.
-_Avoid_ : carte, aperçu projet
 
 **ContactForm** :
 Le formulaire par lequel un visiteur envoie un message au propriétaire du portfolio.

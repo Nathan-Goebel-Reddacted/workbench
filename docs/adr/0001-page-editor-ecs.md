@@ -26,8 +26,11 @@ mobile).
   tard sans toucher aux Elements qui ne le portent pas.
 - **Coordonnées en pourcentage** : écartées, la hauteur ne pouvant suivre la largeur sans
   déformation.
-- **Une disposition par dimension d'écran (à la Framer)** : écartée. Chaque Element devrait être
-  placé dans chaque dimension, par l'utilisateur comme par un agent MCP.
+- **Un empilement automatique sous 1024 px, sans disposition éditée** : retenu le 2026-11-13
+  « pour démarrer », écarté le 2026-11-17 en composant l'accueil. Les rangées de lecture du
+  desktop ne disent ni ce qu'on veut voir en premier sur un téléphone, ni ce qu'on y masque, ni
+  quelle taille garder à une image ; la mise en page d'une version mobile est un choix, pas un
+  calcul. Révision : une disposition par taille d'écran (voir § Disposition par taille d'écran).
 
 ## Consequences
 
@@ -41,16 +44,20 @@ mobile).
   image légendée, ce sont deux Elements.
 - Les combinaisons de Components interdites sont refusées par le backend ; le front ne fait que
   les refléter. Première règle : `Link` est interdit sur un contenu déjà interactif
-  (`ContactForm`, `Embed`, `LinkList`).
-- Aucune règle ne dépend du type de Page : tous les contenus, `ProjectCard` compris, sont
-  utilisables sur l'accueil comme sur une page projet.
+  (`ContactForm`, `Embed`).
+- Aucune règle ne dépend du type de Page : tous les contenus sont utilisables sur l'accueil
+  comme sur une page projet.
+- Pas de contenu composé (révision 2026-11-17) : une carte de projet, une liste de liens, une
+  rangée d'images ou une pastille se composent d'Elements libres (`Surface`, `Text`, `Media`,
+  `Link`). `ProjectCard`, `LinkList` et `Carousel`, hérités de la grille, sont retirés ; une Page
+  qui en porte encore se charge sans eux.
 
 ### Couleurs
 
 - Une couleur se choisit parmi les variables du thème ou en valeur libre ; une valeur libre est
   une donnée de contenu, elle ne suit pas un changement de thème. Par défaut, toute couleur vaut
   une variable du thème.
-- Portent une couleur : `Text`, `Surface`, `LinkList`, `ContactForm`. `Code` garde le thème de
+- Portent une couleur : `Text`, `Surface`, `ContactForm`. `Code` garde le thème de
   sa coloration syntaxique. Dans un `Text`, des mots colorés dans le texte riche priment
   localement sur la couleur du Component.
 - Une couleur ou une URL venues des données ne sont jamais recopiées telles quelles dans la
@@ -61,48 +68,58 @@ mobile).
 
 ### Rendu desktop
 
-- Le `Transform` s'exprime en pixels sur une largeur de référence de 1440 px : l'éditeur montre
-  exactement ce qui est publié. Au-dessus, la Page reste à 1440 px et se centre ; entre 1024 et
-  1440 px, elle est réduite proportionnellement ; sous 1024 px, elle est empilée.
+- Le `Transform` s'exprime en pixels sur la largeur de sa taille d'écran (desktop 1440 px) :
+  l'éditeur montre exactement ce qui est publié. Au-dessus de sa largeur, la Page se centre ;
+  en dessous, elle est mise à l'échelle de la fenêtre.
 - La hauteur de la Page suit l'Element le plus bas, plus une marge fixe.
 - L'ordre d'affichage est explicite et réglé par l'utilisateur, sans couches calculées : une
   zone cliquable placée devant un texte lui prend ses clics. Cet ordre est la position de
   l'Element dans la Page, pas un champ du `Transform` : avancer ou reculer échange deux voisins,
   et deux Elements ne peuvent pas partager un rang.
 - L'ordre du document (tabulation, lecteurs d'écran, référencement) suit l'ordre de lecture —
-  les mêmes rangées que l'empilement mobile —, indépendamment de l'ordre d'affichage.
-- Un `Link` ou une `ProjectCard` vers un projet suit la destination du projet : sa page, son URL
-  externe, ou rien s'il n'en a pas.
+  les rangées de la taille affichée, de haut en bas puis de gauche à droite —, indépendamment de
+  l'ordre d'affichage.
+- Un `Link` vers un projet suit la destination du projet : sa page, son URL externe, ou rien
+  s'il n'en a pas. Un projet privé ou supprimé neutralise le lien sans masquer l'Element : une
+  carte de projet composée d'Elements libres reste affichée, inerte.
 - Rien ne bouge sans que l'utilisateur l'ait déplacé : un contenu plus grand que sa boîte est
   coupé, jamais agrandi d'office.
 - Une référence cassée (projet supprimé ou privé, fichier disparu) masque l'Element ou désactive
   son `Link` sur le site public. C'est le backend qui en décide en construisant la Page publique ;
   le front public n'applique aucune règle.
 
-### Rendu mobile (sous 1024 px)
+### Disposition par taille d'écran (révision 2026-11-17)
 
-- Les Elements sont empilés automatiquement ; il n'y a pas de disposition mobile éditée à la
-  main.
-- L'ordre d'empilement regroupe en rangées les Elements dont les hauteurs se recouvrent sur plus
-  de la moitié de la plus petite, puis lit les rangées de haut en bas et de gauche à droite.
-- Un Element empilé prend toute la largeur. Un contenu textuel (`Text`, `LinkList`,
-  `ContactForm`, `Code`) prend la hauteur de ce qu'il affiche et garde une taille de texte
-  lisible ; un contenu visuel garde la proportion de sa boîte desktop.
-- Un Element sans contenu (fond, zone cliquable) n'existe que par ce qu'il recouvre : il est
-  masqué.
-- Si l'empilement déçoit, un Component `MobileTransform` permettra d'éditer la disposition
-  mobile sans casser le reste.
+- Trois tailles d'écran : desktop 1440 px, tablette 768 px, mobile 375 px. Chaque Element porte
+  une **disposition** : un placement par taille (un `Transform` borné par la largeur de sa taille,
+  et un drapeau « masqué »), toujours complète. Hauteur maximale : 20 000 px en desktop,
+  40 000 px en tablette, 80 000 px en mobile, où les Elements s'empilent.
+- Rendu public par seuils de largeur de fenêtre : desktop dès 1024 px, tablette de 600 à
+  1023 px, mobile sous 600 px ; chaque disposition est mise à l'échelle de la fenêtre et se
+  centre au-dessus de sa largeur. Les seuils vivent dans le domaine backend et passent par le DTO.
+- Masquer garde la boîte. Un Element masqué ne compte ni dans la hauteur ni dans l'ordre de
+  lecture de sa taille ; masqué dans les trois tailles, son contenu ne publie plus de page projet.
+- Composer le desktop d'abord : un Element se crée pleine largeur (gouttière 16 px) en bas de la
+  tablette et du mobile ; son premier contenu y fixe sa hauteur à partir de sa boîte desktop
+  (visuel : proportion gardée ; texte : reflux à police inchangée), sans toucher x, y, w. C'est
+  une approximation : l'alerte « contenu coupé » par taille sert de filet.
+- Régénérer la tablette ou le mobile depuis le desktop (commande de Page) relit les rangées du
+  desktop et les empile pleine largeur ; elle écrase toute retouche de cette taille. Un Element
+  masqué en desktop va en fin de pile, masqué. Un fond (Element sans contenu) n'a pas de règle de
+  groupe : il reçoit le calcul générique et se redéfinit à la main.
+- Une commande de placement ou de masquage nomme toujours sa taille (sans défaut) ; seuls les
+  outils MCP prennent le desktop par défaut.
 
 ### Édition
 
-- Un Element se crée vide (son seul `Transform`) ; ses Components s'ajoutent depuis
-  l'inspecteur. Dupliquer copie tous ses Components.
+- Un Element se crée vide (sa seule disposition) ; ses Components s'ajoutent depuis
+  l'inspecteur. Dupliquer copie tous ses Components et décale chaque placement de 20 px.
 - Chaque opération (ajout, déplacement, redimensionnement, pose ou retrait d'un Component,
   suppression) est une commande enregistrée aussitôt, sans brouillon. La dernière écriture
   gagne, y compris entre l'éditeur et un agent MCP — mais seulement sur un même Element : la
   Page étant enregistrée d'un bloc, une commande dont la Page a changé entre-temps est rejouée
   sur la version à jour, pour qu'une modification d'un autre Element ne soit jamais perdue.
-- L'éditeur prévisualise les dimensions d'écran courantes sans les rendre éditables.
+- L'éditeur dispose chaque taille d'écran à la main, et la régénère depuis le desktop.
 - Sans grille, l'éditeur aide à l'alignement par magnétisme (bords et centres des autres
   Elements, centre de la Page) et par un pas fin de 8 px, désactivables pendant le glisser. Ce
   sont des aides d'interface : le `Transform` reste en pixels libres.
@@ -113,6 +130,8 @@ mobile).
 
 ### Migration
 
+- Les Pages composées avant la disposition par taille (develop, jamais déployé) sont vidées par
+  une migration, sans convertisseur.
 - Les pages existantes ne sont pas migrées : elles sont supprimées et recomposées. Les données
   des projets ne sont pas touchées ; les fichiers propres à l'éditeur, référencés seulement par
   ces pages, sont supprimés avec elles.
