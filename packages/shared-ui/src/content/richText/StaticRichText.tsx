@@ -7,7 +7,7 @@ import { resolveUploadPaths } from './uploadPaths'
 import { useBindingLabel } from './dataBinding'
 import type { DataBindingAttrs } from '../section/types'
 
-type Props = { html: string; scale?: number; color?: string }
+type Props = { html: string; style?: CSSProperties }
 
 function LiveBinding({ apiUrl, attrs }: { apiUrl: string; attrs: DataBindingAttrs }) {
   const label = useBindingLabel(apiUrl, attrs)
@@ -18,7 +18,7 @@ function LiveBinding({ apiUrl, attrs }: { apiUrl: string; attrs: DataBindingAttr
   )
 }
 
-export function StaticRichText({ html, scale = 1, color = 'var(--color-text)' }: Props) {
+export function StaticRichText({ html, style }: Props) {
   const apiUrl = useApiUrl()
 
   const rendered = useMemo(() => {
@@ -35,14 +35,14 @@ export function StaticRichText({ html, scale = 1, color = 'var(--color-text)' }:
   }, [html, apiUrl])
 
   return (
-    <div className="rich-text-content" style={{ ...contentStyle, color, '--text-scale': scale } as CSSProperties}>
+    <div className="rich-text-content" style={{ ...contentStyle, ...style }}>
       {rendered}
     </div>
   )
 }
 
 const contentStyle: CSSProperties = {
-  fontSize: 'calc(0.8125rem * var(--text-scale, 1))',
+  color: 'var(--color-text)',
   height: '100%',
   overflow: 'hidden',
 }

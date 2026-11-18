@@ -1,39 +1,36 @@
 export { MindmapView } from './mindmap/MindmapView'
-export { PageRenderer } from './page/PageRenderer'
-export {
-  CONTENT_RENDERERS,
-  CONTENT_FLOW,
-  contentFlowOf,
-  type ContentRenderers,
-  type ContentFlow,
-} from './page/contentRenderers'
+export { PageRenderer, type ShownSlide } from './page/PageRenderer'
+export { pageAt, screenFor, screenScale } from './page/screenPage'
+export { TEXT_FONT_OPTIONS, RenderScreenContext } from './page/typography'
+export { CONTENT_RENDERERS, CONTENT_FLOW, type ContentRenderers, type ContentFlow } from './page/contentRenderers'
 export { cssColor } from './page/color'
 export { linkHref, projectPagePath } from './page/linkHref'
 export { clearBindingCache } from './richText/dataBinding'
-export { PAGE_BOTTOM_MARGIN, STACK_BELOW, readingRows, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
+export { PAGE_BOTTOM_MARGIN, readingRows, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
 export type {
   PageDto,
   PageElement,
+  PageElementDto,
+  ScreenPage,
+  ScreenSize,
+  ScreenSpec,
+  ElementLayout,
+  ElementPlacement,
   ElementTransform,
   ElementComponents,
   ComponentKind,
   ContentKind,
   ColorValue,
   TextComponent,
+  TextFont,
   SurfaceComponent,
   LinkComponent,
   LinkDestination,
   MediaComponent,
-  CarouselComponent,
-  CarouselItem,
+  MediaFileRef,
   ElementIssue,
   CodeComponent,
   EmbedComponent,
-  LinkListComponent,
-  LinkListItem,
-  LinkListStyle,
-  ProjectCardComponent,
-  ProjectCardSummary,
   ContactFormComponent,
 } from './page/pageTypes'
 export { buildRichTextExtensions } from './richText/richTextExtensions'
@@ -86,11 +83,5 @@ export {
 export { mindmapStroke, mindmapText, mindmapFill } from './mindmap/mindmapTheme'
 
 export type { PageType } from './section/sectionTypes'
-export type { TextScale, BindingEntity, BindingField, DataBindingAttrs, ImageFit, ImagePosition } from './section/types'
-export {
-  TEXT_SCALE_OPTIONS,
-  BINDING_FIELDS,
-  BINDING_ENTITY_LABELS,
-  IMAGE_FIT_OPTIONS,
-  IMAGE_POSITION_OPTIONS,
-} from './section/types'
+export type { BindingEntity, BindingField, DataBindingAttrs, ImageFit, ImagePosition } from './section/types'
+export { BINDING_FIELDS, BINDING_ENTITY_LABELS, IMAGE_FIT_OPTIONS, IMAGE_POSITION_OPTIONS } from './section/types'

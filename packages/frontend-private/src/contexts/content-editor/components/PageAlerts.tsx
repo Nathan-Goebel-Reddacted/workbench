@@ -1,29 +1,35 @@
 import type { CSSProperties } from 'react'
-import type { PageElement } from '@content'
+import type { PageElementDto } from '@content'
 import { COMPONENT_KINDS, COMPONENT_REGISTRY } from './componentRegistry'
 import { issueMessage } from './inspector/ElementInspector'
+import { layoutWarnings, type ClippedByScreen, type Screens } from './canvas/screenWarnings'
 
 type Props = {
-  elements: readonly PageElement[]
-  clipped: ReadonlySet<string>
+  elements: readonly PageElementDto[]
+  clipped: ClippedByScreen
+  screens: Screens
   onSelect: (elementId: string) => void
 }
 
-export function flaggedElements(elements: readonly PageElement[], clipped: ReadonlySet<string>): PageElement[] {
-  return elements.filter(element => clipped.has(element.id) || (element.issues?.length ?? 0) > 0)
+export function problemsOf(element: PageElementDto, clipped: ClippedByScreen, screens: Screens): string[] {
+  return [...layoutWarnings(element, clipped, screens), ...(element.issues ?? []).map(issueMessage)]
 }
 
-function labelOf(element: PageElement): string {
+export function flaggedElements(
+  elements: readonly PageElementDto[],
+  clipped: ClippedByScreen,
+  screens: Screens,
+): PageElementDto[] {
+  return elements.filter(element => problemsOf(element, clipped, screens).length > 0)
+}
+
+function labelOf(element: PageElementDto): string {
   const content = COMPONENT_KINDS.find(kind => element.components[kind] && COMPONENT_REGISTRY[kind].render)
   return content ? COMPONENT_REGISTRY[content].label : 'Empty element'
 }
 
-function problemsOf(element: PageElement, clipped: boolean): string[] {
-  return [...(clipped ? ['Content cut by its box.'] : []), ...(element.issues ?? []).map(issueMessage)]
-}
-
-export function PageAlerts({ elements, clipped, onSelect }: Props) {
-  const flagged = flaggedElements(elements, clipped)
+export function PageAlerts({ elements, clipped, screens, onSelect }: Props) {
+  const flagged = flaggedElements(elements, clipped, screens)
   if (flagged.length === 0) return null
 
   return (
@@ -36,7 +42,7 @@ export function PageAlerts({ elements, clipped, onSelect }: Props) {
           <li key={element.id}>
             <button type="button" style={itemStyle} onClick={() => onSelect(element.id)}>
               <strong style={labelStyle}>{labelOf(element)}</strong>
-              <span>{problemsOf(element, clipped.has(element.id)).join(' ')}</span>
+              <span>{problemsOf(element, clipped, screens).join(' ')}</span>
             </button>
           </li>
         ))}

@@ -1,49 +1,80 @@
-import { useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useRef, useState, type CSSProperties } from 'react'
 import { Button } from '@atelier/shared-ui'
-import { PageRenderer, pageScale, type ElementTransform, type PageElement } from '@content'
+import {
+  PageRenderer,
+  pageAt,
+  pageScale,
+  type ElementTransform,
+  type PageElement,
+  type ScreenSize,
+  type ShownSlide,
+} from '@content'
 import { usePage } from '../hooks/usePage'
 import type { PageType } from '../widgets'
 import { ElementFrame } from './canvas/ElementFrame'
 import { collectGuides, type GuideLines } from './canvas/canvasGestures'
 import { ElementInspector } from './inspector/ElementInspector'
-import { useClippedElements } from './canvas/useClippedElements'
+import { ClipProbes } from './canvas/ClipProbes'
+import {
+  EDITED_SCREENS,
+  SCREEN_LABELS,
+  SMALLEST_WIDTHS,
+  layoutWarnings,
+  type ClippedByScreen,
+} from './canvas/screenWarnings'
 import { PageAlerts, flaggedElements } from './PageAlerts'
 
 const EDITING_ROOM = 320
 
-const PREVIEWS = [
-  { label: '1440', width: 1440 },
-  { label: '1280', width: 1280 },
-  { label: '1024', width: 1024 },
-  { label: 'Tablet', width: 768 },
-  { label: 'Mobile', width: 375 },
-]
+const PREVIEWS = EDITED_SCREENS.map(screen => SMALLEST_WIDTHS[screen])
+
+const NOTHING_CLIPPED: ClippedByScreen = { desktop: new Set(), tablet: new Set(), mobile: new Set() }
 
 type Props = { pageType: PageType; pageRef: string }
 
 export function PageEditor({ pageType, pageRef }: Props) {
-  const { page, status, revision, canEdit, beginInteraction, add, move, reorder, duplicate, set, unset, remove } =
-    usePage(pageType, pageRef)
+  const { page, status, revision, canEdit, beginInteraction, ...commands } = usePage(pageType, pageRef)
+  const { add, move, hide, regenerate, reorder, duplicate, set, unset, remove } = commands
+  const [screen, setScreen] = useState<ScreenSize>('desktop')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [previewWidth, setPreviewWidth] = useState<number | null>(null)
+  const [confirmRegenerate, setConfirmRegenerate] = useState(false)
+  const [shownSlide, setShownSlide] = useState<ShownSlide | null>(null)
   const [preview, setPreview] = useState<{ id: string; transform: ElementTransform; lines: GuideLines } | null>(null)
+  const [clipped, setClipped] = useState<ClippedByScreen>(NOTHING_CLIPPED)
   const scroller = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLDivElement>(null)
-  const clipped = useClippedElements(canvas, page !== null && previewWidth === null)
+
+  const onMeasure = useCallback(
+    (measured: ScreenSize, ids: ReadonlySet<string>) => setClipped(current => ({ ...current, [measured]: ids })),
+    [],
+  )
 
   if (status === 'loading') return <p style={mutedStyle}>Loading page…</p>
   if (status === 'error') return <p style={mutedStyle}>The page could not be loaded.</p>
   if (!page) return <p style={mutedStyle}>This page has not been composed yet.</p>
 
+  const editing = previewWidth === null
+  const placed = pageAt(page, screen, true)
   const shown = {
     ...page,
     elements: page.elements.map(element =>
-      preview?.id === element.id ? { ...element, transform: preview.transform } : element,
+      preview?.id === element.id
+        ? {
+            ...element,
+            layout: { ...element.layout, [screen]: { ...element.layout[screen], transform: preview.transform } },
+          }
+        : element,
     ),
   }
-  const selected =
-    canEdit && previewWidth === null ? page.elements.find(element => element.id === selectedId) : undefined
-  const flagged = new Set(flaggedElements(page.elements, clipped).map(element => element.id))
+  const selected = canEdit && editing ? placed.elements.find(element => element.id === selectedId) : undefined
+  const flagged = new Set(flaggedElements(page.elements, clipped, page.screens).map(element => element.id))
+
+  const chooseScreen = (next: ScreenSize) => {
+    setScreen(next)
+    setPreviewWidth(null)
+    setConfirmRegenerate(false)
+  }
 
   const reveal = (elementId: string) => {
     setSelectedId(elementId)
@@ -56,7 +87,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
     const top = scroller.current?.getBoundingClientRect().top ?? 0
     const box = canvas.current?.getBoundingClientRect()
     if (!box) return 0
-    const scale = pageScale(box.width, page.referenceWidth)
+    const scale = pageScale(box.width, placed.referenceWidth)
     return Math.max(0, Math.round((top - box.top) / scale))
   }
 
@@ -64,19 +95,19 @@ export function PageEditor({ pageType, pageRef }: Props) {
     <ElementFrame
       transform={element.transform}
       scale={scale}
-      referenceWidth={page.referenceWidth}
+      referenceWidth={placed.referenceWidth}
       selected={element.id === selected?.id}
       flagged={flagged.has(element.id)}
       editable={canEdit}
       onSelect={() => setSelectedId(element.id)}
       guides={() =>
         collectGuides(
-          page.elements.filter(other => other.id !== element.id).map(other => other.transform),
-          page.referenceWidth,
+          placed.elements.filter(other => other.id !== element.id && !other.hidden).map(other => other.transform),
+          placed.referenceWidth,
         )
       }
       onPreview={({ transform, lines }) => setPreview({ id: element.id, transform, lines })}
-      onCommit={transform => void move(element.id, transform).finally(() => setPreview(null))}
+      onCommit={transform => void move(element.id, screen, transform).finally(() => setPreview(null))}
       beginInteraction={beginInteraction}
     />
   )
@@ -93,26 +124,59 @@ export function PageEditor({ pageType, pageRef }: Props) {
 
   return (
     <div style={layoutStyle}>
+      <ClipProbes page={page} onMeasure={onMeasure} />
       <div ref={scroller} style={scrollerStyle} onPointerDown={() => setSelectedId(null)}>
         <div style={toolbarStyle} onPointerDown={event => event.stopPropagation()}>
-          {canEdit && previewWidth === null && (
-            <Button variant="primary" onClick={() => void add(visibleTop())}>
+          {canEdit && editing && (
+            <Button variant="primary" onClick={() => void add(screen, visibleTop())}>
               Add element
             </Button>
           )}
-          <div style={previewBarStyle} role="group" aria-label="Preview">
-            <Button variant={previewWidth === null ? 'secondary' : 'ghost'} onClick={() => setPreviewWidth(null)}>
-              {canEdit ? 'Edit' : 'Page'}
+          {canEdit && editing && screen !== 'desktop' && !confirmRegenerate && (
+            <Button variant="ghost" onClick={() => setConfirmRegenerate(true)}>
+              Regenerate from desktop
             </Button>
-            {PREVIEWS.map(({ label, width }) => (
+          )}
+          {confirmRegenerate && (
+            <span style={confirmStyle}>
+              Overwrite every {screen} placement?
               <Button
-                key={width}
-                variant={previewWidth === width ? 'secondary' : 'ghost'}
-                onClick={() => setPreviewWidth(width)}
+                variant="primary"
+                onClick={() => {
+                  setConfirmRegenerate(false)
+                  void regenerate(screen)
+                }}
               >
-                {label}
+                Overwrite
               </Button>
-            ))}
+              <Button variant="ghost" onClick={() => setConfirmRegenerate(false)}>
+                Cancel
+              </Button>
+            </span>
+          )}
+          <div style={previewBarStyle}>
+            <div style={groupStyle} role="group" aria-label="Screen size">
+              {EDITED_SCREENS.map(option => (
+                <Button
+                  key={option}
+                  variant={editing && screen === option ? 'secondary' : 'ghost'}
+                  onClick={() => chooseScreen(option)}
+                >
+                  {SCREEN_LABELS[option]}
+                </Button>
+              ))}
+            </div>
+            <div style={groupStyle} role="group" aria-label="Preview">
+              {PREVIEWS.map(width => (
+                <Button
+                  key={width}
+                  variant={previewWidth === width ? 'secondary' : 'ghost'}
+                  onClick={() => setPreviewWidth(width)}
+                >
+                  {width}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
         {previewWidth !== null ? (
@@ -123,21 +187,23 @@ export function PageEditor({ pageType, pageRef }: Props) {
           </div>
         ) : (
           <>
-            <PageAlerts elements={page.elements} clipped={clipped} onSelect={reveal} />
-            {page.elements.length === 0 && (
+            <PageAlerts elements={page.elements} clipped={clipped} screens={page.screens} onSelect={reveal} />
+            {placed.elements.length === 0 && (
               <p style={inviteStyle}>
                 {canEdit ? 'This page is empty. Add a first element to start composing it.' : 'This page is empty.'}
               </p>
             )}
-            <div ref={canvas} style={{ ...canvasStyle, maxWidth: page.referenceWidth }}>
+            <div ref={canvas} style={{ ...canvasStyle, maxWidth: placed.referenceWidth }}>
               <PageRenderer
-                key={revision}
+                key={`${revision}-${screen}`}
                 page={shown}
                 overlay={overlay}
                 foreground={guideLines}
                 editing
-                stacking={false}
+                showHidden
+                screen={screen}
                 extraHeight={canEdit ? EDITING_ROOM : 0}
+                shownSlide={shownSlide && shownSlide.elementId === selected?.id ? shownSlide : undefined}
               />
             </div>
           </>
@@ -146,9 +212,11 @@ export function PageEditor({ pageType, pageRef }: Props) {
       {selected && (
         <div onPointerDown={event => event.stopPropagation()} style={inspectorSlotStyle}>
           <ElementInspector
-            key={selected.id}
+            key={`${selected.id}-${screen}`}
             element={selected}
-            clipped={clipped.has(selected.id)}
+            screen={screen}
+            warnings={layoutWarnings(selected, clipped, page.screens)}
+            onHide={hidden => void hide(selected.id, screen, hidden)}
             onSet={(kind, value) => void set(selected.id, kind, value)}
             onUnset={kind => void unset(selected.id, kind)}
             onDelete={() => {
@@ -158,6 +226,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
             onDuplicate={() => void duplicate(selected.id).then(copy => copy && setSelectedId(copy))}
             onReorder={direction => void reorder(selected.id, direction)}
             beginInteraction={beginInteraction}
+            onShowSlide={index => setShownSlide({ elementId: selected.id, index })}
           />
         </div>
       )}
@@ -165,6 +234,14 @@ export function PageEditor({ pageType, pageRef }: Props) {
   )
 }
 
+const groupStyle: CSSProperties = { display: 'flex', gap: '0.25rem' }
+const confirmStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+  fontSize: '0.875rem',
+  color: 'var(--color-text)',
+}
 const layoutStyle: CSSProperties = { flex: 1, minHeight: 0, display: 'flex' }
 const scrollerStyle: CSSProperties = {
   flex: 1,
@@ -177,7 +254,7 @@ const scrollerStyle: CSSProperties = {
   backgroundColor: 'var(--color-bg)',
 }
 const toolbarStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }
-const previewBarStyle: CSSProperties = { display: 'flex', gap: '0.25rem', marginLeft: 'auto' }
+const previewBarStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginLeft: 'auto' }
 const previewScrollStyle: CSSProperties = { overflowX: 'auto' }
 const previewFrameStyle: CSSProperties = {
   margin: '0 auto',

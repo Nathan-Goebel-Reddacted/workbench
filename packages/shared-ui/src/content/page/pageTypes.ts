@@ -1,11 +1,20 @@
 import type { PageType } from '../section/sectionTypes'
-import type { BindingEntity, FormField, ImageFit, ImagePosition, TextScale } from '../section/types'
+import type { BindingEntity, FormField, ImageFit, ImagePosition } from '../section/types'
 
 export type ElementTransform = Readonly<{ x: number; y: number; w: number; h: number }>
 
 export type ColorValue = Readonly<{ theme: string }> | Readonly<{ hex: string }>
 
-export type TextComponent = Readonly<{ html: string; scale: TextScale; color: ColorValue | null }>
+export type TextFont = 'heading' | 'body'
+
+export type TextComponent = Readonly<{
+  html: string
+  font: TextFont
+  fontSize: Readonly<Record<ScreenSize, number>>
+  uppercase: boolean
+  letterSpacing: number
+  color: ColorValue | null
+}>
 
 export type SurfaceComponent = Readonly<{
   background: ColorValue | null
@@ -26,43 +35,17 @@ export type LinkComponent = Readonly<{
   destination?: LinkDestination | null
 }>
 
+export type MediaFileRef = Readonly<{ url: string | null; alt: string }>
+
 export type MediaComponent = Readonly<{
-  url: string | null
-  alt: string
+  files: readonly MediaFileRef[]
   fit: ImageFit
   position: ImagePosition
 }>
 
-export type CarouselItem = Readonly<{ url: string | null; caption: string }>
-
-export type CarouselComponent = Readonly<{ items: readonly CarouselItem[] }>
-
 export type CodeComponent = Readonly<{ code: string; language: string; wrap: boolean }>
 
 export type EmbedComponent = Readonly<{ url: string | null; title: string }>
-
-export type LinkListStyle = 'link' | 'solid' | 'outline'
-
-export type LinkListItem = Readonly<{ url: string | null; label: string; logo: string | null; newTab: boolean }>
-
-export type LinkListComponent = Readonly<{
-  links: readonly LinkListItem[]
-  style: LinkListStyle
-  color: ColorValue | null
-  fill: ColorValue | null
-}>
-
-export type ProjectCardSummary = Readonly<{
-  name: string
-  description: string
-  image: string | null
-  destination: LinkDestination
-}>
-
-export type ProjectCardComponent = Readonly<{
-  projectId: string | null
-  project?: ProjectCardSummary | null
-}>
 
 export type ContactFormComponent = Readonly<{
   title: string
@@ -76,11 +59,8 @@ export type ContactFormComponent = Readonly<{
 export type ContentComponents = Readonly<{
   text?: TextComponent
   media?: MediaComponent
-  carousel?: CarouselComponent
   code?: CodeComponent
   embed?: EmbedComponent
-  linkList?: LinkListComponent
-  projectCard?: ProjectCardComponent
   contactForm?: ContactFormComponent
 }>
 
@@ -100,9 +80,17 @@ export type ElementIssue =
   | Readonly<{ kind: 'projectUnavailable'; projectId: string }>
   | Readonly<{ kind: 'missingBinding'; entity: BindingEntity; id: string }>
 
-export type PageElement = Readonly<{
+export type ScreenSize = 'desktop' | 'tablet' | 'mobile'
+
+export type ElementPlacement = Readonly<{ transform: ElementTransform; hidden: boolean }>
+
+export type ElementLayout = Readonly<Record<ScreenSize, ElementPlacement>>
+
+export type ScreenSpec = Readonly<{ width: number; maxHeight: number; minViewport: number }>
+
+export type PageElementDto = Readonly<{
   id: string
-  transform: ElementTransform
+  layout: ElementLayout
   components: ElementComponents
   issues?: readonly ElementIssue[]
 }>
@@ -112,7 +100,13 @@ export type PageDto = Readonly<{
   pageType: PageType
   pageRef: string
   version: number
-  referenceWidth: number
+  screens: Readonly<Record<ScreenSize, ScreenSpec>>
   hasContent: boolean
-  elements: readonly PageElement[]
+  elements: readonly PageElementDto[]
 }>
+
+export type PageElement = PageElementDto & Readonly<{ transform: ElementTransform; hidden: boolean }>
+
+export type ScreenPage = Readonly<
+  Omit<PageDto, 'elements'> & { screen: ScreenSize; referenceWidth: number; elements: readonly PageElement[] }
+>

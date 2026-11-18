@@ -1,8 +1,5 @@
 import type { CSSProperties } from 'react'
-import { useApiUrl } from '../../config/ApiUrlContext'
-import { resolveUploadUrl } from '../media/documentKind'
-import { cssColor } from './color'
-import type { CodeComponent, EmbedComponent, LinkListComponent } from './pageTypes'
+import type { CodeComponent, EmbedComponent } from './pageTypes'
 
 export function CodeView({ code, language, wrap }: CodeComponent) {
   if (code.trim() === '') return null
@@ -28,40 +25,6 @@ export function EmbedView({ url, title }: EmbedComponent) {
       allowFullScreen
       style={embedStyle}
     />
-  )
-}
-
-export function LinkListView({ links, style, color, fill }: LinkListComponent) {
-  const apiUrl = useApiUrl()
-  const shown = links.filter(link => link.url)
-  if (shown.length === 0) return null
-
-  const text = cssColor(color, style === 'link' ? 'var(--color-primary)' : 'var(--color-text)')
-  const itemStyle: CSSProperties =
-    style === 'link'
-      ? { ...linkItemStyle, color: text }
-      : {
-          ...linkButtonStyle,
-          borderColor: style === 'solid' ? cssColor(fill, 'var(--color-text)') : text,
-          backgroundColor: style === 'solid' ? cssColor(fill, 'var(--color-text)') : 'transparent',
-          color: style === 'solid' ? cssColor(color, 'var(--color-surface)') : text,
-        }
-
-  return (
-    <div style={style === 'link' ? linkListStyle : linkRowStyle}>
-      {shown.map((link, index) => (
-        <a
-          key={index}
-          href={resolveUploadUrl(link.url ?? '', apiUrl)}
-          target={link.newTab ? '_blank' : undefined}
-          rel={link.newTab ? 'noopener noreferrer' : undefined}
-          style={itemStyle}
-        >
-          {link.logo && <img src={resolveUploadUrl(link.logo, apiUrl)} alt="" style={logoStyle} />}
-          <span style={labelStyle}>{link.label || link.url}</span>
-        </a>
-      ))}
-    </div>
   )
 }
 
@@ -95,44 +58,3 @@ const codePreStyle: CSSProperties = {
   wordBreak: 'break-word',
 }
 const embedStyle: CSSProperties = { display: 'block', width: '100%', height: '100%', border: 'none' }
-const linkListStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-  gap: '0.25rem',
-  height: '100%',
-  overflowY: 'auto',
-}
-const linkRowStyle: CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  alignContent: 'flex-start',
-  gap: '0.75rem',
-  height: '100%',
-}
-const linkItemStyle: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '0.35rem',
-  maxWidth: '100%',
-  fontSize: '0.875rem',
-  textDecoration: 'none',
-}
-const linkButtonStyle: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '0.5rem',
-  maxWidth: '100%',
-  minHeight: '44px',
-  padding: '0 1.25rem',
-  borderRadius: '8px',
-  border: '1px solid',
-  fontSize: '0.9375rem',
-  fontWeight: 600,
-  boxSizing: 'border-box',
-  textDecoration: 'none',
-}
-const logoStyle: CSSProperties = { width: '16px', height: '16px', flexShrink: 0, objectFit: 'contain' }
-const labelStyle: CSSProperties = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }

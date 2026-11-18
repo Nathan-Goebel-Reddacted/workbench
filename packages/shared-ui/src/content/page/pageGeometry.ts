@@ -1,7 +1,6 @@
 import type { ElementTransform } from './pageTypes'
 
 export const PAGE_BOTTOM_MARGIN = 64
-export const STACK_BELOW = 1024
 
 type Placed = Readonly<{ transform: ElementTransform }>
 

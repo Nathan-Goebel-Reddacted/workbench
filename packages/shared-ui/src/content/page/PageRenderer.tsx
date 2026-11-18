@@ -3,54 +3,69 @@ import { useApiUrl } from '../../config/ApiUrlContext'
 import { cssColor } from './color'
 import { linkHref } from './linkHref'
 import { EditingContext } from './interactiveRenderers'
-import { contentFlowOf, renderContent, type ContentFlow } from './contentRenderers'
-import { PAGE_BOTTOM_MARGIN, STACK_BELOW, pageHeight, pageScale, readingOrder } from './pageGeometry'
-import type { LinkComponent, PageDto, PageElement, SurfaceComponent } from './pageTypes'
+import { renderContent } from './contentRenderers'
+import { pageHeight, readingOrder } from './pageGeometry'
+import type { LinkComponent, PageDto, PageElement, ScreenPage, ScreenSize, SurfaceComponent } from './pageTypes'
 import { useContainerWidth } from './useContainerWidth'
-
-const STACK_GAP = 24
-const STACK_GUTTER = 16
+import { ShownSlideContext } from './mediaRenderers'
+import { RenderScreenContext } from './typography'
+import { pageAt, screenFor, screenScale } from './screenPage'
 
 type Props = {
   page: PageDto
+  screen?: ScreenSize
   overlay?: (element: PageElement, scale: number) => ReactNode
   foreground?: (scale: number) => ReactNode
   extraHeight?: number
   editing?: boolean
-  stacking?: boolean
+  showHidden?: boolean
+  shownSlide?: ShownSlide
 }
 
-export function PageRenderer({ page, overlay, foreground, extraHeight = 0, editing = false, stacking = true }: Props) {
+export type ShownSlide = Readonly<{ elementId: string; index: number }>
+
+export function PageRenderer({
+  page,
+  screen,
+  overlay,
+  foreground,
+  extraHeight = 0,
+  editing = false,
+  showHidden = false,
+  shownSlide,
+}: Props) {
   const { ref, width } = useContainerWidth<HTMLDivElement>()
-  const stacked = stacking && width > 0 && width < STACK_BELOW
+  const rendered = screen ?? screenFor(width, page.screens)
+  const placed = pageAt(page, rendered, showHidden)
 
   return (
     <EditingContext.Provider value={editing}>
-      <div ref={ref} style={{ ...frameStyle, maxWidth: stacked ? undefined : page.referenceWidth }}>
-        {stacked ? (
-          <StackedPage page={page} editing={editing} />
-        ) : (
-          <PlacedPage
-            page={page}
-            width={width}
-            overlay={overlay}
-            foreground={foreground}
-            extraHeight={extraHeight}
-            editing={editing}
-          />
-        )}
-      </div>
+      <RenderScreenContext.Provider value={rendered}>
+        <div ref={ref} style={{ ...frameStyle, maxWidth: rendered === 'desktop' ? placed.referenceWidth : undefined }}>
+          {width > 0 && (
+            <PlacedPage
+              page={placed}
+              width={width}
+              overlay={overlay}
+              foreground={foreground}
+              extraHeight={extraHeight}
+              editing={editing}
+              shownSlide={shownSlide}
+            />
+          )}
+        </div>
+      </RenderScreenContext.Provider>
     </EditingContext.Provider>
   )
 }
 
-type PlacedProps = Required<Pick<Props, 'page' | 'extraHeight' | 'editing'>> &
-  Pick<Props, 'overlay' | 'foreground'> & { width: number }
+type PlacedProps = Required<Pick<Props, 'extraHeight' | 'editing'>> &
+  Pick<Props, 'overlay' | 'foreground' | 'shownSlide'> & { page: ScreenPage; width: number }
 
-function PlacedPage({ page, width, overlay, foreground, extraHeight, editing }: PlacedProps) {
+function PlacedPage({ page, width, overlay, foreground, extraHeight, editing, shownSlide }: PlacedProps) {
   const apiUrl = useApiUrl()
   const { referenceWidth, elements } = page
-  const scale = pageScale(width, referenceWidth)
+  const scale = screenScale(width, page.screen, referenceWidth)
   const height = pageHeight(elements) + extraHeight
   const layer = new Map(elements.map((element, index) => [element.id, index + 1]))
 
@@ -64,10 +79,12 @@ function PlacedPage({ page, width, overlay, foreground, extraHeight, editing }: 
               apiUrl,
               linkFillStyle,
               <div
-                style={surfaceStyle(element.components.surface, fillStyle)}
-                data-element-surface={editing ? element.id : undefined}
+                style={surfaceStyle(element.components.surface, element.hidden ? ghostStyle : fillStyle)}
+                data-element-surface={editing && !element.hidden ? element.id : undefined}
               >
-                {renderContent(element.components)}
+                <ShownSlideContext.Provider value={shownSlide?.elementId === element.id ? shownSlide.index : null}>
+                  {renderContent(element.components)}
+                </ShownSlideContext.Provider>
               </div>,
             )}
             {overlay?.(element, scale)}
@@ -79,40 +96,8 @@ function PlacedPage({ page, width, overlay, foreground, extraHeight, editing }: 
   )
 }
 
-function StackedPage({ page, editing }: { page: PageDto; editing: boolean }) {
-  const apiUrl = useApiUrl()
-  const shown = readingOrder(page.elements).flatMap(element => {
-    const flow = contentFlowOf(element.components)
-    return flow ? [{ element, flow }] : []
-  })
-
-  return (
-    <div style={stackStyle}>
-      {shown.map(({ element, flow }) => (
-        <div key={element.id} style={stackedStyle(element, flow)}>
-          {wrapInLink(
-            element.components.link,
-            apiUrl,
-            flow === 'text' ? linkFlowStyle : linkFillStyle,
-            <div
-              style={surfaceStyle(element.components.surface, flow === 'text' ? flowStyle : fillStyle)}
-              data-element-surface={editing ? element.id : undefined}
-            >
-              {renderContent(element.components)}
-            </div>,
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function placedStyle({ transform: { x, y, w, h } }: PageElement, zIndex: number): CSSProperties {
   return { position: 'absolute', left: x, top: y, width: w, height: h, zIndex }
-}
-
-function stackedStyle({ transform: { w, h } }: PageElement, flow: ContentFlow): CSSProperties {
-  return flow === 'text' ? { position: 'relative' } : { position: 'relative', aspectRatio: `${w} / ${h}` }
 }
 
 function wrapInLink(link: LinkComponent | undefined, apiUrl: string, style: CSSProperties, children: ReactNode) {
@@ -144,10 +129,8 @@ function surfaceStyle(surface: SurfaceComponent | undefined, base: CSSProperties
 }
 
 const linkFillStyle: CSSProperties = { position: 'absolute', inset: 0, display: 'block', color: 'inherit' }
-const linkFlowStyle: CSSProperties = { display: 'block', color: 'inherit' }
 
 const fillStyle: CSSProperties = { position: 'absolute', inset: 0, boxSizing: 'border-box', overflow: 'hidden' }
-const flowStyle: CSSProperties = { position: 'relative', boxSizing: 'border-box' }
 
 const frameStyle: CSSProperties = {
   position: 'relative',
@@ -156,11 +139,10 @@ const frameStyle: CSSProperties = {
   overflow: 'hidden',
 }
 
-const stackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: STACK_GAP,
-  padding: `${STACK_GUTTER}px ${STACK_GUTTER}px ${PAGE_BOTTOM_MARGIN}px`,
+const ghostStyle: CSSProperties = {
+  ...fillStyle,
+  opacity: 0.35,
+  backgroundImage: 'repeating-linear-gradient(45deg, transparent 0 6px, var(--color-border) 6px 8px)',
 }
 
 const foregroundStyle: CSSProperties = { position: 'absolute', inset: 0, pointerEvents: 'none' }

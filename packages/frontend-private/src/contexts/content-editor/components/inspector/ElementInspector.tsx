@@ -1,22 +1,26 @@
 import type { CSSProperties } from 'react'
 import { Button, ConfirmDeleteButton } from '@atelier/shared-ui'
-import type { ComponentKind, ElementComponents, ElementIssue, PageElement } from '@content'
+import type { ComponentKind, ElementComponents, ElementIssue, PageElement, ScreenSize } from '@content'
 import type { ReorderDirection } from '../../types'
 import { COMPONENT_KINDS, COMPONENT_REGISTRY } from '../componentRegistry'
 
 type Props = {
   element: PageElement
-  clipped: boolean
+  screen: ScreenSize
+  warnings: readonly string[]
+  onHide: (hidden: boolean) => void
   onSet: (kind: ComponentKind, value: object) => void
   onUnset: (kind: ComponentKind) => void
   onDelete: () => void
   onDuplicate: () => void
   onReorder: (direction: ReorderDirection) => void
   beginInteraction: () => () => void
+  onShowSlide: (index: number) => void
 }
 
 export function ElementInspector(props: Props) {
-  const { element, clipped, onSet, onUnset, onDelete, onDuplicate, onReorder, beginInteraction } = props
+  const { element, screen, warnings, onSet, onUnset, onDelete, onDuplicate, onReorder, onHide } = props
+  const { beginInteraction, onShowSlide } = props
   const present = COMPONENT_KINDS.filter(kind => element.components[kind])
   const absent = COMPONENT_KINDS.filter(kind => !element.components[kind])
   const issues = element.issues ?? []
@@ -39,9 +43,16 @@ export function ElementInspector(props: Props) {
         </Button>
       </div>
 
-      {(issues.length > 0 || clipped) && (
+      <label style={hiddenStyle}>
+        <input type="checkbox" checked={element.hidden} onChange={e => onHide(e.target.checked)} />
+        Hidden on {screen}
+      </label>
+
+      {(issues.length > 0 || warnings.length > 0) && (
         <ul style={issuesStyle}>
-          {clipped && <li>The content is larger than its box: part of it is cut. Enlarge the element.</li>}
+          {warnings.map(warning => (
+            <li key={warning}>{warning}</li>
+          ))}
           {issues.map(issue => (
             <li key={issueKey(issue)}>{issueMessage(issue)}</li>
           ))}
@@ -61,6 +72,8 @@ export function ElementInspector(props: Props) {
             components={element.components}
             onChange={value => onSet(kind, value)}
             beginInteraction={beginInteraction}
+            showSlide={onShowSlide}
+            screen={screen}
           />
         </section>
       ))}
@@ -100,18 +113,37 @@ function ComponentPanel<K extends ComponentKind>({
   components,
   onChange,
   beginInteraction,
+  showSlide,
+  screen,
 }: {
   kind: K
   components: ElementComponents
   onChange: (value: object) => void
   beginInteraction: () => () => void
+  showSlide: (index: number) => void
+  screen: ScreenSize
 }) {
   const value = components[kind]
   if (!value) return null
   const { Inspector } = COMPONENT_REGISTRY[kind]
-  return <Inspector value={value} onChange={onChange} beginInteraction={beginInteraction} />
+  return (
+    <Inspector
+      value={value}
+      onChange={onChange}
+      beginInteraction={beginInteraction}
+      showSlide={showSlide}
+      screen={screen}
+    />
+  )
 }
 
+const hiddenStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.4rem',
+  fontSize: '0.875rem',
+  color: 'var(--color-text)',
+}
 const inspectorStyle: CSSProperties = {
   width: '380px',
   flexShrink: 0,

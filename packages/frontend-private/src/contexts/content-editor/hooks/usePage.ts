@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useShowPopup } from '@atelier/shared-ui'
-import { clearBindingCache, type ComponentKind, type ElementTransform, type PageElement } from '@content'
+import {
+  clearBindingCache,
+  type ComponentKind,
+  type ElementTransform,
+  type PageElementDto,
+  type ScreenSize,
+} from '@content'
 import { errorDetailOr } from '../../../shared/api/errors'
 import { useCanEdit } from '../../../shared/auth/EditPermissionContext'
 import {
@@ -8,8 +14,10 @@ import {
   deleteElement,
   duplicateElement,
   ensurePage,
+  hideElement,
   moveElement,
   readPage,
+  regenerateLayout,
   removeComponent,
   reorderElement,
   setComponent,
@@ -68,7 +76,7 @@ export function usePage(pageType: PageType, pageRef: string) {
     }
   }, [])
 
-  const patchElement = (elementId: string, patch: (element: PageElement) => PageElement) =>
+  const patchElement = (elementId: string, patch: (element: PageElementDto) => PageElementDto) =>
     setPage(prev => (prev ? { ...prev, elements: prev.elements.map(e => (e.id === elementId ? patch(e) : e)) } : prev))
 
   const run = async (operation: () => Promise<unknown>, failure: string) => {
@@ -82,11 +90,26 @@ export function usePage(pageType: PageType, pageRef: string) {
 
   const pageId = page?.id ?? ''
 
-  const add = (visibleTop: number) => run(() => addElement(pageId, visibleTop), 'Could not add the element.')
+  const add = (screen: ScreenSize, visibleTop: number) =>
+    run(() => addElement(pageId, screen, visibleTop), 'Could not add the element.')
 
-  const move = (elementId: string, transform: ElementTransform) => {
-    patchElement(elementId, element => ({ ...element, transform }))
-    return run(() => moveElement(pageId, elementId, transform), 'Could not move the element.')
+  const hide = (elementId: string, screen: ScreenSize, hidden: boolean) => {
+    patchElement(elementId, element => ({
+      ...element,
+      layout: { ...element.layout, [screen]: { ...element.layout[screen], hidden } },
+    }))
+    return run(() => hideElement(pageId, elementId, screen, hidden), 'Could not hide the element.')
+  }
+
+  const regenerate = (screen: ScreenSize) =>
+    run(() => regenerateLayout(pageId, screen), 'Could not regenerate the layout.')
+
+  const move = (elementId: string, screen: ScreenSize, transform: ElementTransform) => {
+    patchElement(elementId, element => ({
+      ...element,
+      layout: { ...element.layout, [screen]: { ...element.layout[screen], transform } },
+    }))
+    return run(() => moveElement(pageId, elementId, screen, transform), 'Could not move the element.')
   }
 
   const reorder = (elementId: string, direction: ReorderDirection) =>
@@ -108,5 +131,20 @@ export function usePage(pageType: PageType, pageRef: string) {
 
   const remove = (elementId: string) => run(() => deleteElement(pageId, elementId), 'Could not delete the element.')
 
-  return { page, status, revision, canEdit, beginInteraction, add, move, reorder, duplicate, set, unset, remove }
+  return {
+    page,
+    status,
+    revision,
+    canEdit,
+    beginInteraction,
+    add,
+    move,
+    hide,
+    regenerate,
+    reorder,
+    duplicate,
+    set,
+    unset,
+    remove,
+  }
 }

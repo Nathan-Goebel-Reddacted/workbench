@@ -1,4 +1,4 @@
-import type { ComponentKind, ElementTransform, PageType } from '@content'
+import type { ComponentKind, ElementTransform, PageType, ScreenSize } from '@content'
 import { HttpError, getJson, send, sendJson } from '../../shared/api/http'
 import type { MediaKind, Page, ProjectMedia, ReorderDirection } from './types'
 
@@ -23,12 +23,25 @@ export async function readPage(pageType: PageType, pageRef: string, signal?: Abo
   }
 }
 
-export function addElement(pageId: string, visibleTop: number): Promise<{ id: string }> {
-  return sendJson<{ id: string }>(`/pages/${pageId}/elements`, { method: 'POST', body: { visibleTop } })
+export function addElement(pageId: string, screen: ScreenSize, visibleTop: number): Promise<{ id: string }> {
+  return sendJson<{ id: string }>(`/pages/${pageId}/elements`, { method: 'POST', body: { screen, visibleTop } })
 }
 
-export function moveElement(pageId: string, elementId: string, transform: ElementTransform): Promise<void> {
-  return send(`/pages/${pageId}/elements/${elementId}/transform`, { method: 'PATCH', body: transform })
+export function hideElement(pageId: string, elementId: string, screen: ScreenSize, hidden: boolean): Promise<void> {
+  return send(`/pages/${pageId}/elements/${elementId}/hidden`, { method: 'PATCH', body: { screen, hidden } })
+}
+
+export function regenerateLayout(pageId: string, screen: ScreenSize): Promise<void> {
+  return send(`/pages/${pageId}/layout/regenerate`, { method: 'POST', body: { screen } })
+}
+
+export function moveElement(
+  pageId: string,
+  elementId: string,
+  screen: ScreenSize,
+  transform: ElementTransform,
+): Promise<void> {
+  return send(`/pages/${pageId}/elements/${elementId}/transform`, { method: 'PATCH', body: { screen, ...transform } })
 }
 
 export function reorderElement(pageId: string, elementId: string, direction: ReorderDirection): Promise<void> {
