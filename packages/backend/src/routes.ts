@@ -53,7 +53,7 @@ export async function registerRoutes(app: FastifyInstance, buses: RouteBuses, or
     });
     await app.register(pairingRoutes, buses);
     await app.register(themeRoutes, buses);
-    await app.register(uploadRoutes);
+    await app.register(uploadRoutes, buses);
     await app.register(ioRoutes, { orm });
     // Public en écriture : le site public n'a pas de session et ses erreurs comptent autant.
     await app.register(errorLogRoutes, buses);

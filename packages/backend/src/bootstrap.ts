@@ -248,7 +248,13 @@ import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRep
 import { PageRepository } from '@contexts/contentEditor/infrastructure/repository/pageRepository';
 import { AgentToolRepository } from '@contexts/ai-assistant/infrastructure/repository/agentToolRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
-import { MindmapFileStorage } from '@shared/infrastructure/upload/mindmapFileStorage';
+import { FileStorage } from '@shared/infrastructure/upload/fileStorage';
+import { StoreUploadCommand } from '@shared/application/command/storeUpload/storeUploadCommand';
+import { StoreUploadHandler } from '@shared/application/command/storeUpload/storeUploadHandler';
+import { RewriteMindmapCommand } from '@shared/application/command/rewriteMindmap/rewriteMindmapCommand';
+import { RewriteMindmapHandler } from '@shared/application/command/rewriteMindmap/rewriteMindmapHandler';
+import { GetMindmapQuery } from '@shared/application/query/getMindmap/getMindmapQuery';
+import { GetMindmapHandler } from '@shared/application/query/getMindmap/getMindmapHandler';
 import { PurgeOrphanUploadsCommand } from '@shared/application/command/purgeOrphanUploads/purgeOrphanUploadsCommand';
 import { PurgeOrphanUploadsHandler } from '@shared/application/command/purgeOrphanUploads/purgeOrphanUploadsHandler';
 import { ContactMessageRepository } from '@contexts/contact/infrastructure/repository/contactMessageRepository';
@@ -361,7 +367,7 @@ export function bootstrap(
     // Chaque contexte déclare où il cite des uploads ; c'est ici qu'on les rassemble. Un
     // contexte manquant à cette liste verrait ses fichiers effacés alors qu'il les cite encore,
     // sans la moindre erreur — d'où la déclaration chez soi plutôt qu'une liste enfouie.
-    const mindmaps = new MindmapFileStorage();
+    const files = new FileStorage();
     const uploads = new UploadStorage(em, UPLOAD_REFERENCE_SOURCES);
 
     // Un seul exécutant de transaction pour tous les cas d'usage multi-dépôts.
@@ -403,6 +409,9 @@ export function bootstrap(
 
     // User
     commandBus.register(PurgeOrphanUploadsCommand.commandName, new PurgeOrphanUploadsHandler(uploads));
+    commandBus.register(StoreUploadCommand.commandName, new StoreUploadHandler(files));
+    commandBus.register(RewriteMindmapCommand.commandName, new RewriteMindmapHandler(files));
+    queryBus.register(GetMindmapQuery.queryName, new GetMindmapHandler(files));
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
     commandBus.register(
         DeleteUserCommand.commandName,
@@ -438,7 +447,7 @@ export function bootstrap(
     commandBus.register(AddProjectDocumentCommand.commandName, new AddProjectDocumentHandler(repos.project));
     commandBus.register(
         CreateProjectMindmapCommand.commandName,
-        new CreateProjectMindmapHandler(repos.project, mindmaps, uploads),
+        new CreateProjectMindmapHandler(repos.project, files, uploads),
     );
     commandBus.register(
         RemoveProjectDocumentCommand.commandName,
@@ -510,10 +519,7 @@ export function bootstrap(
         new DeleteIdeaHandler(repos.idea, ideaFeaturesGateway, uploads, transactions),
     );
     commandBus.register(AddIdeaDocumentCommand.commandName, new AddIdeaDocumentHandler(repos.idea));
-    commandBus.register(
-        CreateIdeaMindmapCommand.commandName,
-        new CreateIdeaMindmapHandler(repos.idea, mindmaps, uploads),
-    );
+    commandBus.register(CreateIdeaMindmapCommand.commandName, new CreateIdeaMindmapHandler(repos.idea, files, uploads));
     commandBus.register(RemoveIdeaDocumentCommand.commandName, new RemoveIdeaDocumentHandler(repos.idea, uploads));
     commandBus.register(AddIdeaLinkCommand.commandName, new AddIdeaLinkHandler(repos.idea));
     commandBus.register(RemoveIdeaLinkCommand.commandName, new RemoveIdeaLinkHandler(repos.idea));

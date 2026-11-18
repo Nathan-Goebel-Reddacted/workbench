@@ -1,5 +1,6 @@
 import { ICommandHandler } from '@shared/application/command/iCommandHandler';
-import { IMindmapStorage } from '@shared/application/port/iMindmapStorage';
+import { IFileStorage } from '@shared/application/port/iFileStorage';
+import { MINDMAP_SUFFIX } from '@shared/domain/valueObject/documentType';
 import { IUploadStorage } from '@shared/application/port/iUploadStorage';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
 import { Document } from '@shared/domain/entity/document';
@@ -11,7 +12,7 @@ import { ProjectId } from '../../../domain/valueObject/projectId';
 export class CreateProjectMindmapHandler implements ICommandHandler<CreateProjectMindmapCommand, string> {
     constructor(
         private readonly repository: IProjectRepository,
-        private readonly mindmaps: IMindmapStorage,
+        private readonly files: IFileStorage,
         private readonly uploads: IUploadStorage,
     ) {}
 
@@ -19,7 +20,7 @@ export class CreateProjectMindmapHandler implements ICommandHandler<CreateProjec
         const project = await this.repository.findById(new ProjectId(command.projectId));
         if (!project) throw new NotFoundError('Project', command.projectId);
 
-        const url = await this.mindmaps.store(command.content);
+        const url = await this.files.save(MINDMAP_SUFFIX, Buffer.from(JSON.stringify(command.content)));
         try {
             project.addDocument(new Document(new DocumentId(command.documentId), command.name, url));
             await this.repository.save(project);
