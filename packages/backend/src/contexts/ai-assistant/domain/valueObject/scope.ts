@@ -6,6 +6,9 @@ export enum ScopeValue {
     TICKET = 'ticket',
     IDEA = 'idea',
     PORTFOLIO = 'portfolio',
+    CV = 'cv',
+    THEME = 'theme',
+    SITE = 'site',
 }
 
 const VALID_SCOPES = Object.values(ScopeValue);

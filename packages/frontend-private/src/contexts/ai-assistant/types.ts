@@ -1,4 +1,4 @@
-export const AGENT_SCOPES = ['project', 'feature', 'ticket', 'idea', 'portfolio'] as const
+export const AGENT_SCOPES = ['project', 'feature', 'ticket', 'idea', 'portfolio', 'cv', 'theme', 'site'] as const
 export const AGENT_PERMISSIONS = ['read', 'write', 'read_write'] as const
 
 export type AgentScope = (typeof AGENT_SCOPES)[number]
