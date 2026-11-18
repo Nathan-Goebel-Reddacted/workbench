@@ -1,8 +1,12 @@
 import { Entity, PrimaryKey, Property, Unique } from '@mikro-orm/core';
 
+export type TransformRow = { x: number; y: number; w: number; h: number };
+
+export type PlacementRow = { transform: TransformRow; hidden: boolean };
+
 export type ElementRow = {
     id: string;
-    transform: { x: number; y: number; w: number; h: number };
+    layout: { desktop: PlacementRow; tablet: PlacementRow; mobile: PlacementRow; origin?: string };
     components: Record<string, unknown>;
 };
 

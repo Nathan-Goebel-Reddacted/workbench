@@ -23,6 +23,19 @@ export class ComponentReader {
         return this.raw[key] !== undefined && this.raw[key] !== null;
     }
 
+    isNumber(key: string): boolean {
+        return typeof this.raw[key] === 'number';
+    }
+
+    child(key: string): ComponentReader | null {
+        const value = this.raw[key];
+        if (value === undefined || value === null) return null;
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            return new ComponentReader(value as Raw, this.strict, this.field(key), this.siteOrigins);
+        }
+        return this.invalid(key, 'an object', null);
+    }
+
     string(key: string, fallback = ''): string {
         const value = this.raw[key];
         if (value === undefined || value === null) return fallback;

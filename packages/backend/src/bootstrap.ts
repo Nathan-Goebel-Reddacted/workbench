@@ -167,6 +167,10 @@ import { AddElementCommand } from '@contexts/contentEditor/application/command/a
 import { AddElementHandler } from '@contexts/contentEditor/application/command/addElement/addElementHandler';
 import { MoveElementCommand } from '@contexts/contentEditor/application/command/moveElement/moveElementCommand';
 import { MoveElementHandler } from '@contexts/contentEditor/application/command/moveElement/moveElementHandler';
+import { HideElementCommand } from '@contexts/contentEditor/application/command/hideElement/hideElementCommand';
+import { HideElementHandler } from '@contexts/contentEditor/application/command/hideElement/hideElementHandler';
+import { RegenerateLayoutCommand } from '@contexts/contentEditor/application/command/regenerateLayout/regenerateLayoutCommand';
+import { RegenerateLayoutHandler } from '@contexts/contentEditor/application/command/regenerateLayout/regenerateLayoutHandler';
 import { ReorderElementCommand } from '@contexts/contentEditor/application/command/reorderElement/reorderElementCommand';
 import { ReorderElementHandler } from '@contexts/contentEditor/application/command/reorderElement/reorderElementHandler';
 import { DuplicateElementCommand } from '@contexts/contentEditor/application/command/duplicateElement/duplicateElementCommand';
@@ -568,6 +572,8 @@ export function bootstrap(
     commandBus.register(AddElementCommand.commandName, new AddElementHandler(pages));
     commandBus.register(MoveElementCommand.commandName, new MoveElementHandler(pages));
     commandBus.register(ReorderElementCommand.commandName, new ReorderElementHandler(pages));
+    commandBus.register(HideElementCommand.commandName, new HideElementHandler(pages));
+    commandBus.register(RegenerateLayoutCommand.commandName, new RegenerateLayoutHandler(pages));
     commandBus.register(DuplicateElementCommand.commandName, new DuplicateElementHandler(pages));
     commandBus.register(
         SetComponentCommand.commandName,

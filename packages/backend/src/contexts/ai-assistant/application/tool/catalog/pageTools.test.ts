@@ -17,6 +17,10 @@ import { AddElementCommand } from '@contexts/contentEditor/application/command/a
 import { AddElementHandler } from '@contexts/contentEditor/application/command/addElement/addElementHandler.js';
 import { MoveElementCommand } from '@contexts/contentEditor/application/command/moveElement/moveElementCommand.js';
 import { MoveElementHandler } from '@contexts/contentEditor/application/command/moveElement/moveElementHandler.js';
+import { HideElementCommand } from '@contexts/contentEditor/application/command/hideElement/hideElementCommand.js';
+import { HideElementHandler } from '@contexts/contentEditor/application/command/hideElement/hideElementHandler.js';
+import { RegenerateLayoutCommand } from '@contexts/contentEditor/application/command/regenerateLayout/regenerateLayoutCommand.js';
+import { RegenerateLayoutHandler } from '@contexts/contentEditor/application/command/regenerateLayout/regenerateLayoutHandler.js';
 import { ReorderElementCommand } from '@contexts/contentEditor/application/command/reorderElement/reorderElementCommand.js';
 import { ReorderElementHandler } from '@contexts/contentEditor/application/command/reorderElement/reorderElementHandler.js';
 import { DuplicateElementCommand } from '@contexts/contentEditor/application/command/duplicateElement/duplicateElementCommand.js';
@@ -92,6 +96,8 @@ function setup() {
     commandBus.register(EnsurePageCommand.commandName, new EnsurePageHandler(pages, new PageFactory()));
     commandBus.register(AddElementCommand.commandName, new AddElementHandler(mutator));
     commandBus.register(MoveElementCommand.commandName, new MoveElementHandler(mutator));
+    commandBus.register(HideElementCommand.commandName, new HideElementHandler(mutator));
+    commandBus.register(RegenerateLayoutCommand.commandName, new RegenerateLayoutHandler(mutator));
     commandBus.register(ReorderElementCommand.commandName, new ReorderElementHandler(mutator));
     commandBus.register(DuplicateElementCommand.commandName, new DuplicateElementHandler(mutator));
     commandBus.register(SetComponentCommand.commandName, new SetComponentHandler(mutator, SiteOrigins.none()));
@@ -145,7 +151,12 @@ describe('Outils MCP des Pages', () => {
     it('ajoute un Element à l’emplacement demandé et le rend tel que persisté', async () => {
         const element = await addElement({ x: 0, y: 0, w: 480, h: 160 });
 
-        expect(element).toMatchObject({ transform: { x: 0, y: 0, w: 480, h: 160 }, components: {}, issues: [] });
+        expect(element).toMatchObject({
+            layout: { desktop: { transform: { x: 0, y: 0, w: 480, h: 160 }, hidden: false } },
+            components: {},
+            issues: [],
+        });
+        expect(element.layout.mobile.transform).toMatchObject({ x: 16, w: 343 });
     });
 
     it('place un Element sans transform sous le plus bas', async () => {
@@ -153,7 +164,7 @@ describe('Outils MCP des Pages', () => {
 
         const element = await addElement();
 
-        expect(element.transform.y).toBeGreaterThan(160);
+        expect(element.layout.desktop.transform.y).toBeGreaterThan(160);
     });
 
     it('refuse un transform qui dépasse la largeur de référence avant toute écriture', async () => {
@@ -175,7 +186,16 @@ describe('Outils MCP des Pages', () => {
             value: { html: '<h1>Nathan</h1>', unknown: 1 },
         });
 
-        expect(saved.components).toEqual({ text: { html: '<h1>Nathan</h1>', scale: 'normal', color: null } });
+        expect(saved.components).toEqual({
+            text: {
+                html: '<h1>Nathan</h1>',
+                font: 'body',
+                fontSize: { desktop: 16, tablet: 15, mobile: 14 },
+                uppercase: false,
+                letterSpacing: 0,
+                color: null,
+            },
+        });
     });
 
     it('refuse une valeur invalide en nommant le champ', async () => {
@@ -185,11 +205,11 @@ describe('Outils MCP des Pages', () => {
             page: HOME,
             elementId: element.id,
             kind: 'text',
-            value: { html: '<p>ok</p>', scale: 'huge' },
+            value: { html: '<p>ok</p>', font: 'huge' },
         });
 
         expect(result.ok).toBe(false);
-        if (!result.ok) expect(result.error.message).toMatch(/scale/);
+        if (!result.ok) expect(result.error.message).toMatch(/font/);
     });
 
     it('refuse un Link sur un contenu interactif avec le message du domaine', async () => {
@@ -239,7 +259,43 @@ describe('Outils MCP des Pages', () => {
             transform: { x: 8, y: 16, w: 320, h: 64 },
         });
 
-        expect(saved.transform).toEqual({ x: 8, y: 16, w: 320, h: 64 });
+        expect(saved.layout.desktop.transform).toEqual({ x: 8, y: 16, w: 320, h: 64 });
+    });
+
+    it('place un Element sur mobile sans toucher le desktop, et borne le transform par la taille', async () => {
+        const element = await addElement({ x: 0, y: 0, w: 480, h: 160 });
+
+        const saved = await ok<ElementDto>('move_element', {
+            page: HOME,
+            elementId: element.id,
+            screen: 'mobile',
+            transform: { x: 16, y: 40, w: 343, h: 120 },
+        });
+        const tooWide = await call('move_element', {
+            page: HOME,
+            elementId: element.id,
+            screen: 'mobile',
+            transform: { x: 0, y: 0, w: 480, h: 160 },
+        });
+
+        expect(saved.layout.mobile.transform).toEqual({ x: 16, y: 40, w: 343, h: 120 });
+        expect(saved.layout.desktop.transform).toEqual({ x: 0, y: 0, w: 480, h: 160 });
+        expect(tooWide.ok).toBe(false);
+        if (!tooWide.ok) expect(tooWide.error.code).toBe('invalid_input');
+    });
+
+    it('masque un Element sur une taille, puis régénère la tablette depuis le desktop', async () => {
+        const first = await addElement({ x: 0, y: 0, w: 480, h: 160 });
+        await addElement({ x: 800, y: 0, w: 480, h: 160 });
+
+        const hidden = await ok<ElementDto>('hide_element', { page: HOME, elementId: first.id, screen: 'mobile' });
+        const page = await ok<PageDto>('regenerate_layout', { page: HOME, screen: 'tablet' });
+
+        expect(hidden.layout.mobile.hidden).toBe(true);
+        expect(hidden.layout.desktop.hidden).toBe(false);
+        const [a, b] = page.elements.map(e => e.layout.tablet.transform);
+        expect(a.y).toBeLessThan(b.y);
+        expect([a.x, a.w, b.x, b.w]).toEqual([16, 736, 16, 736]);
     });
 
     it('duplique un Element avec ses Components, puis le recule sous l’original', async () => {
@@ -281,7 +337,11 @@ describe('Outils MCP des Pages', () => {
 
         const page = await ok<PageDto>('get_page', { page: HOME });
 
-        expect(page).toMatchObject({ pageType: 'portfolio', pageRef: PORTFOLIO_ID, referenceWidth: 1440 });
+        expect(page).toMatchObject({
+            pageType: 'portfolio',
+            pageRef: PORTFOLIO_ID,
+            screens: { desktop: { width: 1440 } },
+        });
         expect(page.elements.map(e => e.id)).toEqual([first.id, second.id]);
     });
 
@@ -322,6 +382,8 @@ describe('Catalogue des outils de Page', () => {
             'get_page',
             'add_element',
             'move_element',
+            'hide_element',
+            'regenerate_layout',
             'set_component',
             'remove_component',
             'reorder_element',
@@ -345,5 +407,6 @@ describe('Catalogue des outils de Page', () => {
         for (const kind of COMPONENT_KINDS) expect(description).toContain(`${kind} (`);
         expect(description).toMatch(/link component is refused on an interactive content \(.*contactForm/);
         expect(named('move_element').description).toContain('1440');
+        expect(named('move_element').description).toContain('375');
     });
 });

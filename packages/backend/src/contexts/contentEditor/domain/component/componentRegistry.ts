@@ -12,6 +12,20 @@ import {
 } from './contactForm';
 import { SiteOrigins } from '../valueObject/siteOrigins';
 import { BindingRef, bindingsIn } from './bindings';
+import {
+    FONT_SIZE_FLOORS,
+    FontSizes,
+    MAX_FONT_SIZE,
+    MAX_LETTER_SPACING,
+    MIN_FONT_SIZE,
+    MIN_LETTER_SPACING,
+    TEXT_FONTS,
+    derivedFontSize,
+    fontSizesOf,
+    readFontSizes,
+    reconcileFontSizes,
+} from './typography';
+import { DerivedScreen } from '../valueObject/screenSize';
 
 export type ComponentValue = Readonly<Record<string, unknown>>;
 
@@ -25,9 +39,11 @@ export type ComponentDescriptor = Readonly<{
     projects?: (value: ComponentValue) => string[];
     bindings?: (value: ComponentValue) => BindingRef[];
     withoutFiles?: (value: ComponentValue, missing: ReadonlySet<string>) => ComponentValue | null;
+    reconcile?: (previous: ComponentValue, next: ComponentValue) => ComponentValue;
+    regenerate?: (value: ComponentValue, screen: DerivedScreen) => ComponentValue;
+    heightRatio?: (value: ComponentValue, screen: DerivedScreen) => number;
 }>;
 
-export const TEXT_SCALES = ['normal', 'large', 'display'] as const;
 export const IMAGE_FITS = ['contain', 'cover', 'fill'] as const;
 export const IMAGE_POSITIONS = [
     'top left',
@@ -40,23 +56,35 @@ export const IMAGE_POSITIONS = [
     'bottom',
     'bottom right',
 ] as const;
-export const MAX_CAROUSEL_ITEMS = 50;
-export const MAX_LINK_LIST_ITEMS = 50;
-export const LINK_LIST_STYLES = ['link', 'solid', 'outline'] as const;
+export const MAX_MEDIA_FILES = 20;
+export const MAX_ALT_LENGTH = 300;
 export const MAX_BORDER_WIDTH = 32;
 export const MAX_RADIUS = 256;
 
 const COLOR = '{ theme: "--color-…" } | { hex: "#rrggbb" } | null';
 const URL_SHAPE = 'http(s) URL | /uploads/… | null';
 
-type CarouselItem = Readonly<{ url: string | null; caption: string }>;
+type MediaFile = Readonly<{ url: string | null; alt: string }>;
 
-function urlOf(value: ComponentValue): string[] {
-    return typeof value.url === 'string' ? [value.url] : [];
+function filesOf(value: ComponentValue): MediaFile[] {
+    return Array.isArray(value.files) ? (value.files as MediaFile[]) : [];
 }
 
-function itemsOf(value: ComponentValue): CarouselItem[] {
-    return Array.isArray(value.items) ? (value.items as CarouselItem[]) : [];
+function mediaFiles(component: ComponentReader): MediaFile[] {
+    const files = component.list('files').map(file => {
+        const alt = file.string('alt');
+        return {
+            url: file.safeUrl('url'),
+            alt:
+                alt.length > MAX_ALT_LENGTH
+                    ? file.invalid('alt', `at most ${MAX_ALT_LENGTH} characters`, alt.slice(0, MAX_ALT_LENGTH))
+                    : alt,
+        };
+    });
+    if (files.length > MAX_MEDIA_FILES) {
+        return component.invalid('files', `at most ${MAX_MEDIA_FILES} files`, files.slice(0, MAX_MEDIA_FILES));
+    }
+    return files;
 }
 
 export const COMPONENT_REGISTRY = {
@@ -66,51 +94,53 @@ export const COMPONENT_REGISTRY = {
         flow: 'text',
         normalize: component => ({
             html: sanitizeInlineColors(component.string('html')),
-            scale: component.oneOf('scale', TEXT_SCALES, 'normal'),
+            font: component.oneOf('font', TEXT_FONTS, 'body'),
+            fontSize: readFontSizes(component),
+            uppercase: component.boolean('uppercase', false),
+            letterSpacing: component.number('letterSpacing', 0, MIN_LETTER_SPACING, MAX_LETTER_SPACING),
             color: component.color('color'),
         }),
-        describe: `Rich text. { html: string (TipTap HTML), scale: ${TEXT_SCALES.join(' | ')}, color: ${COLOR} }`,
+        describe:
+            `Rich text. { html: string (TipTap HTML), font: ${TEXT_FONTS.join(' | ')}, fontSize: integer ` +
+            `${MIN_FONT_SIZE}-${MAX_FONT_SIZE} px for desktop, or { desktop, tablet, mobile } (tablet and mobile ` +
+            `follow desktop when omitted or when only desktop changes: scaled to the screen width, at least ` +
+            `${FONT_SIZE_FLOORS.tablet} px on tablet and ${FONT_SIZE_FLOORS.mobile} px on mobile, never above desktop), ` +
+            `uppercase: ` +
+            `boolean, letterSpacing: ${MIN_LETTER_SPACING} to ${MAX_LETTER_SPACING} em, color: ${COLOR} }`,
         bindings: value => (typeof value.html === 'string' ? bindingsIn(value.html) : []),
+        reconcile: (previous, next) => ({
+            ...next,
+            fontSize: reconcileFontSizes(fontSizesOf(previous), fontSizesOf(next)),
+        }),
+        regenerate: (value, screen) => {
+            const sizes: FontSizes = fontSizesOf(value);
+            return { ...value, fontSize: { ...sizes, [screen]: derivedFontSize(sizes.desktop, screen) } };
+        },
+        heightRatio: (value, screen) => {
+            const sizes = fontSizesOf(value);
+            return (sizes[screen] / sizes.desktop) ** 2;
+        },
     },
     media: {
         role: 'content',
         interactive: false,
         flow: 'visual',
         normalize: component => ({
-            url: component.safeUrl('url'),
-            alt: component.string('alt'),
+            files: mediaFiles(component),
             fit: component.oneOf('fit', IMAGE_FITS, 'contain'),
             position: component.oneOf('position', IMAGE_POSITIONS, 'center'),
         }),
         describe:
-            `An image, a video, a PDF or a mindmap, chosen by its file. { url: ${URL_SHAPE}, alt: string, ` +
-            `fit: ${IMAGE_FITS.join(' | ')}, position: ${IMAGE_POSITIONS.join(' | ')} }`,
-        files: urlOf,
-        withoutFiles: (value, missing) => (urlOf(value).some(url => missing.has(url)) ? null : value),
-    },
-    carousel: {
-        role: 'content',
-        interactive: false,
-        flow: 'visual',
-        normalize: component => {
-            const items = component.list('items').map(item => ({
-                url: item.safeUrl('url'),
-                caption: item.string('caption'),
-            }));
-            if (items.length > MAX_CAROUSEL_ITEMS) {
-                return component.invalid('items', `at most ${MAX_CAROUSEL_ITEMS} items`, {
-                    items: items.slice(0, MAX_CAROUSEL_ITEMS),
-                });
-            }
-            return { items };
-        },
-        describe: `A row of captioned images. { items: [{ url: ${URL_SHAPE}, caption: string }] (at most ${MAX_CAROUSEL_ITEMS}) }`,
-        files: value => itemsOf(value).flatMap(item => (item.url ? [item.url] : [])),
+            `One or more images, videos, PDFs or mindmaps, chosen by their file; several files are shown one ` +
+            `at a time, with arrows. { files: [{ url: ${URL_SHAPE}, alt: string (at most ${MAX_ALT_LENGTH}) }] ` +
+            `(at most ${MAX_MEDIA_FILES}, in display order), fit: ${IMAGE_FITS.join(' | ')}, ` +
+            `position: ${IMAGE_POSITIONS.join(' | ')} }`,
+        files: value => filesOf(value).flatMap(file => (file.url ? [file.url] : [])),
         withoutFiles: (value, missing) => {
-            const items = itemsOf(value);
-            const kept = items.filter(item => !item.url || !missing.has(item.url));
-            if (kept.length === items.length) return value;
-            return kept.some(item => item.url) ? { ...value, items: kept } : null;
+            const files = filesOf(value);
+            const kept = files.filter(file => !file.url || !missing.has(file.url));
+            if (kept.length === files.length) return value;
+            return kept.some(file => file.url) ? { ...value, files: kept } : null;
         },
     },
     code: {
@@ -133,43 +163,6 @@ export const COMPONENT_REGISTRY = {
             title: component.string('title'),
         }),
         describe: 'An external page in a sandboxed frame. { url: https URL of another site | null, title: string }',
-    },
-    linkList: {
-        role: 'content',
-        interactive: true,
-        flow: 'text',
-        normalize: component => {
-            const links = component.list('links').map(link => ({
-                url: link.safeUrl('url'),
-                label: link.string('label'),
-                logo: link.safeUrl('logo'),
-                newTab: link.boolean('newTab', true),
-            }));
-            const value = {
-                links: links.slice(0, MAX_LINK_LIST_ITEMS),
-                style: component.oneOf('style', LINK_LIST_STYLES, 'link'),
-                color: component.color('color'),
-                fill: component.color('fill'),
-            };
-            if (links.length > MAX_LINK_LIST_ITEMS) {
-                return component.invalid('links', `at most ${MAX_LINK_LIST_ITEMS} links`, value);
-            }
-            return value;
-        },
-        describe:
-            `A list of external links with logos. { links: [{ url: ${URL_SHAPE}, label: string, logo: ${URL_SHAPE}, ` +
-            `newTab: boolean }] (at most ${MAX_LINK_LIST_ITEMS}), style: ${LINK_LIST_STYLES.join(' | ')}, ` +
-            `color: ${COLOR} (text and outline), fill: ${COLOR} (solid buttons) }`,
-    },
-    projectCard: {
-        role: 'content',
-        interactive: true,
-        flow: 'visual',
-        normalize: component => ({ projectId: component.uuid('projectId') }),
-        describe:
-            'The card of a project, leading to its destination; hidden on the public page while the project ' +
-            'is private or missing. { projectId: project id | null }',
-        projects: value => (typeof value.projectId === 'string' ? [value.projectId] : []),
     },
     contactForm: {
         role: 'content',

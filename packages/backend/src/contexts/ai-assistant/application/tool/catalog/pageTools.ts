@@ -18,9 +18,13 @@ import { DeleteElementCommand } from '@contexts/contentEditor/application/comman
 import {
     COMPONENT_CATALOG,
     LINK_COMPONENT_KIND,
-    PAGE_MAX_HEIGHT,
-    PAGE_REFERENCE_WIDTH,
+    PAGE_DERIVED_SCREENS,
+    PAGE_SCREEN_MAX_HEIGHTS,
+    PAGE_SCREEN_WIDTHS,
+    PAGE_SCREENS,
 } from '@contexts/contentEditor/application/componentCatalog';
+import { HideElementCommand } from '@contexts/contentEditor/application/command/hideElement/hideElementCommand';
+import { RegenerateLayoutCommand } from '@contexts/contentEditor/application/command/regenerateLayout/regenerateLayoutCommand';
 import { ScopeValue } from '../../../domain/valueObject/scope';
 import { AnyToolDescriptor, defineTool } from '../toolDescriptor';
 import { uuidSchema } from './sharedSchemas';
@@ -30,12 +34,20 @@ const PAGE_GUIDE =
     'site as soon as one of its elements holds a content (if the project is visible): the project then opens on ' +
     'it. Every change is live on the public site immediately: read the page with get_page before changing it.';
 
+const SCREEN_LIST = PAGE_SCREENS.map(
+    screen => `${screen} ${PAGE_SCREEN_WIDTHS[screen]} px wide (y + h <= ${PAGE_SCREEN_MAX_HEIGHTS[screen]})`,
+).join(', ');
+
 const LAYOUT_GUIDE =
-    `A page is a flat list of elements, each placed by its transform { x, y, w, h } in pixels on a reference ` +
-    `width of ${PAGE_REFERENCE_WIDTH} px (x + w <= ${PAGE_REFERENCE_WIDTH}, y + h <= ${PAGE_MAX_HEIGHT}); keep values on ` +
-    `multiples of 8. Elements may overlap: later elements in the list are drawn on top. The public site shows ` +
-    `the page centered above ${PAGE_REFERENCE_WIDTH} px, scaled down between 1024 and ${PAGE_REFERENCE_WIDTH} px, and ` +
-    `stacked top to bottom under 1024 px. A content larger than its box is cut: size the box to its content.`;
+    `A page is a flat list of elements. Each element has one placement per screen size: ${SCREEN_LIST}. A ` +
+    `placement is a transform { x, y, w, h } in pixels on the width of its screen size (x + w <= that width), ` +
+    `plus a hidden flag; keep values on multiples of 8. The public site shows desktop from 1024 px, tablet from ` +
+    `600 px and mobile below, each scaled to the window width and centered above its own width. Compose desktop ` +
+    `first: a new element is placed full width at the bottom of tablet and mobile, and its first content sets its ` +
+    `tablet and mobile height from its desktop box. regenerate_layout then rebuilds tablet or mobile from desktop ` +
+    `(desktop rows read top to bottom and left to right, stacked full width), overwriting that screen size; ` +
+    `retouch it afterwards with move_element and hide_element. Elements may overlap: later elements in the list ` +
+    `are drawn on top. A content larger than its box is cut: size the box to its content.`;
 
 const interactiveKinds = COMPONENT_CATALOG.filter(entry => entry.role === 'content' && entry.interactive).map(
     entry => entry.kind,
@@ -66,13 +78,43 @@ const elementIdSchema = uuidSchema.describe('Id of the element, as returned by g
 
 const transformSchema = z
     .object({
-        x: z.number().int().min(0).describe('Left edge, in pixels from the left of the reference width.'),
+        x: z.number().int().min(0).describe('Left edge, in pixels from the left of the screen size width.'),
         y: z.number().int().min(0).describe('Top edge, in pixels from the top of the page.'),
-        w: z.number().int().min(1).describe(`Width in pixels; x + w must not exceed ${PAGE_REFERENCE_WIDTH}.`),
-        h: z.number().int().min(1).describe(`Height in pixels; y + h must not exceed ${PAGE_MAX_HEIGHT}.`),
+        w: z.number().int().min(1).describe('Width in pixels; x + w must not exceed the screen size width.'),
+        h: z.number().int().min(1).describe('Height in pixels; y + h must not exceed the screen size max height.'),
     })
-    .refine(t => t.x + t.w <= PAGE_REFERENCE_WIDTH, { message: `x + w must not exceed ${PAGE_REFERENCE_WIDTH}` })
-    .refine(t => t.y + t.h <= PAGE_MAX_HEIGHT, { message: `y + h must not exceed ${PAGE_MAX_HEIGHT}` });
+    .describe('Where to place the element on the screen size.');
+
+type ScreenName = (typeof PAGE_SCREENS)[number];
+
+const screenSchema = z
+    .enum(PAGE_SCREENS as [ScreenName, ...ScreenName[]])
+    .default('desktop')
+    .describe('The screen size to work on; desktop by default.');
+
+function checkBounds(
+    input: { screen: ScreenName; transform?: z.infer<typeof transformSchema> },
+    ctx: z.RefinementCtx,
+): void {
+    const t = input.transform;
+    if (!t) return;
+    const width = PAGE_SCREEN_WIDTHS[input.screen];
+    const maxHeight = PAGE_SCREEN_MAX_HEIGHTS[input.screen];
+    if (t.x + t.w > width) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['transform'],
+            message: `x + w must not exceed ${width} on ${input.screen}`,
+        });
+    }
+    if (t.y + t.h > maxHeight) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['transform'],
+            message: `y + h must not exceed ${maxHeight} on ${input.screen}`,
+        });
+    }
+}
 
 const kindSchema = z
     .enum(COMPONENT_CATALOG.map(entry => entry.kind) as [string, ...string[]])
@@ -115,8 +157,8 @@ export function createPageTools(commandBus: CommandBus, queryBus: QueryBus): Any
         defineTool({
             name: 'get_page',
             description:
-                'Get a page with every element in display order (first drawn first): its id, transform, components ' +
-                'and issues (missing file, private or missing project). ' +
+                'Get a page with every element in display order (first drawn first): its id, layout (one placement ' +
+                'per screen size), components and issues (missing file, private or missing project). ' +
                 PAGE_GUIDE +
                 ' ' +
                 LAYOUT_GUIDE,
@@ -130,23 +172,25 @@ export function createPageTools(commandBus: CommandBus, queryBus: QueryBus): Any
             name: 'add_element',
             description:
                 'Add an empty element on top of a page, then give it components with set_component. Without a ' +
-                'transform it is placed below the lowest element. Returns the element as saved. ' +
+                'transform it is placed below the lowest element on every screen size; with one, the transform ' +
+                'applies to the given screen size. Returns the element as saved. ' +
                 LAYOUT_GUIDE,
             scope: ScopeValue.PORTFOLIO,
             access: 'write',
-            inputSchema: z.object({
-                page: pageSchema,
-                transform: transformSchema.optional().describe('Where to place the element.'),
-            }),
-            execute: async ({ page, transform }) => {
+            inputSchema: z
+                .object({ page: pageSchema, screen: screenSchema, transform: transformSchema.optional() })
+                .superRefine(checkBounds),
+            execute: async ({ page, screen, transform }) => {
                 const elementId = crypto.randomUUID();
                 return onElement(
                     page,
                     async pageId => {
-                        await commandBus.dispatch(new AddElementCommand(pageId, elementId, null));
+                        await commandBus.dispatch(
+                            new AddElementCommand(pageId, elementId, transform ? screen : 'desktop', null),
+                        );
                         if (!transform) return;
                         const { x, y, w, h } = transform;
-                        await commandBus.dispatch(new MoveElementCommand(pageId, elementId, x, y, w, h));
+                        await commandBus.dispatch(new MoveElementCommand(pageId, elementId, screen, x, y, w, h));
                     },
                     elementId,
                 );
@@ -155,16 +199,68 @@ export function createPageTools(commandBus: CommandBus, queryBus: QueryBus): Any
 
         defineTool({
             name: 'move_element',
-            description: 'Move and/or resize an element. Returns the element as saved. ' + LAYOUT_GUIDE,
+            description:
+                'Move and/or resize an element on one screen size; the other screen sizes keep their placement. ' +
+                'Returns the element as saved. ' +
+                LAYOUT_GUIDE,
             scope: ScopeValue.PORTFOLIO,
             access: 'write',
-            inputSchema: z.object({ page: pageSchema, elementId: elementIdSchema, transform: transformSchema }),
-            execute: async ({ page, elementId, transform: { x, y, w, h } }) =>
+            inputSchema: z
+                .object({
+                    page: pageSchema,
+                    elementId: elementIdSchema,
+                    screen: screenSchema,
+                    transform: transformSchema,
+                })
+                .superRefine(checkBounds),
+            execute: async ({ page, elementId, screen, transform: { x, y, w, h } }) =>
                 onElement(
                     page,
-                    pageId => commandBus.dispatch(new MoveElementCommand(pageId, elementId, x, y, w, h)),
+                    pageId => commandBus.dispatch(new MoveElementCommand(pageId, elementId, screen, x, y, w, h)),
                     elementId,
                 ),
+        }),
+
+        defineTool({
+            name: 'hide_element',
+            description:
+                'Hide an element on one screen size, or show it again; it keeps its placement. A hidden element ' +
+                'takes no room in the page height nor in the reading order of that screen size. Hidden on every ' +
+                'screen size, its content no longer publishes a project page. Returns the element as saved.',
+            scope: ScopeValue.PORTFOLIO,
+            access: 'write',
+            inputSchema: z.object({
+                page: pageSchema,
+                elementId: elementIdSchema,
+                screen: screenSchema,
+                hidden: z.boolean().default(true).describe('true hides the element, false shows it again.'),
+            }),
+            execute: async ({ page, elementId, screen, hidden }) =>
+                onElement(
+                    page,
+                    pageId => commandBus.dispatch(new HideElementCommand(pageId, elementId, screen, hidden)),
+                    elementId,
+                ),
+        }),
+
+        defineTool({
+            name: 'regenerate_layout',
+            description:
+                'Rebuild the tablet or mobile placement of every element from desktop, overwriting every retouch ' +
+                'made on that screen size: desktop rows are read top to bottom and left to right and stacked full ' +
+                'width; elements hidden on desktop go last, hidden. Returns the page as saved.',
+            scope: ScopeValue.PORTFOLIO,
+            access: 'write',
+            inputSchema: z.object({
+                page: pageSchema,
+                screen: z.enum(PAGE_DERIVED_SCREENS).describe('The screen size to rebuild.'),
+            }),
+            execute: async ({ page, screen }) => {
+                const current = await ensurePage(page);
+                if (!current) return null;
+                await commandBus.dispatch(new RegenerateLayoutCommand(current.id, screen));
+                return readPage(page);
+            },
         }),
 
         defineTool({

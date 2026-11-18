@@ -1,6 +1,5 @@
 import { IProjectRepository } from '@contexts/project/domain/repository/iProjectRepository';
 import { destinationOf } from '@contexts/project/application/query/projectDestination';
-import { isImageDocument } from '@shared/domain/valueObject/documentType';
 import { IProjectReferences, LinkDestination, ProjectSummary } from '../../domain/port/iProjectReferences';
 import { IPageRepository } from '../../domain/repository/iPageRepository';
 import { PageType } from '../../domain/valueObject/pageType';
@@ -32,17 +31,7 @@ export class ProjectReferences implements IProjectReferences {
                     const found = destinationOf(project, withPage.has(id));
                     const destination: LinkDestination =
                         found.kind === 'page' ? { kind: 'page', projectId: id } : found;
-                    const image = project.getDocuments().find(d => isImageDocument(d.getType(), d.getUrl()));
-                    return [
-                        id,
-                        {
-                            name: project.getName().getValue(),
-                            description: project.getDescription().getValue(),
-                            image: image?.getUrl() ?? null,
-                            visible: project.isVisible(),
-                            destination,
-                        },
-                    ];
+                    return [id, { visible: project.isVisible(), destination }];
                 }),
         );
     }

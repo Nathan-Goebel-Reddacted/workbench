@@ -17,6 +17,12 @@ import { EnsurePageCommand } from './command/ensurePage/ensurePageCommand.js';
 import { AddElementHandler } from './command/addElement/addElementHandler.js';
 import { AddElementCommand } from './command/addElement/addElementCommand.js';
 import { MoveElementHandler } from './command/moveElement/moveElementHandler.js';
+import { HideElementCommand } from './command/hideElement/hideElementCommand.js';
+import { HideElementHandler } from './command/hideElement/hideElementHandler.js';
+import { RegenerateLayoutCommand } from './command/regenerateLayout/regenerateLayoutCommand.js';
+import { RegenerateLayoutHandler } from './command/regenerateLayout/regenerateLayoutHandler.js';
+import { UnknownScreenSizeException } from '../domain/exception/unknownScreenSize.js';
+import { InvalidTransformException } from '../domain/exception/invalidTransform.js';
 import { MoveElementCommand } from './command/moveElement/moveElementCommand.js';
 import { ReorderElementHandler } from './command/reorderElement/reorderElementHandler.js';
 import { ReorderElementCommand } from './command/reorderElement/reorderElementCommand.js';
@@ -72,7 +78,7 @@ class SpyUploads implements IUploadStorage {
 }
 
 function summary(destination: LinkDestination, visible = true): ProjectSummary {
-    return { name: 'Atelier', description: 'Un projet', image: '/uploads/cover.png', visible, destination };
+    return { visible, destination };
 }
 
 function projects(known: Record<string, ProjectSummary> = {}): IProjectReferences & { asked: string[][] } {
@@ -101,7 +107,7 @@ async function pageWithElement() {
     await new EnsurePageHandler(repository, new PageFactory()).handle(
         new EnsurePageCommand(pageId, PageType.PORTFOLIO, PAGE_REF),
     );
-    await new AddElementHandler(mutator).handle(new AddElementCommand(pageId, ELEMENT, null));
+    await new AddElementHandler(mutator).handle(new AddElementCommand(pageId, ELEMENT, 'desktop', null));
     const elements = async () => (await repository.findById(new PageId(pageId)))!.getElements();
     return { repository, uploads, mutator, pageId, elements };
 }
@@ -140,12 +146,53 @@ describe('commandes sur les Elements', () => {
         expect(element.getComponents()).toEqual({});
     });
 
-    it('déplace un Element', async () => {
+    it('déplace un Element dans une seule taille d’écran', async () => {
         const { mutator, pageId, elements } = await pageWithElement();
+        const before = (await elements())[0].getLayout();
 
-        await new MoveElementHandler(mutator).handle(new MoveElementCommand(pageId, ELEMENT, 8, 16, 24, 32));
+        await new MoveElementHandler(mutator).handle(new MoveElementCommand(pageId, ELEMENT, 'mobile', 8, 16, 24, 32));
 
-        expect((await elements())[0].getTransform().getX()).toBe(8);
+        const after = (await elements())[0].getLayout();
+        expect(after.transform('mobile').getX()).toBe(8);
+        expect(after.transform('desktop').equals(before.transform('desktop'))).toBe(true);
+        expect(after.transform('tablet').equals(before.transform('tablet'))).toBe(true);
+    });
+
+    it('refuse une taille d’écran inconnue ou un Transform hors de sa largeur', async () => {
+        const { mutator, pageId } = await pageWithElement();
+        const handler = new MoveElementHandler(mutator);
+
+        await expect(handler.handle(new MoveElementCommand(pageId, ELEMENT, 'watch', 0, 0, 8, 8))).rejects.toThrow(
+            UnknownScreenSizeException,
+        );
+        await expect(handler.handle(new MoveElementCommand(pageId, ELEMENT, 'mobile', 0, 0, 400, 8))).rejects.toThrow(
+            InvalidTransformException,
+        );
+    });
+
+    it('masque un Element dans une taille, puis le réaffiche', async () => {
+        const { mutator, pageId, elements } = await pageWithElement();
+        const handler = new HideElementHandler(mutator);
+
+        await handler.handle(new HideElementCommand(pageId, ELEMENT, 'tablet', true));
+        expect((await elements())[0].getLayout().isHidden('tablet')).toBe(true);
+        expect((await elements())[0].getLayout().isHidden('mobile')).toBe(false);
+
+        await handler.handle(new HideElementCommand(pageId, ELEMENT, 'tablet', false));
+        expect((await elements())[0].getLayout().isHidden('tablet')).toBe(false);
+    });
+
+    it('régénère le mobile depuis le desktop et refuse de régénérer le desktop', async () => {
+        const { mutator, pageId, elements } = await pageWithElement();
+        await new MoveElementHandler(mutator).handle(new MoveElementCommand(pageId, ELEMENT, 'mobile', 0, 500, 8, 8));
+        const handler = new RegenerateLayoutHandler(mutator);
+
+        await handler.handle(new RegenerateLayoutCommand(pageId, 'mobile'));
+
+        expect((await elements())[0].transform('mobile').getW()).toBe(343);
+        await expect(handler.handle(new RegenerateLayoutCommand(pageId, 'desktop'))).rejects.toThrow(
+            UnknownScreenSizeException,
+        );
     });
 
     it('duplique un Element puis le recule sous sa copie', async () => {
@@ -166,7 +213,18 @@ describe('commandes sur les Elements', () => {
         expect(uploads.released).toEqual([]);
 
         await handler.handle(new SetComponentCommand(pageId, ELEMENT, 'text', { html: '<p>b</p>' }));
-        expect(uploads.released).toEqual([[{ html: '<img src="/uploads/a.png">', scale: 'normal', color: null }]]);
+        expect(uploads.released).toEqual([
+            [
+                {
+                    html: '<img src="/uploads/a.png">',
+                    font: 'body',
+                    fontSize: { desktop: 16, tablet: 15, mobile: 14 },
+                    uppercase: false,
+                    letterSpacing: 0,
+                    color: null,
+                },
+            ],
+        ]);
     });
 
     it('libère le contenu retiré', async () => {
@@ -177,7 +235,18 @@ describe('commandes sur les Elements', () => {
 
         await new RemoveComponentHandler(mutator).handle(new RemoveComponentCommand(pageId, ELEMENT, 'text'));
 
-        expect(uploads.released).toEqual([[{ html: '/uploads/a.png', scale: 'normal', color: null }]]);
+        expect(uploads.released).toEqual([
+            [
+                {
+                    html: '/uploads/a.png',
+                    font: 'body',
+                    fontSize: { desktop: 16, tablet: 15, mobile: 14 },
+                    uppercase: false,
+                    letterSpacing: 0,
+                    color: null,
+                },
+            ],
+        ]);
         expect((await elements())[0].getComponents()).toEqual({});
     });
 
@@ -189,7 +258,20 @@ describe('commandes sur les Elements', () => {
 
         await new DeleteElementHandler(mutator).handle(new DeleteElementCommand(pageId, ELEMENT));
 
-        expect(uploads.released).toEqual([[{ text: { html: '/uploads/a.png', scale: 'normal', color: null } }]]);
+        expect(uploads.released).toEqual([
+            [
+                {
+                    text: {
+                        html: '/uploads/a.png',
+                        font: 'body',
+                        fontSize: { desktop: 16, tablet: 15, mobile: 14 },
+                        uppercase: false,
+                        letterSpacing: 0,
+                        color: null,
+                    },
+                },
+            ],
+        ]);
         expect(await elements()).toEqual([]);
     });
 
@@ -240,12 +322,21 @@ describe('GetPageByRefHandler', () => {
         return repository;
     }
 
-    it('rend la Page publique avec sa largeur de référence', async () => {
+    it('rend la Page publique avec ses tailles d’écran', async () => {
         const handler = new GetPageByRefHandler(await repositoryWithPage(), visibility(true), readers());
 
         const dto = await handler.handle(new GetPageByRefQuery('project', PAGE_REF));
 
-        expect(dto).toMatchObject({ pageRef: PAGE_REF, referenceWidth: 1440, hasContent: false, elements: [] });
+        expect(dto).toMatchObject({
+            pageRef: PAGE_REF,
+            screens: {
+                desktop: { width: 1440, minViewport: 1024 },
+                tablet: { width: 768, minViewport: 600 },
+                mobile: { width: 375, minViewport: 0 },
+            },
+            hasContent: false,
+            elements: [],
+        });
     });
 
     it('dit qu’une Page a du contenu dès qu’un Element en porte un, comme la destination des projets', async () => {
@@ -342,86 +433,77 @@ describe('fichiers manquants', () => {
         );
     }
 
-    it('retire du site public un Media dont le fichier manque, et le signale à l’éditeur', async () => {
-        const { repository } = await pageWith('media', { url: '/uploads/a.png' });
+    const media = (...urls: string[]) => ({ files: urls.map(url => ({ url })) });
+
+    it('retire du site public un Media dont le seul fichier manque, et le signale à l’éditeur', async () => {
+        const { repository } = await pageWith('media', media('/uploads/a.png'));
 
         expect((await read(repository, ['/uploads/a.png'], false))?.elements).toEqual([]);
 
         const editor = await read(repository, ['/uploads/a.png'], true);
         expect(editor?.elements[0]).toMatchObject({
-            components: { media: { url: '/uploads/a.png' } },
+            components: { media: { files: [{ url: '/uploads/a.png' }] } },
             issues: [{ kind: 'missingFile', url: '/uploads/a.png' }],
         });
     });
 
-    it('retire les slides perdues d’un Carousel, puis l’Element quand il n’en reste aucune', async () => {
-        const { repository } = await pageWith('carousel', {
-            items: [{ url: '/uploads/a.png' }, { url: '/uploads/b.png' }],
-        });
+    it('retire du site public les seuls fichiers perdus d’un Media, puis le Media quand il n’en reste aucun', async () => {
+        const { repository } = await pageWith('media', media('/uploads/a.png', '/uploads/b.png'));
 
         const partial = await read(repository, ['/uploads/a.png'], false);
-        expect(partial?.elements[0].components.carousel).toEqual({ items: [{ url: '/uploads/b.png', caption: '' }] });
+        expect(partial?.elements[0].components.media).toMatchObject({ files: [{ url: '/uploads/b.png', alt: '' }] });
+
+        const editor = await read(repository, ['/uploads/a.png'], true);
+        expect(editor?.elements[0].components.media).toMatchObject(media('/uploads/a.png', '/uploads/b.png'));
+        expect(editor?.elements[0].issues).toEqual([{ kind: 'missingFile', url: '/uploads/a.png' }]);
 
         const none = await read(repository, ['/uploads/a.png', '/uploads/b.png'], false);
         expect(none?.elements).toEqual([]);
     });
 
     it('garde tel quel un Element dont les fichiers sont présents', async () => {
-        const { repository } = await pageWith('media', { url: 'https://example.com/a.png' });
+        const { repository } = await pageWith('media', media('https://example.com/a.png'));
 
         const dto = await read(repository, [], false);
 
         expect(dto?.elements[0]).toMatchObject({
-            components: { media: { url: 'https://example.com/a.png' } },
+            components: { media: { files: [{ url: 'https://example.com/a.png' }] } },
             issues: [],
         });
     });
 
     it('confie au stockage le fichier d’un Media retiré, qui le garde s’il est encore cité ailleurs', async () => {
-        const { mutator, uploads, pageId } = await pageWith('media', { url: '/uploads/a.png' });
+        const { mutator, uploads, pageId } = await pageWith('media', media('/uploads/a.png'));
 
         await new RemoveComponentHandler(mutator).handle(new RemoveComponentCommand(pageId, ELEMENT, 'media'));
 
-        expect(uploads.released).toEqual([[{ url: '/uploads/a.png', alt: '', fit: 'contain', position: 'center' }]]);
+        expect(uploads.released).toEqual([
+            [{ files: [{ url: '/uploads/a.png', alt: '' }], fit: 'contain', position: 'center' }],
+        ]);
+    });
+
+    it('confie au stockage l’ancienne liste quand un fichier en est retiré', async () => {
+        const { mutator, uploads, pageId } = await pageWith('media', media('/uploads/a.png', '/uploads/b.png'));
+
+        await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
+            new SetComponentCommand(pageId, ELEMENT, 'media', media('/uploads/b.png')),
+        );
+
+        expect(uploads.released.at(-1)).toEqual([
+            {
+                files: [
+                    { url: '/uploads/a.png', alt: '' },
+                    { url: '/uploads/b.png', alt: '' },
+                ],
+                fit: 'contain',
+                position: 'center',
+            },
+        ]);
     });
 });
 
 describe('projets cités', () => {
     const PROJECT = '88888888-8888-4888-8888-888888888888';
-
-    async function readCard(known: Record<string, ProjectSummary>, forEditor: boolean) {
-        const { repository, mutator, pageId } = await pageWithElement();
-        await new SetComponentHandler(mutator, SiteOrigins.none()).handle(
-            new SetComponentCommand(pageId, ELEMENT, 'projectCard', { projectId: PROJECT }),
-        );
-        return new GetPageByRefHandler(repository, { isPublic: async () => true }, readers(projects(known))).handle(
-            new GetPageByRefQuery('portfolio', PAGE_REF, forEditor, forEditor),
-        );
-    }
-
-    it('joint à la carte le résumé et la destination d’un projet public', async () => {
-        const dto = await readCard({ [PROJECT]: summary({ kind: 'page', projectId: PROJECT }) }, false);
-
-        expect(dto?.elements[0].components.projectCard).toEqual({
-            projectId: PROJECT,
-            project: {
-                name: 'Atelier',
-                description: 'Un projet',
-                image: '/uploads/cover.png',
-                destination: { kind: 'page', projectId: PROJECT },
-            },
-        });
-    });
-
-    it.each([
-        ['privé', { [PROJECT]: summary({ kind: 'page', projectId: PROJECT }, false) }],
-        ['introuvable', {}],
-    ])('retire du site public la carte d’un projet %s, et la signale à l’éditeur', async (_label, known) => {
-        expect((await readCard(known, false))?.elements).toEqual([]);
-
-        const editor = await readCard(known, true);
-        expect(editor?.elements[0].issues).toEqual([{ kind: 'projectUnavailable', projectId: PROJECT }]);
-    });
 
     it('neutralise un Link vers un projet privé et le signale à l’éditeur', async () => {
         const { repository, mutator, pageId } = await pageWithElement();
@@ -441,9 +523,9 @@ describe('projets cités', () => {
     it('demande tous les projets cités d’une Page en un seul appel', async () => {
         const { repository, mutator, pageId } = await pageWithElement();
         const second = crypto.randomUUID();
-        await new AddElementHandler(mutator).handle(new AddElementCommand(pageId, second, null));
+        await new AddElementHandler(mutator).handle(new AddElementCommand(pageId, second, 'desktop', null));
         const handler = new SetComponentHandler(mutator, SiteOrigins.none());
-        await handler.handle(new SetComponentCommand(pageId, ELEMENT, 'projectCard', { projectId: PROJECT }));
+        await handler.handle(new SetComponentCommand(pageId, ELEMENT, 'link', { projectId: PROJECT }));
         await handler.handle(new SetComponentCommand(pageId, second, 'link', { projectId: PROJECT }));
         const port = projects();
 

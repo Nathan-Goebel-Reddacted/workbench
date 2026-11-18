@@ -7,7 +7,9 @@ import { PageRef } from '../../domain/valueObject/pageRef';
 import { PageType } from '../../domain/valueObject/pageType';
 import { ElementId } from '../../domain/valueObject/elementId';
 import { Transform } from '../../domain/valueObject/transform';
-import { ElementRow, PageOrmEntity } from '../entity/pageOrmEntity';
+import { Layout, Placement } from '../../domain/valueObject/layout';
+import { SCREENS, ScreenSize, isScreenSize } from '../../domain/valueObject/screenSize';
+import { ElementRow, PageOrmEntity, PlacementRow } from '../entity/pageOrmEntity';
 
 export class PageRepository implements IPageRepository {
     constructor(private readonly em: EntityManager) {}
@@ -66,21 +68,35 @@ export class PageRepository implements IPageRepository {
 
     private toDomain(row: PageOrmEntity): Page {
         const elements = row.elements.map(e =>
-            Element.rehydrate(
-                new ElementId(e.id),
-                new Transform(e.transform.x, e.transform.y, e.transform.w, e.transform.h),
-                e.components ?? {},
-            ),
+            Element.rehydrate(new ElementId(e.id), layoutOf(e.layout), e.components ?? {}),
         );
         return new Page(new PageId(row.id), row.pageType as PageType, new PageRef(row.pageRef), elements, row.version);
     }
 }
 
+function layoutOf(row: ElementRow['layout']): Layout {
+    const placements = {} as Record<ScreenSize, Placement>;
+    for (const screen of SCREENS) {
+        const { transform: t, hidden } = row[screen];
+        placements[screen] = { transform: new Transform(screen, t.x, t.y, t.w, t.h), hidden };
+    }
+    return Layout.of(placements, row.origin && isScreenSize(row.origin) ? row.origin : 'desktop');
+}
+
+function placementRow({ transform: t, hidden }: Placement): PlacementRow {
+    return { transform: { x: t.getX(), y: t.getY(), w: t.getW(), h: t.getH() }, hidden };
+}
+
 function toRow(element: Element): ElementRow {
-    const t = element.getTransform();
+    const layout = element.getLayout();
     return {
         id: element.getId().getValue(),
-        transform: { x: t.getX(), y: t.getY(), w: t.getW(), h: t.getH() },
+        layout: {
+            desktop: placementRow(layout.placement('desktop')),
+            tablet: placementRow(layout.placement('tablet')),
+            mobile: placementRow(layout.placement('mobile')),
+            origin: layout.getOrigin(),
+        },
         components: element.getComponents(),
     };
 }

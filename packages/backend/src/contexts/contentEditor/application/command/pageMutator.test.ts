@@ -6,6 +6,15 @@ import { PageRef } from '../../domain/valueObject/pageRef.js';
 import { PageType } from '../../domain/valueObject/pageType.js';
 import { ElementId } from '../../domain/valueObject/elementId.js';
 import { Transform } from '../../domain/valueObject/transform.js';
+import { Layout } from '../../domain/valueObject/layout.js';
+
+function desktopAt(x: number, y: number, w: number, h: number): Layout {
+    return Layout.of({
+        desktop: { transform: new Transform('desktop', x, y, w, h), hidden: false },
+        tablet: { transform: new Transform('tablet', 16, 0, 736, 100), hidden: false },
+        mobile: { transform: new Transform('mobile', 16, 0, 343, 100), hidden: false },
+    });
+}
 import { Element } from '../../domain/entity/element.js';
 import { IPageRepository, PageVersionConflictError } from '../../domain/repository/iPageRepository.js';
 import { NotFoundError } from '@shared/application/errors/notFoundError.js';
@@ -17,7 +26,7 @@ import type { IUploadStorage } from '@shared/application/port/iUploadStorage.js'
 const PAGE_ID = new PageId();
 
 type Stored = {
-    elements: Array<{ id: string; transform: Transform; components: Record<string, unknown> }>;
+    elements: Array<{ id: string; layout: Layout; components: Record<string, unknown> }>;
     version: number;
 };
 
@@ -29,9 +38,7 @@ class FakeRepository implements IPageRepository {
 
     async findById(): Promise<Page | null> {
         this.events.push(`read v${this.stored.version}`);
-        const elements = this.stored.elements.map(e =>
-            Element.rehydrate(new ElementId(e.id), e.transform, e.components),
-        );
+        const elements = this.stored.elements.map(e => Element.rehydrate(new ElementId(e.id), e.layout, e.components));
         return new Page(PAGE_ID, PageType.PORTFOLIO, new PageRef(), elements, this.stored.version);
     }
 
@@ -58,7 +65,7 @@ class FakeRepository implements IPageRepository {
             version: this.stored.version + 1,
             elements: page.getElements().map(e => ({
                 id: e.getId().getValue(),
-                transform: e.getTransform(),
+                layout: e.getLayout(),
                 components: e.getComponents(),
             })),
         };
@@ -82,8 +89,8 @@ function setup() {
     const repository = new FakeRepository({
         version: 1,
         elements: [
-            { id: FIRST, transform: new Transform(0, 0, 10, 10), components: { text: { html: '/uploads/a.png' } } },
-            { id: SECOND, transform: new Transform(0, 0, 10, 10), components: {} },
+            { id: FIRST, layout: desktopAt(0, 0, 10, 10), components: { text: { html: '/uploads/a.png' } } },
+            { id: SECOND, layout: desktopAt(0, 0, 10, 10), components: {} },
         ],
     });
     const mutator = new PageMutator(repository, new FakeUploads(repository.events));
@@ -94,17 +101,17 @@ describe('PageMutator', () => {
     it('rejoue la commande sur la Page relue quand une autre écriture est passée entre-temps', async () => {
         const { repository, mutator } = setup();
         repository.concurrentWrites.push(stored => {
-            stored.elements[1].transform = new Transform(100, 100, 10, 10);
+            stored.elements[1].layout = desktopAt(100, 100, 10, 10);
         });
 
         await mutator.apply(PAGE_ID.getValue(), page => {
-            page.moveElement(new ElementId(FIRST), new Transform(50, 50, 10, 10));
+            page.moveElement(new ElementId(FIRST), new Transform('desktop', 50, 50, 10, 10));
             return [];
         });
 
         expect(repository.events).toEqual(['read v1', 'conflict v1', 'read v2', 'save v2']);
-        expect(repository.stored.elements[0].transform.getX()).toBe(50);
-        expect(repository.stored.elements[1].transform.getX()).toBe(100);
+        expect(repository.stored.elements[0].layout.transform('desktop').getX()).toBe(50);
+        expect(repository.stored.elements[1].layout.transform('desktop').getX()).toBe(100);
     });
 
     it('libère les fichiers de l’ancien contenu après l’enregistrement, une seule fois', async () => {
@@ -118,7 +125,7 @@ describe('PageMutator', () => {
             'conflict v1',
             'read v2',
             'save v2',
-            'release [{"text":{"html":"/uploads/a.png","scale":"normal","color":null}}]',
+            'release [{"text":{"html":"/uploads/a.png","font":"body","fontSize":{"desktop":16,"tablet":15,"mobile":14},"uppercase":false,"letterSpacing":0,"color":null}}]',
         ]);
     });
 

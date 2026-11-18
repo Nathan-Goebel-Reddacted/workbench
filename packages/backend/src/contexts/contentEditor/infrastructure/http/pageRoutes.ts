@@ -16,13 +16,15 @@ import { GetPageByRefQuery } from '../../application/query/getPageByRef/getPageB
 import { PageDto } from '../../application/query/pageDto';
 import { PageType } from '../../domain/valueObject/pageType';
 import { ReorderDirection } from '../../domain/pageAggregate';
-import { MAX_PAGE_HEIGHT, REFERENCE_WIDTH } from '../../domain/valueObject/transform';
+import { DERIVED_SCREENS, MAX_SCREEN_HEIGHTS, SCREEN_SIZES, SCREENS } from '../../domain/valueObject/screenSize';
+import { HideElementCommand } from '../../application/command/hideElement/hideElementCommand';
+import { RegenerateLayoutCommand } from '../../application/command/regenerateLayout/regenerateLayoutCommand';
 import { COMPONENT_KINDS } from '../../domain/component/componentRegistry';
 
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
 type PageRefInput = { pageType: string; pageRef: string };
-type TransformInput = { x: number; y: number; w: number; h: number };
+type TransformInput = { screen: string; x: number; y: number; w: number; h: number };
 
 const uuid = { type: 'string', format: 'uuid' } as const;
 
@@ -55,15 +57,32 @@ const componentParams = {
 } as const;
 
 const transformBody = {
+    oneOf: SCREENS.map(screen => ({
+        type: 'object',
+        required: ['screen', 'x', 'y', 'w', 'h'],
+        additionalProperties: false,
+        properties: {
+            screen: { const: screen },
+            x: { type: 'integer', minimum: 0, maximum: SCREEN_SIZES[screen] - 1 },
+            y: { type: 'integer', minimum: 0, maximum: MAX_SCREEN_HEIGHTS[screen] - 1 },
+            w: { type: 'integer', minimum: 1, maximum: SCREEN_SIZES[screen] },
+            h: { type: 'integer', minimum: 1, maximum: MAX_SCREEN_HEIGHTS[screen] },
+        },
+    })),
+};
+
+const hiddenBody = {
     type: 'object',
-    required: ['x', 'y', 'w', 'h'],
+    required: ['screen', 'hidden'],
     additionalProperties: false,
-    properties: {
-        x: { type: 'integer', minimum: 0, maximum: REFERENCE_WIDTH - 1 },
-        y: { type: 'integer', minimum: 0, maximum: MAX_PAGE_HEIGHT - 1 },
-        w: { type: 'integer', minimum: 1, maximum: REFERENCE_WIDTH },
-        h: { type: 'integer', minimum: 1, maximum: MAX_PAGE_HEIGHT },
-    },
+    properties: { screen: { type: 'string', enum: SCREENS }, hidden: { type: 'boolean' } },
+} as const;
+
+const regenerateBody = {
+    type: 'object',
+    required: ['screen'],
+    additionalProperties: false,
+    properties: { screen: { type: 'string', enum: DERIVED_SCREENS } },
 } as const;
 
 function sendPage(reply: FastifyReply, page: PageDto | null) {
@@ -107,7 +126,7 @@ export const pageRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
         },
     );
 
-    app.post<{ Params: { id: string }; Body: { visibleTop?: number } }>(
+    app.post<{ Params: { id: string }; Body: { screen: string; visibleTop?: number } }>(
         '/pages/:id/elements',
         {
             preHandler: requireRole(UserRole.EDIT),
@@ -115,14 +134,20 @@ export const pageRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
                 params: pageParams,
                 body: {
                     type: 'object',
+                    required: ['screen'],
                     additionalProperties: false,
-                    properties: { visibleTop: { type: 'integer', minimum: 0, maximum: MAX_PAGE_HEIGHT } },
+                    properties: {
+                        screen: { type: 'string', enum: SCREENS },
+                        visibleTop: { type: 'integer', minimum: 0, maximum: MAX_SCREEN_HEIGHTS.mobile },
+                    },
                 },
             },
         },
         async (req, reply) => {
             const elementId = crypto.randomUUID();
-            await commandBus.dispatch(new AddElementCommand(req.params.id, elementId, req.body?.visibleTop ?? null));
+            await commandBus.dispatch(
+                new AddElementCommand(req.params.id, elementId, req.body.screen, req.body.visibleTop ?? null),
+            );
             return reply.status(201).send({ id: elementId });
         },
     );
@@ -131,8 +156,27 @@ export const pageRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, qu
         '/pages/:id/elements/:elementId/transform',
         { preHandler: requireRole(UserRole.EDIT), schema: { params: elementParams, body: transformBody } },
         async (req, reply) => {
-            const { x, y, w, h } = req.body;
-            await commandBus.dispatch(new MoveElementCommand(req.params.id, req.params.elementId, x, y, w, h));
+            const { screen, x, y, w, h } = req.body;
+            await commandBus.dispatch(new MoveElementCommand(req.params.id, req.params.elementId, screen, x, y, w, h));
+            return reply.status(204).send();
+        },
+    );
+
+    app.patch<{ Params: { id: string; elementId: string }; Body: { screen: string; hidden: boolean } }>(
+        '/pages/:id/elements/:elementId/hidden',
+        { preHandler: requireRole(UserRole.EDIT), schema: { params: elementParams, body: hiddenBody } },
+        async (req, reply) => {
+            const { screen, hidden } = req.body;
+            await commandBus.dispatch(new HideElementCommand(req.params.id, req.params.elementId, screen, hidden));
+            return reply.status(204).send();
+        },
+    );
+
+    app.post<{ Params: { id: string }; Body: { screen: string } }>(
+        '/pages/:id/layout/regenerate',
+        { preHandler: requireRole(UserRole.EDIT), schema: { params: pageParams, body: regenerateBody } },
+        async (req, reply) => {
+            await commandBus.dispatch(new RegenerateLayoutCommand(req.params.id, req.body.screen));
             return reply.status(204).send();
         },
     );

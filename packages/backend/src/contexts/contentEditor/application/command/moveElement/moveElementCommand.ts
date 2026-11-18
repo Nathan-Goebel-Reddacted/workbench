@@ -7,6 +7,7 @@ export class MoveElementCommand implements Command {
     constructor(
         readonly pageId: string,
         readonly elementId: string,
+        readonly screen: string,
         readonly x: number,
         readonly y: number,
         readonly w: number,

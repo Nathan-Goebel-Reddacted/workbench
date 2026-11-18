@@ -1,6 +1,13 @@
 import { IUploadPresence } from '@shared/application/port/iUploadPresence';
 import { Page } from '../../domain/pageAggregate';
-import { REFERENCE_WIDTH } from '../../domain/valueObject/transform';
+import {
+    MAX_SCREEN_HEIGHTS,
+    SCREEN_MIN_VIEWPORTS,
+    SCREEN_SIZES,
+    SCREENS,
+    ScreenSize,
+} from '../../domain/valueObject/screenSize';
+import { Layout } from '../../domain/valueObject/layout';
 import { ElementComponents } from '../../domain/entity/element';
 import {
     COMPONENT_REGISTRY,
@@ -11,7 +18,7 @@ import {
 import { IProjectReferences, LinkDestination, ProjectSummary } from '../../domain/port/iProjectReferences';
 import { IBindingTargets } from '../../domain/port/iBindingTargets';
 import { BindingRef, bindingKey } from '../../domain/component/bindings';
-import { ElementDto, ElementIssue, PageDto } from './pageDto';
+import { ElementDto, ElementIssue, PageDto, PlacementDto, ScreenDto } from './pageDto';
 
 export type PageReaders = Readonly<{
     projects: IProjectReferences;
@@ -42,11 +49,10 @@ export async function toPageDto(page: Page, readers: PageReaders, audience: Audi
         const issues = issuesOf(components[index], known);
         const shown = audience === 'public' ? withoutBrokenReferences(components[index], known) : components[index];
         if (shown === null) return [];
-        const t = element.getTransform();
         return [
             {
                 id: element.getId().getValue(),
-                transform: { x: t.getX(), y: t.getY(), w: t.getW(), h: t.getH() },
+                layout: layoutDto(element.getLayout()),
                 components: withProjects(shown, known),
                 issues: audience === 'editor' ? issues : [],
             },
@@ -58,10 +64,33 @@ export async function toPageDto(page: Page, readers: PageReaders, audience: Audi
         pageType: page.getPageType(),
         pageRef: page.getPageRef().getValue(),
         version: page.getVersion(),
-        referenceWidth: REFERENCE_WIDTH,
+        screens: SCREENS_DTO,
         hasContent: page.hasContent(),
         elements: dtos,
     };
+}
+
+const SCREENS_DTO = Object.fromEntries(
+    SCREENS.map(screen => [
+        screen,
+        {
+            width: SCREEN_SIZES[screen],
+            maxHeight: MAX_SCREEN_HEIGHTS[screen],
+            minViewport: SCREEN_MIN_VIEWPORTS[screen],
+        },
+    ]),
+) as Record<ScreenSize, ScreenDto>;
+
+function layoutDto(layout: Layout): Record<ScreenSize, PlacementDto> {
+    return Object.fromEntries(
+        SCREENS.map(screen => {
+            const t = layout.transform(screen);
+            return [
+                screen,
+                { transform: { x: t.getX(), y: t.getY(), w: t.getW(), h: t.getH() }, hidden: layout.isHidden(screen) },
+            ];
+        }),
+    ) as Record<ScreenSize, PlacementDto>;
 }
 
 function entries(components: ElementComponents): Array<[ComponentKind, ComponentValue]> {
@@ -102,8 +131,6 @@ function issuesOf(components: ElementComponents, known: Cited): ElementIssue[] {
 }
 
 function withoutBrokenReferences(components: ElementComponents, known: Cited): ElementComponents | null {
-    const card = components.projectCard?.projectId;
-    if (typeof card === 'string' && !isAvailable(card, known)) return null;
     if (known.missing.size === 0) return components;
     const kept: ElementComponents = {};
     for (const [kind, value] of entries(components)) {
@@ -125,21 +152,6 @@ function withProjects(components: ElementComponents, known: Cited): ElementCompo
     const result: ElementComponents = { ...components };
     if (components.link) {
         result.link = { ...components.link, destination: destinationOf(components.link.projectId, known) };
-    }
-    if (components.projectCard) {
-        const projectId = components.projectCard.projectId;
-        const summary = typeof projectId === 'string' ? known.projects.get(projectId) : undefined;
-        result.projectCard = {
-            ...components.projectCard,
-            project: summary
-                ? {
-                      name: summary.name,
-                      description: summary.description,
-                      image: summary.image,
-                      destination: destinationOf(projectId, known),
-                  }
-                : null,
-        };
     }
     return result;
 }

@@ -7,6 +7,7 @@ export class AddElementCommand implements Command {
     constructor(
         readonly pageId: string,
         readonly elementId: string,
+        readonly screen: string,
         readonly visibleTop: number | null,
     ) {
         this.commandName = AddElementCommand.commandName;

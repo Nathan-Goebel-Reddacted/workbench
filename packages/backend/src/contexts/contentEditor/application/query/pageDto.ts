@@ -1,3 +1,4 @@
+import { ScreenSize } from '../../domain/valueObject/screenSize';
 import { BindingEntity } from '../../domain/component/bindings';
 
 export type ElementIssue =
@@ -5,9 +6,15 @@ export type ElementIssue =
     | Readonly<{ kind: 'projectUnavailable'; projectId: string }>
     | Readonly<{ kind: 'missingBinding'; entity: BindingEntity; id: string }>;
 
+export type TransformDto = Readonly<{ x: number; y: number; w: number; h: number }>;
+
+export type PlacementDto = Readonly<{ transform: TransformDto; hidden: boolean }>;
+
+export type ScreenDto = Readonly<{ width: number; maxHeight: number; minViewport: number }>;
+
 export type ElementDto = Readonly<{
     id: string;
-    transform: Readonly<{ x: number; y: number; w: number; h: number }>;
+    layout: Readonly<Record<ScreenSize, PlacementDto>>;
     components: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
     issues: readonly ElementIssue[];
 }>;
@@ -17,7 +24,7 @@ export type PageDto = Readonly<{
     pageType: string;
     pageRef: string;
     version: number;
-    referenceWidth: number;
+    screens: Readonly<Record<ScreenSize, ScreenDto>>;
     hasContent: boolean;
     elements: readonly ElementDto[];
 }>;
