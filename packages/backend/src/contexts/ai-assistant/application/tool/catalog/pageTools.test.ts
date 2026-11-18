@@ -379,6 +379,7 @@ describe('Catalogue des outils de Page', () => {
 
     it('expose les outils autour des Elements et des Components', () => {
         expect(tools.map(tool => tool.name)).toEqual([
+            'list_media',
             'get_page',
             'add_element',
             'move_element',

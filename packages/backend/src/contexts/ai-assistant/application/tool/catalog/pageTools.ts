@@ -7,6 +7,7 @@ import { GetProjectByIdQuery } from '@contexts/project/application/query/getProj
 import { ProjectDto } from '@contexts/project/application/query/getProjectById/projectDto';
 import { GetPageByRefQuery } from '@contexts/contentEditor/application/query/getPageByRef/getPageByRefQuery';
 import { PageDto } from '@contexts/contentEditor/application/query/pageDto';
+import { ListMediaImagesQuery } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesQuery';
 import { EnsurePageCommand } from '@contexts/contentEditor/application/command/ensurePage/ensurePageCommand';
 import { AddElementCommand } from '@contexts/contentEditor/application/command/addElement/addElementCommand';
 import { MoveElementCommand } from '@contexts/contentEditor/application/command/moveElement/moveElementCommand';
@@ -156,6 +157,20 @@ export function createPageTools(commandBus: CommandBus, queryBus: QueryBus): Any
     };
 
     return [
+        defineTool({
+            name: 'list_media',
+            description:
+                'List the files already attached to projects, features and tickets, grouped by project, to pick a ' +
+                'source for a page component. kind: image, video, mindmap, or document (every displayable file: ' +
+                'image, video, mindmap and pdf). To add a new file, store it with upload_file.',
+            scope: ScopeValue.PORTFOLIO,
+            access: 'read',
+            inputSchema: z.object({
+                kind: z.enum(['image', 'video', 'mindmap', 'document']).describe('Which files to list.'),
+            }),
+            execute: async ({ kind }) => queryBus.dispatch(new ListMediaImagesQuery(kind)),
+        }),
+
         defineTool({
             name: 'get_page',
             description:

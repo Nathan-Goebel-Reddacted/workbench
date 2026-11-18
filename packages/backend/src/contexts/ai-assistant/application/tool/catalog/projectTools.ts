@@ -5,6 +5,7 @@ import { Category } from '@contexts/project/application/command/createProject/cr
 import { CreateProjectCommand } from '@contexts/project/application/command/createProject/createProjectCommand';
 import { UpdateProjectCommand } from '@contexts/project/application/command/updateProject/updateProjectCommand';
 import { UpdateProjectVisibilityCommand } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityCommand';
+import { SetProjectPageReplacementCommand } from '@contexts/project/application/command/setProjectPageReplacement/setProjectPageReplacementCommand';
 import { AddProjectLinkCommand } from '@contexts/project/application/command/addProjectLink/addProjectLinkCommand';
 import { RemoveProjectLinkCommand } from '@contexts/project/application/command/removeProjectLink/removeProjectLinkCommand';
 import { AddProjectDocumentCommand } from '@contexts/project/application/command/addProjectDocument/addProjectDocumentCommand';
@@ -102,6 +103,24 @@ export function createProjectTools(commandBus: CommandBus, queryBus: QueryBus): 
             }),
             execute: async ({ id, visible }) => {
                 await commandBus.dispatch(new UpdateProjectVisibilityCommand(id, visible));
+                return readProject(id);
+            },
+        }),
+
+        defineTool({
+            name: 'set_project_page_replacement',
+            description:
+                "Send visitors of the project's public page to one of its links instead (for instance a project " +
+                'that lives on its own site), or give it back its own page with url: null. The url must be one of ' +
+                'the project links, as listed by get_project. Returns the updated project.',
+            scope: ScopeValue.PROJECT,
+            access: 'write',
+            inputSchema: z.object({
+                id: uuidSchema.describe('Id of the project.'),
+                url: z.string().min(1).nullable().describe('URL of a project link, or null to keep its own page.'),
+            }),
+            execute: async ({ id, url }) => {
+                await commandBus.dispatch(new SetProjectPageReplacementCommand(id, url));
                 return readProject(id);
             },
         }),
