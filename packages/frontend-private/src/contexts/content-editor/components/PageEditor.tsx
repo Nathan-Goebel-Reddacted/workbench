@@ -20,8 +20,6 @@ import { PageAlerts, flaggedElements } from './PageAlerts'
 
 const EDITING_ROOM = 320
 
-const BELOW_MOBILE_PREVIEW = 320
-
 const NOTHING_CLIPPED: ClippedByScreen = { desktop: new Set(), tablet: new Set(), mobile: new Set() }
 
 type Props = { pageType: PageType; pageRef: string }
@@ -31,7 +29,6 @@ export function PageEditor({ pageType, pageRef }: Props) {
   const { add, move, hide, regenerate, reorder, duplicate, set, unset, remove } = commands
   const [screen, setScreen] = useState<ScreenSize>('desktop')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [previewWidth, setPreviewWidth] = useState<number | null>(null)
   const [confirmRegenerate, setConfirmRegenerate] = useState(false)
   const [shownSlide, setShownSlide] = useState<ShownSlide | null>(null)
   const [preview, setPreview] = useState<{ id: string; transform: ElementTransform; lines: GuideLines } | null>(null)
@@ -48,7 +45,6 @@ export function PageEditor({ pageType, pageRef }: Props) {
   if (status === 'error') return <p style={mutedStyle}>The page could not be loaded.</p>
   if (!page) return <p style={mutedStyle}>This page has not been composed yet.</p>
 
-  const editing = previewWidth === null
   const placed = pageAt(page, screen, true)
   const shown = {
     ...page,
@@ -61,12 +57,11 @@ export function PageEditor({ pageType, pageRef }: Props) {
         : element,
     ),
   }
-  const selected = canEdit && editing ? placed.elements.find(element => element.id === selectedId) : undefined
+  const selected = canEdit ? placed.elements.find(element => element.id === selectedId) : undefined
   const flagged = new Set(flaggedElements(page.elements, clipped).map(element => element.id))
 
   const chooseScreen = (next: ScreenSize) => {
     setScreen(next)
-    setPreviewWidth(null)
     setConfirmRegenerate(false)
   }
 
@@ -121,12 +116,12 @@ export function PageEditor({ pageType, pageRef }: Props) {
       <ClipProbes page={page} onMeasure={onMeasure} />
       <div ref={scroller} style={scrollerStyle} onPointerDown={() => setSelectedId(null)}>
         <div style={toolbarStyle} onPointerDown={event => event.stopPropagation()}>
-          {canEdit && editing && (
+          {canEdit && (
             <Button variant="solid" onClick={() => void add(screen, visibleTop())}>
               Add element
             </Button>
           )}
-          {canEdit && editing && screen !== 'desktop' && !confirmRegenerate && (
+          {canEdit && screen !== 'desktop' && !confirmRegenerate && (
             <Button variant="ghost" onClick={() => setConfirmRegenerate(true)}>
               Regenerate from desktop
             </Button>
@@ -148,60 +143,37 @@ export function PageEditor({ pageType, pageRef }: Props) {
               </Button>
             </span>
           )}
-          <div style={previewBarStyle}>
-            <div style={groupStyle} role="group" aria-label="Screen size">
-              {EDITED_SCREENS.map(option => (
-                <Button
-                  key={option}
-                  variant={editing && screen === option ? 'outline' : 'ghost'}
-                  onClick={() => chooseScreen(option)}
-                >
-                  {SCREEN_LABELS[option]}
-                </Button>
-              ))}
-            </div>
-            <div style={groupStyle} role="group" aria-label="Preview">
-              {[...EDITED_SCREENS.map(option => page.screens[option].width), BELOW_MOBILE_PREVIEW].map(width => (
-                <Button
-                  key={width}
-                  variant={previewWidth === width ? 'outline' : 'ghost'}
-                  onClick={() => setPreviewWidth(width)}
-                >
-                  {width}
-                </Button>
-              ))}
-            </div>
+          <div style={screenBarStyle} role="group" aria-label="Screen size">
+            {EDITED_SCREENS.map(option => (
+              <Button
+                key={option}
+                variant={screen === option ? 'outline' : 'ghost'}
+                onClick={() => chooseScreen(option)}
+              >
+                {SCREEN_LABELS[option]}
+              </Button>
+            ))}
           </div>
         </div>
-        {previewWidth !== null ? (
-          <div style={previewScrollStyle}>
-            <div style={{ ...previewFrameStyle, width: previewWidth }}>
-              <PageRenderer page={page} editing />
-            </div>
-          </div>
-        ) : (
-          <>
-            <PageAlerts elements={page.elements} clipped={clipped} onSelect={reveal} />
-            {placed.elements.length === 0 && (
-              <p style={inviteStyle}>
-                {canEdit ? 'This page is empty. Add a first element to start composing it.' : 'This page is empty.'}
-              </p>
-            )}
-            <div ref={canvas} style={{ ...canvasStyle, maxWidth: placed.referenceWidth }}>
-              <PageRenderer
-                key={`${revision}-${screen}`}
-                page={shown}
-                overlay={overlay}
-                foreground={guideLines}
-                editing
-                showHidden
-                screen={screen}
-                extraHeight={canEdit ? EDITING_ROOM : 0}
-                shownSlide={shownSlide && shownSlide.elementId === selected?.id ? shownSlide : undefined}
-              />
-            </div>
-          </>
+        <PageAlerts elements={page.elements} clipped={clipped} onSelect={reveal} />
+        {placed.elements.length === 0 && (
+          <p style={inviteStyle}>
+            {canEdit ? 'This page is empty. Add a first element to start composing it.' : 'This page is empty.'}
+          </p>
         )}
+        <div ref={canvas} style={{ ...canvasStyle, maxWidth: placed.referenceWidth }}>
+          <PageRenderer
+            key={`${revision}-${screen}`}
+            page={shown}
+            overlay={overlay}
+            foreground={guideLines}
+            editing
+            showHidden
+            screen={screen}
+            extraHeight={canEdit ? EDITING_ROOM : 0}
+            shownSlide={shownSlide && shownSlide.elementId === selected?.id ? shownSlide : undefined}
+          />
+        </div>
       </div>
       {selected && (
         <div onPointerDown={event => event.stopPropagation()} style={inspectorSlotStyle}>
@@ -228,7 +200,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
   )
 }
 
-const groupStyle: CSSProperties = { display: 'flex', gap: '0.25rem' }
+const screenBarStyle: CSSProperties = { display: 'flex', gap: '0.25rem', marginLeft: 'auto' }
 const confirmStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -248,13 +220,6 @@ const scrollerStyle: CSSProperties = {
   backgroundColor: 'var(--color-bg)',
 }
 const toolbarStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }
-const previewBarStyle: CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginLeft: 'auto' }
-const previewScrollStyle: CSSProperties = { overflowX: 'auto' }
-const previewFrameStyle: CSSProperties = {
-  margin: '0 auto',
-  outline: '1px solid var(--color-border)',
-  backgroundColor: 'var(--color-bg)',
-}
 const canvasStyle: CSSProperties = {
   width: '100%',
   margin: '0 auto',
