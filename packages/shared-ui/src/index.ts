@@ -8,6 +8,7 @@ export { createErrorReporter, ERROR_LOG_PATH, type ErrorReport } from './errorLo
 export { ThemeProvider } from './theme/ThemeProvider'
 export { workbenchPalette as defaultPalette } from './theme/palette'
 export { popupMessages, SITE_CLOSED_MESSAGE } from './popup/messages'
+export { Button } from './components/Button'
 
 export {
   Modal,
@@ -16,7 +17,6 @@ export {
   ColorPicker,
   ColorField,
   ConfirmDeleteButton,
-  Button,
   NavBar,
   PageStatus,
   useTheme,
