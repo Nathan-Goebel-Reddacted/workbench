@@ -34,7 +34,7 @@ export function App() {
                   <NavLink to="/cv" style={linkStyle}>
                     CV
                   </NavLink>
-                  <ThemeSelect ariaLabel="Thème" />
+                  <ThemeSelect ariaLabel="Thème" style={themeSelectStyle} />
                 </NavBar>
                 <Routes>
                   <Route path="/" element={<HomePage />} />
@@ -52,13 +52,22 @@ export function App() {
   )
 }
 
+// Interpolates from `min` px on a 320 px wide screen to `max` px from 480 px up.
+function fluid(min: number, max: number): string {
+  const slope = (max - min) * 0.625
+  const offset = min - (max - min) * 2
+  return `clamp(${min}px, calc(${slope}vw ${offset < 0 ? '-' : '+'} ${Math.abs(offset)}px), ${max}px)`
+}
+
 const navStyle: CSSProperties = {
-  gap: '1.25rem',
+  height: fluid(48, 56),
+  paddingInline: fluid(12, 24),
+  gap: fluid(12, 20),
 }
 
 const brandStyle: CSSProperties = {
   padding: 0,
-  fontSize: '1rem',
+  fontSize: fluid(14, 16),
   fontWeight: 600,
   color: 'var(--color-text)',
 }
@@ -67,8 +76,13 @@ function linkStyle({ isActive }: { isActive: boolean }): CSSProperties {
   return {
     padding: 0,
     backgroundColor: 'transparent',
-    fontSize: '0.875rem',
+    fontSize: fluid(13, 14),
     fontWeight: 'normal',
     color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)',
   }
+}
+
+const themeSelectStyle: CSSProperties = {
+  width: fluid(70, 90),
+  paddingInline: fluid(4, 8),
 }
