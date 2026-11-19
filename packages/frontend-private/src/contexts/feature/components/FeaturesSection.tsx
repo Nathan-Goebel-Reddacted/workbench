@@ -48,7 +48,7 @@ export function FeaturesSection({ ownerType, ownerId }: SectionProps) {
           style={addInputStyle}
         />
         <Button
-          variant="primary"
+          variant="solid"
           onClick={handleAddFeature}
           disabled={!canEdit || !newName.trim()}
           style={{ gridColumn: 'span 2' }}

@@ -32,7 +32,7 @@ export function ElementInspector(props: Props) {
         <ConfirmDeleteButton onConfirm={onDelete} label="Delete" confirmLabel="Confirm" />
       </header>
       <div style={addRowStyle}>
-        <Button variant="secondary" onClick={onDuplicate}>
+        <Button variant="outline" onClick={onDuplicate}>
           Duplicate
         </Button>
         <Button variant="ghost" onClick={() => onReorder('forward')}>
@@ -83,7 +83,7 @@ export function ElementInspector(props: Props) {
           <h3 style={subtitleStyle}>Add</h3>
           <div style={addRowStyle}>
             {absent.map(kind => (
-              <Button key={kind} variant="secondary" onClick={() => onSet(kind, {})}>
+              <Button key={kind} variant="outline" onClick={() => onSet(kind, {})}>
                 {COMPONENT_REGISTRY[kind].label}
               </Button>
             ))}

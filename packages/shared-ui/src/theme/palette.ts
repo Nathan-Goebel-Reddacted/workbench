@@ -7,6 +7,8 @@ import { defaultPalette, type ThemeColors } from '@-reddacted-/react-ui'
 export const workbenchPalette: ThemeColors = {
   ...defaultPalette,
   '--color-primary-soft': '#e0e7ff',
+  '--color-danger': '#dc2626',
+  '--color-danger-soft': '#fee2e2',
   '--color-mindmap-red': '#dc2626',
   '--color-mindmap-red-soft': '#fee2e2',
   '--color-mindmap-orange': '#ea580c',

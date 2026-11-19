@@ -30,7 +30,7 @@ export function AllowedEmailsSection({ reloadKey }: { reloadKey: number }) {
           onKeyDown={e => e.key === 'Enter' && handleAddEmail()}
           style={inputStyle}
         />
-        <Button variant="primary" onClick={handleAddEmail} disabled={!canEdit || !newEmail.trim()} title={lockedTitle}>
+        <Button variant="solid" onClick={handleAddEmail} disabled={!canEdit || !newEmail.trim()} title={lockedTitle}>
           Add
         </Button>
       </div>

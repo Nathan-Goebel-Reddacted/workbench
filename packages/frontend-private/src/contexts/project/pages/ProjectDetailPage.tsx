@@ -34,7 +34,7 @@ export function ProjectDetailPage() {
         </Button>
         <h1 style={titleStyle}>{project.name}</h1>
         <Button
-          variant="secondary"
+          variant="outline"
           style={editButtonStyle}
           title="Edit the public page"
           aria-label="Edit the public page"

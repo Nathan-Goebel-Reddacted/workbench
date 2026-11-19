@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import type { CSSProperties } from 'react'
+import { BrowserRouter, Routes, Route, Link, NavLink } from 'react-router-dom'
 import {
   ApiUrlProvider,
   ThemeProvider,
@@ -22,15 +23,19 @@ export function App() {
           <PopupProvider>
             <ThemeProvider>
               <SiteGate>
-                <NavBar
-                  brand="Workbench"
-                  links={[
-                    { label: 'Projets', to: '/projects' },
-                    { label: 'CV', to: '/cv' },
-                  ]}
-                  linkAs={Link}
-                  actions={<ThemeSelect ariaLabel="Thème" />}
-                />
+                <NavBar style={navStyle}>
+                  <Link to="/" style={brandStyle}>
+                    Workbench
+                  </Link>
+                  <NavBar.Spacer />
+                  <NavLink to="/projects" style={linkStyle}>
+                    Projets
+                  </NavLink>
+                  <NavLink to="/cv" style={linkStyle}>
+                    CV
+                  </NavLink>
+                  <ThemeSelect ariaLabel="Thème" />
+                </NavBar>
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/projects" element={<ProjectsPage />} />
@@ -45,4 +50,25 @@ export function App() {
       </ApiUrlProvider>
     </BrowserRouter>
   )
+}
+
+const navStyle: CSSProperties = {
+  gap: '1.25rem',
+}
+
+const brandStyle: CSSProperties = {
+  padding: 0,
+  fontSize: '1rem',
+  fontWeight: 600,
+  color: 'var(--color-text)',
+}
+
+function linkStyle({ isActive }: { isActive: boolean }): CSSProperties {
+  return {
+    padding: 0,
+    backgroundColor: 'transparent',
+    fontSize: '0.875rem',
+    fontWeight: 'normal',
+    color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)',
+  }
 }

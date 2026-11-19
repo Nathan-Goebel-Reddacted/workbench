@@ -82,7 +82,7 @@ export function ContactFormPanel({ value, onChange, beginInteraction }: PanelPro
         </div>
       ))}
       <Button
-        variant="secondary"
+        variant="outline"
         onClick={() =>
           update({
             ...draft,

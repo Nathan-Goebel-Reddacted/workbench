@@ -137,7 +137,7 @@ export function TicketModal({
                         style={{ ...modalInputStyle, flex: 1 }}
                         autoFocus
                       />
-                      <Button variant="primary" onClick={() => handleSaveNote(n.id)}>
+                      <Button variant="solid" onClick={() => handleSaveNote(n.id)}>
                         OK
                       </Button>
                       <Button variant="ghost" onClick={() => setEditingId(null)}>
@@ -243,7 +243,7 @@ export function TicketModal({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSave} disabled={!canEdit || saving || !title.trim()}>
+          <Button variant="solid" onClick={handleSave} disabled={!canEdit || saving || !title.trim()}>
             {saving ? 'Saving…' : 'Save'}
           </Button>
         </div>

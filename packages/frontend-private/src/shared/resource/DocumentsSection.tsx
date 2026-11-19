@@ -84,13 +84,13 @@ export function DocumentsSection({ store, initialDocuments }: Props) {
           style={inputStyle}
         />
         <FileUpload label="📁" onUploaded={u => setUrl(u)} disabled={!canEdit} />
-        <Button variant="primary" onClick={handleAdd} disabled={!canEdit || !name.trim() || !url.trim()}>
+        <Button variant="solid" onClick={handleAdd} disabled={!canEdit || !name.trim() || !url.trim()}>
           Add
         </Button>
       </div>
 
       <div style={mindmapActionStyle}>
-        <Button variant="secondary" onClick={() => setEditing({})} disabled={!canEdit}>
+        <Button variant="outline" onClick={() => setEditing({})} disabled={!canEdit}>
           🧠 New mindmap
         </Button>
       </div>

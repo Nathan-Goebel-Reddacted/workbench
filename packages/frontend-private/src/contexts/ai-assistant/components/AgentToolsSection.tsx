@@ -151,7 +151,7 @@ function TokenRotationModal({ tool, onClose }: { tool: AgentTool; onClose: () =>
               <Button variant="ghost" onClick={onClose}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={rotate}>
+              <Button variant="solid" onClick={rotate}>
                 Rotate
               </Button>
             </div>
@@ -167,7 +167,7 @@ function TokenRotationModal({ tool, onClose }: { tool: AgentTool; onClose: () =>
               <Button variant="ghost" onClick={handleCopyToken}>
                 {copied ? 'Copied' : 'Copy'}
               </Button>
-              <Button variant="primary" onClick={onClose}>
+              <Button variant="solid" onClick={onClose}>
                 Close
               </Button>
             </div>

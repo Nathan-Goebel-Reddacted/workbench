@@ -32,13 +32,13 @@ function Viewer({ cvs }: { cvs: Cv[] }) {
     <>
       <div style={selectorStyle}>
         {hasSeveral && (
-          <Button variant="secondary" onClick={() => move(-1)} aria-label="CV précédent" style={arrowStyle}>
+          <Button variant="outline" onClick={() => move(-1)} aria-label="CV précédent" style={arrowStyle}>
             <Chevron direction="left" />
           </Button>
         )}
         <span style={currentNameStyle}>{current.name}</span>
         {hasSeveral && (
-          <Button variant="secondary" onClick={() => move(1)} aria-label="CV suivant" style={arrowStyle}>
+          <Button variant="outline" onClick={() => move(1)} aria-label="CV suivant" style={arrowStyle}>
             <Chevron direction="right" />
           </Button>
         )}

@@ -122,7 +122,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
       <div ref={scroller} style={scrollerStyle} onPointerDown={() => setSelectedId(null)}>
         <div style={toolbarStyle} onPointerDown={event => event.stopPropagation()}>
           {canEdit && editing && (
-            <Button variant="primary" onClick={() => void add(screen, visibleTop())}>
+            <Button variant="solid" onClick={() => void add(screen, visibleTop())}>
               Add element
             </Button>
           )}
@@ -135,7 +135,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
             <span style={confirmStyle}>
               Overwrite every {screen} placement?
               <Button
-                variant="primary"
+                variant="solid"
                 onClick={() => {
                   setConfirmRegenerate(false)
                   void regenerate(screen)
@@ -153,7 +153,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
               {EDITED_SCREENS.map(option => (
                 <Button
                   key={option}
-                  variant={editing && screen === option ? 'secondary' : 'ghost'}
+                  variant={editing && screen === option ? 'outline' : 'ghost'}
                   onClick={() => chooseScreen(option)}
                 >
                   {SCREEN_LABELS[option]}
@@ -164,7 +164,7 @@ export function PageEditor({ pageType, pageRef }: Props) {
               {[...EDITED_SCREENS.map(option => page.screens[option].width), BELOW_MOBILE_PREVIEW].map(width => (
                 <Button
                   key={width}
-                  variant={previewWidth === width ? 'secondary' : 'ghost'}
+                  variant={previewWidth === width ? 'outline' : 'ghost'}
                   onClick={() => setPreviewWidth(width)}
                 >
                   {width}

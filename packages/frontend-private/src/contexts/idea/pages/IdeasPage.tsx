@@ -40,7 +40,7 @@ export function IdeasPage() {
             disabled={!canEdit}
             style={inputStyle}
           />
-          <Button variant="primary" onClick={handleCreate} disabled={!canEdit || creating || !name.trim()}>
+          <Button variant="solid" onClick={handleCreate} disabled={!canEdit || creating || !name.trim()}>
             {creating ? 'Creating…' : 'Create'}
           </Button>
         </div>

@@ -2,7 +2,7 @@ export { ApiUrlProvider, useApiUrl } from './config/ApiUrlContext'
 export { AuthProvider, useAuth, type AuthUser } from './auth/AuthContext'
 export { ProtectedRoute } from './auth/ProtectedRoute'
 export { PopupProvider } from './popup/PopupProvider'
-export { useShowPopup } from './popup/PopupMessageProvider'
+export { useShowPopup } from './popup/useShowPopup'
 export { ErrorReporterProvider, useErrorReporter } from './errorLog/ErrorReporterProvider'
 export { createErrorReporter, ERROR_LOG_PATH, type ErrorReport } from './errorLog/errorReporter'
 export { ThemeProvider } from './theme/ThemeProvider'
@@ -18,9 +18,7 @@ export {
   ConfirmDeleteButton,
   Button,
   NavBar,
-  PageMessage,
-  LoadingMessage,
-  ErrorMessage,
+  PageStatus,
   useTheme,
   ThemeSelect,
   createLocalThemeStore,
@@ -36,7 +34,6 @@ export {
   useClickOutside,
   useEscapeKey,
   type ButtonVariant,
-  type NavLink,
   type LoadStatus,
   type AsyncStatus,
   type AsyncResult,

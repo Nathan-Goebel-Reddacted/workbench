@@ -62,7 +62,7 @@ export function ProjectInfoSection({ projectId, initialName, initialDescription,
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', alignItems: 'center' }}>
         {saved && <span style={savedStyle}>Saved</span>}
-        <Button variant="primary" onClick={handleSave} disabled={!canEdit || saving || !name.trim()}>
+        <Button variant="solid" onClick={handleSave} disabled={!canEdit || saving || !name.trim()}>
           {saving ? 'Saving…' : 'Save'}
         </Button>
       </div>

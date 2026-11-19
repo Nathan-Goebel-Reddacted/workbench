@@ -77,7 +77,7 @@ export function MediaPanel({ value, onChange, beginInteraction, showSlide }: Pan
           </div>
         </div>
       ))}
-      <Button variant="secondary" disabled={files.length >= MAX_FILES} onClick={() => setPicking('new')}>
+      <Button variant="outline" disabled={files.length >= MAX_FILES} onClick={() => setPicking('new')}>
         Add a file
       </Button>
       <label style={fieldStyle}>

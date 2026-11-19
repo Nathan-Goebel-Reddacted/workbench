@@ -79,7 +79,7 @@ export function ThemeEditorPage() {
           <h1 style={titleStyle}>Theme Editor</h1>
           <p style={subtitleStyle}>Compose a palette, then save it as a theme.</p>
         </div>
-        <Button variant="secondary" onClick={handleRandomAll}>
+        <Button variant="outline" onClick={handleRandomAll}>
           Random
         </Button>
       </div>
@@ -106,7 +106,7 @@ export function ThemeEditorPage() {
             <Button variant="ghost" onClick={() => void handleExport()}>
               Export
             </Button>
-            <Button variant="primary" onClick={() => void handleCreate()} disabled={!canEdit} title={editGuard}>
+            <Button variant="solid" onClick={() => void handleCreate()} disabled={!canEdit} title={editGuard}>
               New theme
             </Button>
           </div>
@@ -128,8 +128,8 @@ export function ThemeEditorPage() {
                 <p style={previewMutedStyle}>Card content</p>
               </div>
               <div style={previewBtnsStyle}>
-                <Button variant="primary">Primary</Button>
-                <Button variant="secondary">Secondary</Button>
+                <Button variant="solid">Solid</Button>
+                <Button variant="outline">Outline</Button>
                 <Button variant="ghost">Ghost</Button>
               </div>
             </div>
@@ -193,7 +193,7 @@ export function ThemeEditorPage() {
                   Default
                 </label>
 
-                <Button variant={targetId === theme.id ? 'secondary' : 'ghost'} onClick={() => handleLoad(theme)}>
+                <Button variant={targetId === theme.id ? 'outline' : 'ghost'} onClick={() => handleLoad(theme)}>
                   Load
                 </Button>
                 <Button
@@ -206,7 +206,7 @@ export function ThemeEditorPage() {
                   Paste
                 </Button>
                 <Button
-                  variant="primary"
+                  variant="solid"
                   onClick={() => void handleOverwrite(theme)}
                   disabled={!canEdit}
                   title={editGuard}

@@ -89,7 +89,7 @@ export function IdeaDetailPage() {
             Convert the idea into a project: its features and tickets follow, and their tickets can finally move
             forward. The idea goes away.
           </span>
-          <Button variant="primary" onClick={handleConvert} disabled={!canEdit || converting}>
+          <Button variant="solid" onClick={handleConvert} disabled={!canEdit || converting}>
             {converting ? 'Converting…' : 'Convert to project'}
           </Button>
         </div>
@@ -99,7 +99,7 @@ export function IdeaDetailPage() {
         <p style={sectionLabelStyle}>Danger zone</p>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
           <span style={mutedStyle}>Deletion is permanent.</span>
-          <Button variant="secondary" onClick={handleDelete} disabled={!canEdit || deleting}>
+          <Button variant="outline" onClick={handleDelete} disabled={!canEdit || deleting}>
             {deleting ? 'Deleting…' : 'Delete idea'}
           </Button>
         </div>

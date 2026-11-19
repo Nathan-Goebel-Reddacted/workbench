@@ -122,10 +122,10 @@ export function ErrorLogPage() {
           {total === 0 ? '0 entries' : `${offset + 1}–${Math.min(offset + pageSize, total)} of ${total}`}
         </span>
         <div style={paginationStyle}>
-          <Button variant="secondary" disabled={offset === 0} onClick={previousPage}>
+          <Button variant="outline" disabled={offset === 0} onClick={previousPage}>
             Previous
           </Button>
-          <Button variant="secondary" disabled={offset + pageSize >= total} onClick={nextPage}>
+          <Button variant="outline" disabled={offset + pageSize >= total} onClick={nextPage}>
             Next
           </Button>
         </div>

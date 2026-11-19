@@ -46,7 +46,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       footer={
         report ? (
-          <Button variant="primary" onClick={onClose}>
+          <Button variant="solid" onClick={onClose}>
             Close
           </Button>
         ) : confirming ? (
@@ -54,7 +54,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
             <Button variant="ghost" onClick={() => setConfirming(false)} disabled={busy}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleImport} disabled={busy}>
+            <Button variant="solid" onClick={handleImport} disabled={busy}>
               {busy ? 'Import…' : 'Confirm import'}
             </Button>
           </>
@@ -63,7 +63,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
             <Button variant="ghost" onClick={onClose}>
               Close
             </Button>
-            <Button variant="primary" onClick={() => setConfirming(true)} disabled={!ready}>
+            <Button variant="solid" onClick={() => setConfirming(true)} disabled={!ready}>
               Import
             </Button>
           </>
