@@ -1,6 +1,6 @@
-import type { PageLayoutDto, PageType, SectionContent, SectionPosition } from '@content'
-import { getJson, send, sendJson } from '../../shared/api/http'
-import type { MediaKind, NewSection, ProjectMedia } from './types'
+import type { ComponentKind, ElementTransform, PageType, ScreenSize } from '@content'
+import { HttpError, getJson, send, sendJson } from '../../shared/api/http'
+import type { MediaKind, Page, ProjectMedia, ReorderDirection } from './types'
 
 const MEDIA_ENDPOINTS: Record<MediaKind, string> = {
   image: '/media/images',
@@ -9,28 +9,59 @@ const MEDIA_ENDPOINTS: Record<MediaKind, string> = {
   document: '/media/documents',
 }
 
-function layoutPath(layoutId: string): string {
-  return `/page-layouts/${layoutId}`
+export function ensurePage(pageType: PageType, pageRef: string): Promise<Page> {
+  return sendJson<Page>('/pages/by-ref', { method: 'PUT', body: { pageType, pageRef } })
 }
 
-export function ensurePageLayout(pageType: PageType, pageRef: string): Promise<PageLayoutDto> {
-  return sendJson<PageLayoutDto>('/page-layouts/by-ref', { method: 'PUT', body: { pageType, pageRef } })
+export async function readPage(pageType: PageType, pageRef: string, signal?: AbortSignal): Promise<Page | null> {
+  const params = new URLSearchParams({ pageType, pageRef })
+  try {
+    return await getJson<Page>(`/pages/private/by-ref?${params}`, signal)
+  } catch (error) {
+    if (error instanceof HttpError && error.status === 404) return null
+    throw error
+  }
 }
 
-export function addSection(layoutId: string, section: NewSection): Promise<void> {
-  return send(`${layoutPath(layoutId)}/sections`, { method: 'POST', body: section })
+export function addElement(pageId: string, screen: ScreenSize, visibleTop: number): Promise<{ id: string }> {
+  return sendJson<{ id: string }>(`/pages/${pageId}/elements`, { method: 'POST', body: { screen, visibleTop } })
 }
 
-export function updateSectionContent(layoutId: string, sectionId: string, content: SectionContent): Promise<void> {
-  return send(`${layoutPath(layoutId)}/sections/${sectionId}/content`, { method: 'PATCH', body: { content } })
+export function hideElement(pageId: string, elementId: string, screen: ScreenSize, hidden: boolean): Promise<void> {
+  return send(`/pages/${pageId}/elements/${elementId}/hidden`, { method: 'PATCH', body: { screen, hidden } })
 }
 
-export function moveSection(layoutId: string, sectionId: string, position: SectionPosition): Promise<void> {
-  return send(`${layoutPath(layoutId)}/sections/${sectionId}/move`, { method: 'PATCH', body: position })
+export function regenerateLayout(pageId: string, screen: ScreenSize): Promise<void> {
+  return send(`/pages/${pageId}/layout/regenerate`, { method: 'POST', body: { screen } })
 }
 
-export function removeSection(layoutId: string, sectionId: string): Promise<void> {
-  return send(`${layoutPath(layoutId)}/sections/${sectionId}`, { method: 'DELETE' })
+export function moveElement(
+  pageId: string,
+  elementId: string,
+  screen: ScreenSize,
+  transform: ElementTransform,
+): Promise<void> {
+  return send(`/pages/${pageId}/elements/${elementId}/transform`, { method: 'PATCH', body: { screen, ...transform } })
+}
+
+export function reorderElement(pageId: string, elementId: string, direction: ReorderDirection): Promise<void> {
+  return send(`/pages/${pageId}/elements/${elementId}/reorder`, { method: 'POST', body: { direction } })
+}
+
+export function duplicateElement(pageId: string, elementId: string): Promise<{ id: string }> {
+  return sendJson<{ id: string }>(`/pages/${pageId}/elements/${elementId}/duplicate`, { method: 'POST' })
+}
+
+export function setComponent(pageId: string, elementId: string, kind: ComponentKind, value: object): Promise<void> {
+  return send(`/pages/${pageId}/elements/${elementId}/components/${kind}`, { method: 'PUT', body: value })
+}
+
+export function removeComponent(pageId: string, elementId: string, kind: ComponentKind): Promise<void> {
+  return send(`/pages/${pageId}/elements/${elementId}/components/${kind}`, { method: 'DELETE' })
+}
+
+export function deleteElement(pageId: string, elementId: string): Promise<void> {
+  return send(`/pages/${pageId}/elements/${elementId}`, { method: 'DELETE' })
 }
 
 export function listMedia(kind: MediaKind, signal?: AbortSignal): Promise<ProjectMedia[]> {

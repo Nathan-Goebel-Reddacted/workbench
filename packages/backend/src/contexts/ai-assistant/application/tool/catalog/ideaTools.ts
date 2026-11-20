@@ -7,14 +7,18 @@ import { AddIdeaLinkCommand } from '@contexts/idea/application/command/addIdeaLi
 import { RemoveIdeaLinkCommand } from '@contexts/idea/application/command/removeIdeaLink/removeIdeaLinkCommand';
 import { AddIdeaDocumentCommand } from '@contexts/idea/application/command/addIdeaDocument/addIdeaDocumentCommand';
 import { RemoveIdeaDocumentCommand } from '@contexts/idea/application/command/removeIdeaDocument/removeIdeaDocumentCommand';
+import { DeleteIdeaCommand } from '@contexts/idea/application/command/deleteIdea/deleteIdeaCommand';
+import { GetIdeaDeletionImpactQuery } from '@contexts/idea/application/query/getIdeaDeletionImpact/getIdeaDeletionImpactQuery';
+import { IdeaDeletionImpactDto } from '@contexts/idea/application/query/getIdeaDeletionImpact/ideaDeletionImpactDto';
 import { ConvertIdeaToProjectCommand } from '@contexts/idea/application/command/convertIdeaToProject/convertIdeaToProjectCommand';
+import { CreateIdeaMindmapCommand } from '@contexts/idea/application/command/createIdeaMindmap/createIdeaMindmapCommand';
 import { GetProjectByIdQuery } from '@contexts/project/application/query/getProjectById/getProjectByIdQuery';
 import { GetIdeaByIdQuery } from '@contexts/idea/application/query/getIdeaById/getIdeaByIdQuery';
 import { ListIdeasQuery } from '@contexts/idea/application/query/listIdeas/listIdeasQuery';
 import { Category } from '@contexts/idea/application/command/createIdea/createIdeaCommand';
 import { ScopeValue } from '../../../domain/valueObject/scope';
 import { AnyToolDescriptor, defineTool } from '../toolDescriptor';
-import { documentSchema, linkSchema, uuidSchema, withGeneratedIds } from './sharedSchemas';
+import { documentSchema, linkSchema, mindmapSchema, uuidSchema, withGeneratedIds } from './sharedSchemas';
 
 export function createIdeaTools(commandBus: CommandBus, queryBus: QueryBus): AnyToolDescriptor[] {
     const readIdea = (id: string) => queryBus.dispatch(new GetIdeaByIdQuery(id));
@@ -92,6 +96,28 @@ export function createIdeaTools(commandBus: CommandBus, queryBus: QueryBus): Any
         }),
 
         defineTool({
+            name: 'delete_idea',
+            description:
+                'Permanently delete an idea **with its features and their tickets**. Without confirm, nothing is ' +
+                'deleted: the tool returns how many features and tickets would be lost. Call it again with ' +
+                'confirm: true to delete. To keep the work, use convert_idea_to_project instead.',
+            scope: ScopeValue.IDEA,
+            access: 'write',
+            inputSchema: z.object({
+                id: uuidSchema.describe('Id of the idea to delete.'),
+                confirm: z.boolean().optional().describe('true deletes; omitted or false only reports the impact.'),
+            }),
+            execute: async ({ id, confirm }) => {
+                const impact = await queryBus.dispatch<GetIdeaDeletionImpactQuery, IdeaDeletionImpactDto>(
+                    new GetIdeaDeletionImpactQuery(id),
+                );
+                if (!confirm) return { deleted: false, id, wouldDelete: impact };
+                await commandBus.dispatch(new DeleteIdeaCommand(id));
+                return { deleted: true, id, removed: impact };
+            },
+        }),
+
+        defineTool({
             name: 'convert_idea_to_project',
             description:
                 "Turn an idea into a project: the project keeps the idea's name, description, category, " +
@@ -147,8 +173,8 @@ export function createIdeaTools(commandBus: CommandBus, queryBus: QueryBus): Any
         defineTool({
             name: 'add_idea_document',
             description:
-                'Attach a document (pdf, image or video) to an idea. The document must already be hosted ' +
-                'somewhere: this tool records its URL, it does not upload a file.',
+                'Attach a document (pdf, image or video) to an idea. This tool records a URL: to attach a local ' +
+                'file, store it first with upload_file.',
             scope: ScopeValue.IDEA,
             access: 'write',
             inputSchema: documentSchema.extend({
@@ -156,6 +182,24 @@ export function createIdeaTools(commandBus: CommandBus, queryBus: QueryBus): Any
             }),
             execute: async ({ id, name, url }) => {
                 await commandBus.dispatch(new AddIdeaDocumentCommand(id, crypto.randomUUID(), name, url));
+                return readIdea(id);
+            },
+        }),
+
+        defineTool({
+            name: 'create_idea_mindmap',
+            description:
+                'Draw a new mindmap and attach it to an idea as a document. Returns the updated idea; ' +
+                'the mindmap URL is in its documents. Edit it later with update_mindmap.',
+            scope: ScopeValue.IDEA,
+            access: 'write',
+            inputSchema: z.object({
+                id: uuidSchema.describe('Id of the idea.'),
+                name: z.string().min(1).describe('Document name shown in the interface.'),
+                content: mindmapSchema,
+            }),
+            execute: async ({ id, name, content }) => {
+                await commandBus.dispatch(new CreateIdeaMindmapCommand(id, crypto.randomUUID(), name, content));
                 return readIdea(id);
             },
         }),

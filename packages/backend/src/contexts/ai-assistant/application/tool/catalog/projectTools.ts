@@ -5,15 +5,17 @@ import { Category } from '@contexts/project/application/command/createProject/cr
 import { CreateProjectCommand } from '@contexts/project/application/command/createProject/createProjectCommand';
 import { UpdateProjectCommand } from '@contexts/project/application/command/updateProject/updateProjectCommand';
 import { UpdateProjectVisibilityCommand } from '@contexts/project/application/command/updateProjectVisibility/updateProjectVisibilityCommand';
+import { SetProjectPageReplacementCommand } from '@contexts/project/application/command/setProjectPageReplacement/setProjectPageReplacementCommand';
 import { AddProjectLinkCommand } from '@contexts/project/application/command/addProjectLink/addProjectLinkCommand';
 import { RemoveProjectLinkCommand } from '@contexts/project/application/command/removeProjectLink/removeProjectLinkCommand';
 import { AddProjectDocumentCommand } from '@contexts/project/application/command/addProjectDocument/addProjectDocumentCommand';
 import { RemoveProjectDocumentCommand } from '@contexts/project/application/command/removeProjectDocument/removeProjectDocumentCommand';
 import { GetProjectByIdQuery } from '@contexts/project/application/query/getProjectById/getProjectByIdQuery';
+import { CreateProjectMindmapCommand } from '@contexts/project/application/command/createProjectMindmap/createProjectMindmapCommand';
 import { ListProjectsQuery } from '@contexts/project/application/query/listProjects/listProjectsQuery';
 import { ScopeValue } from '../../../domain/valueObject/scope';
 import { AnyToolDescriptor, defineTool } from '../toolDescriptor';
-import { documentSchema, linkSchema, uuidSchema, withGeneratedIds } from './sharedSchemas';
+import { documentSchema, linkSchema, mindmapSchema, uuidSchema, withGeneratedIds } from './sharedSchemas';
 
 export function createProjectTools(commandBus: CommandBus, queryBus: QueryBus): AnyToolDescriptor[] {
     // Un agent agit pour le compte de son propriétaire, côté privé : il voit aussi les
@@ -106,6 +108,24 @@ export function createProjectTools(commandBus: CommandBus, queryBus: QueryBus): 
         }),
 
         defineTool({
+            name: 'set_project_page_replacement',
+            description:
+                "Send visitors of the project's public page to one of its links instead (for instance a project " +
+                'that lives on its own site), or give it back its own page with url: null. The url must be one of ' +
+                'the project links, as listed by get_project. Returns the updated project.',
+            scope: ScopeValue.PROJECT,
+            access: 'write',
+            inputSchema: z.object({
+                id: uuidSchema.describe('Id of the project.'),
+                url: z.string().min(1).nullable().describe('URL of a project link, or null to keep its own page.'),
+            }),
+            execute: async ({ id, url }) => {
+                await commandBus.dispatch(new SetProjectPageReplacementCommand(id, url));
+                return readProject(id);
+            },
+        }),
+
+        defineTool({
             name: 'add_project_link',
             description: 'Attach an external link to a project. Returns the updated project.',
             scope: ScopeValue.PROJECT,
@@ -138,8 +158,8 @@ export function createProjectTools(commandBus: CommandBus, queryBus: QueryBus): 
         defineTool({
             name: 'add_project_document',
             description:
-                'Attach a document (pdf, image or video) to a project. The document must already be hosted ' +
-                'somewhere: this tool records its URL, it does not upload a file.',
+                'Attach a document (pdf, image or video) to a project. This tool records a URL: to attach a local ' +
+                'file, store it first with upload_file.',
             scope: ScopeValue.PROJECT,
             access: 'write',
             inputSchema: documentSchema.extend({
@@ -147,6 +167,24 @@ export function createProjectTools(commandBus: CommandBus, queryBus: QueryBus): 
             }),
             execute: async ({ id, name, url }) => {
                 await commandBus.dispatch(new AddProjectDocumentCommand(id, crypto.randomUUID(), name, url));
+                return readProject(id);
+            },
+        }),
+
+        defineTool({
+            name: 'create_project_mindmap',
+            description:
+                'Draw a new mindmap and attach it to a project as a document. Returns the updated project; ' +
+                'the mindmap URL is in its documents. Edit it later with update_mindmap.',
+            scope: ScopeValue.PROJECT,
+            access: 'write',
+            inputSchema: z.object({
+                id: uuidSchema.describe('Id of the project.'),
+                name: z.string().min(1).describe('Document name shown in the interface.'),
+                content: mindmapSchema,
+            }),
+            execute: async ({ id, name, content }) => {
+                await commandBus.dispatch(new CreateProjectMindmapCommand(id, crypto.randomUUID(), name, content));
                 return readProject(id);
             },
         }),

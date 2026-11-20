@@ -1,5 +1,6 @@
 import { ICommandHandler } from '@shared/application/command/iCommandHandler';
-import { IMindmapStorage } from '@shared/application/port/iMindmapStorage';
+import { IFileStorage } from '@shared/application/port/iFileStorage';
+import { MINDMAP_SUFFIX } from '@shared/domain/valueObject/documentType';
 import { IUploadStorage } from '@shared/application/port/iUploadStorage';
 import { NotFoundError } from '@shared/application/errors/notFoundError';
 import { Document } from '@shared/domain/entity/document';
@@ -11,7 +12,7 @@ import { IdeaId } from '../../../domain/valueObject/ideaId';
 export class CreateIdeaMindmapHandler implements ICommandHandler<CreateIdeaMindmapCommand, string> {
     constructor(
         private readonly repository: IIdeaRepository,
-        private readonly mindmaps: IMindmapStorage,
+        private readonly files: IFileStorage,
         private readonly uploads: IUploadStorage,
     ) {}
 
@@ -19,7 +20,7 @@ export class CreateIdeaMindmapHandler implements ICommandHandler<CreateIdeaMindm
         const idea = await this.repository.findById(new IdeaId(command.ideaId));
         if (!idea) throw new NotFoundError('Idea', command.ideaId);
 
-        const url = await this.mindmaps.store(command.content);
+        const url = await this.files.save(MINDMAP_SUFFIX, Buffer.from(JSON.stringify(command.content)));
         try {
             idea.addDocument(new Document(new DocumentId(command.documentId), command.name, url));
             await this.repository.save(idea);

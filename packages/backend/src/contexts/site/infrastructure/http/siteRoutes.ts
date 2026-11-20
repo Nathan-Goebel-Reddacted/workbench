@@ -11,7 +11,7 @@ type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
 export const siteRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
     // Pas `public` : la session doit être lue pour dire si le site est servi à cet appelant.
-    app.get('/site-access', { config: { servedWhenSiteClosed: true } }, async (req, reply) => {
+    app.get('/site-access', { config: { servedWhenSiteClosed: true, anonymousRead: true } }, async (req, reply) => {
         const { open } = await queryBus.dispatch<GetSiteAccessQuery, SiteAccessDto>(new GetSiteAccessQuery());
         return reply.header('Cache-Control', 'no-store').send({ open, served: open || hasPrivateRead(req) });
     });

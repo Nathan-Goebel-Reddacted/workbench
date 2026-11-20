@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { Link, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { NavBar, ThemeSelect, useAuth } from '@atelier/shared-ui'
 
 const NAV_LINKS = [
@@ -14,26 +14,49 @@ export function PrivateLayout() {
 
   return (
     <div style={layoutStyle}>
-      <NavBar
-        brand="Workbench"
-        links={NAV_LINKS}
-        linkAs={Link}
-        actions={
-          <>
-            <ThemeSelect ariaLabel="Theme" />
-            {user && (
-              <button type="button" onClick={() => void logout()} style={logoutStyle}>
-                Log out
-              </button>
-            )}
-          </>
-        }
-      />
+      <NavBar style={navStyle}>
+        <Link to="/" style={brandStyle}>
+          Workbench
+        </Link>
+        <NavBar.Spacer />
+        {NAV_LINKS.map(link => (
+          <NavLink key={link.to} to={link.to} style={linkStyle}>
+            {link.label}
+          </NavLink>
+        ))}
+        <ThemeSelect ariaLabel="Theme" />
+        {user && (
+          <button type="button" onClick={() => void logout()} style={logoutStyle}>
+            Log out
+          </button>
+        )}
+      </NavBar>
       <main style={mainStyle}>
         <Outlet />
       </main>
     </div>
   )
+}
+
+const navStyle: CSSProperties = {
+  gap: '1.25rem',
+}
+
+const brandStyle: CSSProperties = {
+  padding: 0,
+  fontSize: '1rem',
+  fontWeight: 600,
+  color: 'var(--color-text)',
+}
+
+function linkStyle({ isActive }: { isActive: boolean }): CSSProperties {
+  return {
+    padding: 0,
+    backgroundColor: 'transparent',
+    fontSize: '0.875rem',
+    fontWeight: 'normal',
+    color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)',
+  }
 }
 
 const logoutStyle: CSSProperties = {
@@ -43,6 +66,7 @@ const logoutStyle: CSSProperties = {
   cursor: 'pointer',
   color: 'var(--color-text-muted)',
   fontSize: '0.875rem',
+  fontWeight: 'normal',
 }
 
 const layoutStyle: CSSProperties = {

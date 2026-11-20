@@ -42,7 +42,7 @@ export function ExportModal({ onClose }: { onClose: () => void }) {
           <Button variant="ghost" onClick={onClose}>
             Close
           </Button>
-          <Button variant="primary" onClick={handleExport} disabled={busy}>
+          <Button variant="solid" onClick={handleExport} disabled={busy}>
             {busy ? 'Export…' : 'Export'}
           </Button>
         </>

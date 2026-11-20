@@ -3,22 +3,22 @@
    RichTextRenderer, sinon le texte sort sans mise en forme. */
 .rich-text-content h1 {
   font-family: var(--font-heading);
-  font-size: calc(1.4rem * var(--text-scale, 1));
+  font-size: 1.4em;
   margin: 0.5rem 0;
 }
 .rich-text-content h2 {
   font-family: var(--font-heading);
-  font-size: calc(1.15rem * var(--text-scale, 1));
+  font-size: 1.15em;
   margin: 0.5rem 0;
 }
 .rich-text-content h3 {
   font-family: var(--font-heading);
-  font-size: calc(1rem * var(--text-scale, 1));
+  font-size: 1em;
   margin: 0.5rem 0;
 }
 .rich-text-content h4 {
   font-family: var(--font-heading);
-  font-size: calc(0.9rem * var(--text-scale, 1));
+  font-size: 0.9em;
   margin: 0.5rem 0;
 }
 .rich-text-content p {

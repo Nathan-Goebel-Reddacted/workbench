@@ -85,7 +85,7 @@ export const authRoutes: FastifyPluginAsync<AuthOpts> = async (app, { commandBus
     const loginFlow = { config: { servedWhenSiteClosed: true } };
 
     // Le site privé n'a pas à deviner ce qui est configuré : il dessine ses boutons à partir d'ici.
-    app.get('/auth/providers', loginFlow, async () => ({
+    app.get('/auth/providers', { config: { ...loginFlow.config, anonymousRead: true } }, async () => ({
         providers: env.oauth.map(credentials => credentials.provider),
     }));
 

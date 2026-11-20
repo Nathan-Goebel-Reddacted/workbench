@@ -49,7 +49,7 @@ export function MindmapModal({ store, document: existing, onClose, onCreated }: 
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSave} disabled={saving || loaded === null || !name.trim()}>
+          <Button variant="solid" onClick={handleSave} disabled={saving || loaded === null || !name.trim()}>
             {saving ? 'Saving…' : 'Save'}
           </Button>
         </div>

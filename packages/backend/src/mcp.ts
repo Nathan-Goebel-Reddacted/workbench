@@ -13,7 +13,7 @@ const logger = new StderrLogger('mcp');
 const log = (message: string) => logger.info(message);
 
 const AGENT_NAME = process.env.AGENT_NAME ?? 'claude-code';
-const AGENT_SCOPES = (process.env.AGENT_SCOPES ?? 'project,feature,ticket,idea,portfolio').split(',');
+const AGENT_SCOPES = (process.env.AGENT_SCOPES ?? 'project,feature,ticket,idea,portfolio,cv,theme').split(',');
 const AGENT_PERMISSION = process.env.AGENT_PERMISSION ?? 'read_write';
 const API_URL = process.env.APP_URL ?? 'http://localhost:3000';
 

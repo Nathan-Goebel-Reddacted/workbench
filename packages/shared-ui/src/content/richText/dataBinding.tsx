@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 import { useEffect, useState, type CSSProperties } from 'react'
-import type { BindingEntity, BindingField, DataBindingAttrs } from '../section/types'
+import type { BindingEntity, BindingField, DataBindingAttrs } from '../page/contentOptions'
 
 type DataBindingOptions = { apiUrl: string }
 
@@ -16,6 +16,10 @@ declare module '@tiptap/core' {
 // --- Résolution de la valeur live (cache de promesses par entité) ---
 type EntityData = Record<string, unknown>
 const entityCache = new Map<string, Promise<EntityData | null>>()
+
+export function clearBindingCache(): void {
+  entityCache.clear()
+}
 
 function entityPath(entity: BindingEntity, id: string): string {
   if (entity === 'project') return `projects/${id}`
@@ -63,14 +67,17 @@ function useBindingValue(apiUrl: string, entity: BindingEntity, id: string, fiel
   return state
 }
 
+export function useBindingLabel(apiUrl: string, { entity, id, field }: DataBindingAttrs): string {
+  const { value, loading, error } = useBindingValue(apiUrl, entity, id, field)
+  return loading ? '…' : error ? '⚠' : value || '(vide)'
+}
+
 // --- NodeView React : affiche la valeur live, non éditable, mais formatable (marques) ---
 function DataBindingView(props: NodeViewProps) {
   const { entity, id, field } = props.node.attrs as DataBindingAttrs
   const { apiUrl } = props.extension.options as DataBindingOptions
   const editable = props.editor.isEditable
-  const { value, loading, error } = useBindingValue(apiUrl, entity, id, field)
-
-  const label = loading ? '…' : error ? '⚠' : value || '(vide)'
+  const label = useBindingLabel(apiUrl, { entity, id, field })
 
   return (
     <NodeViewWrapper

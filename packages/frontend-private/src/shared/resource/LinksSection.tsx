@@ -43,7 +43,7 @@ export function LinksSection({ store, initialLinks, pageReplacement }: Props) {
             <div style={cellStyle}>
               {pageReplacement && (
                 <Button
-                  variant={pageReplacement.replacingUrl === l.url ? 'primary' : 'ghost'}
+                  variant={pageReplacement.replacingUrl === l.url ? 'solid' : 'ghost'}
                   onClick={() => pageReplacement.onChange(pageReplacement.replacingUrl === l.url ? null : l.url)}
                   disabled={!canEdit}
                   title="Visitors reach this link instead of the project page"
@@ -75,7 +75,7 @@ export function LinksSection({ store, initialLinks, pageReplacement }: Props) {
           style={inputStyle}
         />
         <FileUpload accept="image/*" label="📁" onUploaded={setLogo} disabled={!canEdit} />
-        <Button variant="primary" onClick={handleAdd} disabled={!canEdit || !url.trim()}>
+        <Button variant="solid" onClick={handleAdd} disabled={!canEdit || !url.trim()}>
           Add
         </Button>
       </div>

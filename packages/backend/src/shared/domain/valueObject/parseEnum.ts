@@ -3,7 +3,7 @@ import { DomainException } from '@shared/domain/domainException';
 /**
  * Convertit une chaîne venue de l'extérieur en membre d'énumération, ou refuse.
  *
- * Un `as SectionType` ne vérifie rien : une valeur inconnue traverse le domaine et ne se
+ * Un `as PageType` ne vérifie rien : une valeur inconnue traverse le domaine et ne se
  * révèle qu'au rendu, sous la forme d'un bloc vide sur le site public. Ce helper est le
  * point où la conversion échoue au lieu de mentir.
  */

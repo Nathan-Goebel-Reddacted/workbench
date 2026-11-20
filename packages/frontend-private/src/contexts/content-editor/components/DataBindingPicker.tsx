@@ -142,7 +142,7 @@ export function DataBindingPicker({ onInsert, onClose }: Props) {
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleInsert} disabled={!canInsert}>
+          <Button variant="solid" onClick={handleInsert} disabled={!canInsert}>
             Insert
           </Button>
         </div>

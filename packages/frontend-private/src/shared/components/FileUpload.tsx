@@ -11,7 +11,7 @@ type Props = {
   onUploaded: (url: string, filename: string) => void
 }
 
-export function FileUpload({ accept, label = 'Upload', variant = 'secondary', disabled = false, onUploaded }: Props) {
+export function FileUpload({ accept, label = 'Upload', variant = 'outline', disabled = false, onUploaded }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const { uploading, error, upload } = useUpload()
 

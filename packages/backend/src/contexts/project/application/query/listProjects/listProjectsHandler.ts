@@ -16,12 +16,13 @@ export class ListProjectsHandler implements IQueryHandler<ListProjectsQuery, Pro
     async handle(query: ListProjectsQuery): Promise<ProjectSummaryDto[]> {
         const projects = await this.repository.findAll();
         const exposed = query.includeHidden ? projects : projects.filter(p => p.isVisible());
-        return Promise.all(exposed.map(p => this.toDto(p)));
+        const withPage = await this.pages.projectsWithPage(exposed.map(p => p.getId().getValue()));
+        return exposed.map(p => this.toDto(p, withPage.has(p.getId().getValue())));
     }
 
-    private async toDto(project: Project): Promise<ProjectSummaryDto> {
+    private toDto(project: Project, hasPage: boolean): ProjectSummaryDto {
         return {
-            destination: await destinationOf(project, this.pages),
+            destination: destinationOf(project, hasPage),
             id: project.getId().getValue(),
             number: project.getNumber(),
             reference: formatSegment(project.getNumber()),

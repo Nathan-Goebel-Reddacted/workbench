@@ -49,6 +49,10 @@ async function runImport(orm: MikroORM, requested: string | undefined): Promise<
     for (const row of report) {
         inserted += Number(row.inserted);
         updated += Number(row.updated);
+        if (row.ignored) {
+            console.log(`  ${row.table_name.padEnd(width)}  retired table, ignored`);
+            continue;
+        }
         console.log(`  ${row.table_name.padEnd(width)}  +${row.inserted} inserted  ~${row.updated} updated`);
     }
     console.log(`  ${'total'.padEnd(width)}  +${inserted} inserted  ~${updated} updated`);

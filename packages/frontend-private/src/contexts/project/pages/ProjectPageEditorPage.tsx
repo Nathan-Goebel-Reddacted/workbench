@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@atelier/shared-ui'
-import { GridBuilder } from '../../content-editor'
+import { PageEditor } from '../../content-editor'
 import { useProject } from '../hooks/useProject'
 
 export function ProjectPageEditorPage() {
@@ -30,7 +30,7 @@ export function ProjectPageEditorPage() {
         </Button>
       </div>
       <div style={builderStyle}>
-        <GridBuilder pageType="project" pageRef={project.id} />
+        <PageEditor pageType="project" pageRef={project.id} />
       </div>
     </div>
   )

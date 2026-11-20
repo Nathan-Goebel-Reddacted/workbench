@@ -12,6 +12,7 @@ declare module 'fastify' {
      */
     interface FastifyContextConfig {
         public?: boolean;
+        anonymousRead?: boolean;
         servedWhenSiteClosed?: boolean;
     }
 }

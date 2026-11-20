@@ -23,9 +23,11 @@ export class GetProjectByIdHandler implements IQueryHandler<GetProjectByIdQuery,
     }
 
     private async toDto(project: Project): Promise<ProjectDto> {
+        const id = project.getId().getValue();
+        const withPage = await this.pages.projectsWithPage([id]);
         return {
-            destination: await destinationOf(project, this.pages),
-            id: project.getId().getValue(),
+            destination: destinationOf(project, withPage.has(id)),
+            id,
             number: project.getNumber(),
             reference: formatSegment(project.getNumber()),
             name: project.getName().getValue(),

@@ -1,45 +1,40 @@
-// Rendu d'un layout composé dans l'Editor. Partagé par l'aperçu de l'éditeur
-// (frontend-private) et les pages publiques (frontend-public) : une seule
-// implémentation de la géométrie et du rendu des widgets, donc un rendu identique
-// des deux côtés. Les styles du texte riche vivent dans ./richText/richText.css, à importer
-// séparément par l'application hôte.
-
-export { LayoutPreview } from './grid/LayoutPreview'
-export type { RenderMode } from './section/renderMode'
-export { SectionPreview } from './section/SectionPreview'
 export { MindmapView } from './mindmap/MindmapView'
-export { RichTextRenderer } from './richText/RichTextRenderer'
-export { ContactForm } from './section/ContactForm'
+export { PageRenderer, type ShownSlide } from './page/PageRenderer'
+export { pageAt, screenFor } from './page/screenPage'
+export { TEXT_FONT_OPTIONS, RenderScreenContext } from './page/typography'
+export { CONTENT_RENDERERS, CONTENT_FLOW, type ContentRenderers, type ContentFlow } from './page/contentRenderers'
+export { cssColor } from './page/color'
+export { linkHref, projectPagePath } from './page/linkHref'
+export { clearBindingCache } from './richText/dataBinding'
+export { PAGE_BOTTOM_MARGIN, readingOrder, pageHeight, pageScale } from './page/pageGeometry'
+export type {
+  PageDto,
+  PageElement,
+  PageElementDto,
+  ScreenPage,
+  ScreenSize,
+  ScreenSpec,
+  ElementLayout,
+  ElementPlacement,
+  ElementTransform,
+  ElementComponents,
+  ComponentKind,
+  ContentKind,
+  ColorValue,
+  TextComponent,
+  TextFont,
+  SurfaceComponent,
+  LinkComponent,
+  LinkDestination,
+  MediaComponent,
+  MediaFileRef,
+  ElementIssue,
+  CodeComponent,
+  EmbedComponent,
+  ContactFormComponent,
+} from './page/pageTypes'
 export { buildRichTextExtensions } from './richText/richTextExtensions'
 
-export {
-  COLS,
-  GAP,
-  colToPercent,
-  widthPercent,
-  REFERENCE_WIDTH,
-  REFERENCE_ROW_HEIGHT,
-  CELL_RATIO,
-  rowHeightFor,
-  gridHeightFor,
-  WIDGET_INSET,
-  BACKGROUND_OUTSET,
-  sectionBox,
-  growForType,
-} from './grid/gridGeometry'
-export { useRowHeight } from './grid/useRowHeight'
-export {
-  BACKGROUND_TYPE,
-  LINK_AREA_TYPE,
-  WIDGET_Z,
-  LINK_AREA_Z,
-  DRAGGING_Z,
-  computeBackgroundDepths,
-  backgroundColorForDepth,
-  computeSectionsOnDark,
-  zIndexFor,
-} from './grid/backgroundStacking'
-export { onDarkSnapshotStyle, onDarkThemeStyle } from './grid/onDarkTheme'
 export {
   VIDEO_EXTENSIONS,
   IMAGE_EXTENSIONS,
@@ -85,52 +80,12 @@ export {
 } from './mindmap/mindmap'
 export { mindmapStroke, mindmapText, mindmapFill } from './mindmap/mindmapTheme'
 
-export type { PageType, SectionType, SectionContent } from './section/sectionTypes'
 export type {
-  SectionDto,
-  SectionPosition,
-  PageLayoutDto,
-  TextContent,
-  TextScale,
-  ImageContent,
-  ImageFit,
-  ImagePosition,
-  BackgroundContent,
-  LinkAreaContent,
-  LinkAreaTarget,
-  ExternalLink,
-  LinkStyle,
-  CodeContent,
-  EmbedContent,
-  ContactFormContent,
-  FormField,
-  FormFieldType,
+  PageType,
   BindingEntity,
   BindingField,
-  ProjectField,
-  FeatureField,
-  TicketField,
   DataBindingAttrs,
-} from './section/types'
-export {
-  readTextContent,
-  TEXT_SCALE_OPTIONS,
-  readImageContent,
-  readLinkContent,
-  LINK_STYLE_OPTIONS,
-  EMPTY_EXTERNAL_LINK,
-  readBackgroundContent,
-  readLinkAreaContent,
-  LINK_AREA_TARGET_OPTIONS,
-  readCodeContent,
-  CODE_LANGUAGE_OPTIONS,
-  readEmbedContent,
-  isEmbeddableUrl,
-  readContactFormContent,
-  DEFAULT_FORM_FIELDS,
-  FORM_FIELD_TYPE_OPTIONS,
-  IMAGE_FIT_OPTIONS,
-  IMAGE_POSITION_OPTIONS,
-  BINDING_FIELDS,
-  BINDING_ENTITY_LABELS,
-} from './section/types'
+  ImageFit,
+  ImagePosition,
+} from './page/contentOptions'
+export { BINDING_FIELDS, BINDING_ENTITY_LABELS, IMAGE_FIT_OPTIONS, IMAGE_POSITION_OPTIONS } from './page/contentOptions'

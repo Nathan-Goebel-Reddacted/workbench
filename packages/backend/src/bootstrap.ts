@@ -144,21 +144,34 @@ import { ListIdeasQuery } from '@contexts/idea/application/query/listIdeas/listI
 import { ListIdeasHandler } from '@contexts/idea/application/query/listIdeas/listIdeasHandler';
 
 // --- ContentEditor ---
-import { PageLayoutFactory } from '@contexts/contentEditor/domain/factory/pageLayoutFactory';
-import { EnsurePageLayoutCommand } from '@contexts/contentEditor/application/command/ensurePageLayout/ensurePageLayoutCommand';
-import { EnsurePageLayoutHandler } from '@contexts/contentEditor/application/command/ensurePageLayout/ensurePageLayoutHandler';
-import { AddSectionCommand } from '@contexts/contentEditor/application/command/addSection/addSectionCommand';
-import { AddSectionHandler } from '@contexts/contentEditor/application/command/addSection/addSectionHandler';
-import { RemoveSectionCommand } from '@contexts/contentEditor/application/command/removeSection/removeSectionCommand';
-import { RemoveSectionHandler } from '@contexts/contentEditor/application/command/removeSection/removeSectionHandler';
-import { MoveSectionCommand } from '@contexts/contentEditor/application/command/moveSection/moveSectionCommand';
-import { MoveSectionHandler } from '@contexts/contentEditor/application/command/moveSection/moveSectionHandler';
-import { UpdateSectionContentCommand } from '@contexts/contentEditor/application/command/updateSectionContent/updateSectionContentCommand';
-import { UpdateSectionContentHandler } from '@contexts/contentEditor/application/command/updateSectionContent/updateSectionContentHandler';
-import { GetPageLayoutByIdQuery } from '@contexts/contentEditor/application/query/getPageLayoutById/getPageLayoutByIdQuery';
-import { GetPageLayoutByIdHandler } from '@contexts/contentEditor/application/query/getPageLayoutById/getPageLayoutByIdHandler';
-import { GetPageLayoutByRefQuery } from '@contexts/contentEditor/application/query/getPageLayoutByRef/getPageLayoutByRefQuery';
-import { GetPageLayoutByRefHandler } from '@contexts/contentEditor/application/query/getPageLayoutByRef/getPageLayoutByRefHandler';
+import { PageFactory } from '@contexts/contentEditor/domain/factory/pageFactory';
+import { PageMutator } from '@contexts/contentEditor/application/command/pageMutator';
+import { EnsurePageCommand } from '@contexts/contentEditor/application/command/ensurePage/ensurePageCommand';
+import { EnsurePageHandler } from '@contexts/contentEditor/application/command/ensurePage/ensurePageHandler';
+import { AddElementCommand } from '@contexts/contentEditor/application/command/addElement/addElementCommand';
+import { AddElementHandler } from '@contexts/contentEditor/application/command/addElement/addElementHandler';
+import { MoveElementCommand } from '@contexts/contentEditor/application/command/moveElement/moveElementCommand';
+import { MoveElementHandler } from '@contexts/contentEditor/application/command/moveElement/moveElementHandler';
+import { HideElementCommand } from '@contexts/contentEditor/application/command/hideElement/hideElementCommand';
+import { HideElementHandler } from '@contexts/contentEditor/application/command/hideElement/hideElementHandler';
+import { RegenerateLayoutCommand } from '@contexts/contentEditor/application/command/regenerateLayout/regenerateLayoutCommand';
+import { RegenerateLayoutHandler } from '@contexts/contentEditor/application/command/regenerateLayout/regenerateLayoutHandler';
+import { ReorderElementCommand } from '@contexts/contentEditor/application/command/reorderElement/reorderElementCommand';
+import { ReorderElementHandler } from '@contexts/contentEditor/application/command/reorderElement/reorderElementHandler';
+import { DuplicateElementCommand } from '@contexts/contentEditor/application/command/duplicateElement/duplicateElementCommand';
+import { DuplicateElementHandler } from '@contexts/contentEditor/application/command/duplicateElement/duplicateElementHandler';
+import { SetComponentCommand } from '@contexts/contentEditor/application/command/setComponent/setComponentCommand';
+import { SetComponentHandler } from '@contexts/contentEditor/application/command/setComponent/setComponentHandler';
+import { RemoveComponentCommand } from '@contexts/contentEditor/application/command/removeComponent/removeComponentCommand';
+import { RemoveComponentHandler } from '@contexts/contentEditor/application/command/removeComponent/removeComponentHandler';
+import { DeleteElementCommand } from '@contexts/contentEditor/application/command/deleteElement/deleteElementCommand';
+import { DeleteElementHandler } from '@contexts/contentEditor/application/command/deleteElement/deleteElementHandler';
+import { GetPageByIdQuery } from '@contexts/contentEditor/application/query/getPageById/getPageByIdQuery';
+import { GetPageByIdHandler } from '@contexts/contentEditor/application/query/getPageById/getPageByIdHandler';
+import { GetPageByRefQuery } from '@contexts/contentEditor/application/query/getPageByRef/getPageByRefQuery';
+import { GetPageByRefHandler } from '@contexts/contentEditor/application/query/getPageByRef/getPageByRefHandler';
+import { ListPageRefsWithContentQuery } from '@contexts/contentEditor/application/query/listPageRefsWithContent/listPageRefsWithContentQuery';
+import { ListPageRefsWithContentHandler } from '@contexts/contentEditor/application/query/listPageRefsWithContent/listPageRefsWithContentHandler';
 import { ListMediaImagesQuery } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesQuery';
 import { ListMediaImagesHandler } from '@contexts/contentEditor/application/query/listMediaImages/listMediaImagesHandler';
 
@@ -232,10 +245,16 @@ import { ProjectRepository } from '@contexts/project/infrastructure/repository/p
 import { FeatureRepository } from '@contexts/feature/infrastructure/repository/featureRepository';
 import { TicketRepository } from '@contexts/ticket/infrastructure/repository/ticketRepository';
 import { IdeaRepository } from '@contexts/idea/infrastructure/repository/ideaRepository';
-import { PageLayoutRepository } from '@contexts/contentEditor/infrastructure/repository/pageLayoutRepository';
+import { PageRepository } from '@contexts/contentEditor/infrastructure/repository/pageRepository';
 import { AgentToolRepository } from '@contexts/ai-assistant/infrastructure/repository/agentToolRepository';
 import { UploadStorage } from '@shared/infrastructure/upload/uploadStorage';
-import { MindmapFileStorage } from '@shared/infrastructure/upload/mindmapFileStorage';
+import { FileStorage } from '@shared/infrastructure/upload/fileStorage';
+import { StoreUploadCommand } from '@shared/application/command/storeUpload/storeUploadCommand';
+import { StoreUploadHandler } from '@shared/application/command/storeUpload/storeUploadHandler';
+import { RewriteMindmapCommand } from '@shared/application/command/rewriteMindmap/rewriteMindmapCommand';
+import { RewriteMindmapHandler } from '@shared/application/command/rewriteMindmap/rewriteMindmapHandler';
+import { GetMindmapQuery } from '@shared/application/query/getMindmap/getMindmapQuery';
+import { GetMindmapHandler } from '@shared/application/query/getMindmap/getMindmapHandler';
 import { PurgeOrphanUploadsCommand } from '@shared/application/command/purgeOrphanUploads/purgeOrphanUploadsCommand';
 import { PurgeOrphanUploadsHandler } from '@shared/application/command/purgeOrphanUploads/purgeOrphanUploadsHandler';
 import { ContactMessageRepository } from '@contexts/contact/infrastructure/repository/contactMessageRepository';
@@ -304,15 +323,13 @@ import { SearchErrorLogHandler } from '@contexts/errorLog/application/query/sear
 
 import { MediaLibrary } from '@contexts/contentEditor/infrastructure/gateway/mediaLibrary';
 import { PageVisibility } from '@contexts/contentEditor/infrastructure/gateway/pageVisibility';
+import { ProjectReferences } from '@contexts/contentEditor/infrastructure/gateway/projectReferences';
+import { BindingTargets } from '@contexts/contentEditor/infrastructure/gateway/bindingTargets';
+import { SiteOrigins } from '@contexts/contentEditor/domain/valueObject/siteOrigins';
 import { ProjectPageGateway } from '@contexts/project/infrastructure/gateway/projectPageGateway';
 
 // --- Registre des fichiers uploadés ---
-import { projectUploadReferences } from '@contexts/project/infrastructure/uploadReferences';
-import { ideaUploadReferences } from '@contexts/idea/infrastructure/uploadReferences';
-import { featureUploadReferences } from '@contexts/feature/infrastructure/uploadReferences';
-import { ticketUploadReferences } from '@contexts/ticket/infrastructure/uploadReferences';
-import { cvUploadReferences } from '@contexts/cv/infrastructure/uploadReferences';
-import { contentEditorUploadReferences } from '@contexts/contentEditor/infrastructure/uploadReferences';
+import { UPLOAD_REFERENCE_SOURCES } from './uploadReferenceSources';
 
 export function bootstrap(
     em: EntityManager,
@@ -330,7 +347,7 @@ export function bootstrap(
         feature: new FeatureRepository(em),
         ticket: new TicketRepository(em),
         idea: new IdeaRepository(em),
-        pageLayout: new PageLayoutRepository(em),
+        page: new PageRepository(em),
         agentTool: new AgentToolRepository(em),
         pairingRequest: new PairingRequestRepository(em),
         contactMessage: new ContactMessageRepository(em),
@@ -350,15 +367,8 @@ export function bootstrap(
     // Chaque contexte déclare où il cite des uploads ; c'est ici qu'on les rassemble. Un
     // contexte manquant à cette liste verrait ses fichiers effacés alors qu'il les cite encore,
     // sans la moindre erreur — d'où la déclaration chez soi plutôt qu'une liste enfouie.
-    const mindmaps = new MindmapFileStorage();
-    const uploads = new UploadStorage(em, [
-        ...projectUploadReferences,
-        ...ideaUploadReferences,
-        ...featureUploadReferences,
-        ...ticketUploadReferences,
-        ...cvUploadReferences,
-        ...contentEditorUploadReferences,
-    ]);
+    const files = new FileStorage();
+    const uploads = new UploadStorage(em, UPLOAD_REFERENCE_SOURCES);
 
     // Un seul exécutant de transaction pour tous les cas d'usage multi-dépôts.
     const transactions = new MikroOrmTransactionRunner(em);
@@ -391,7 +401,7 @@ export function bootstrap(
     const featureFactory = new FeatureFactory();
     const ticketFactory = new TicketFactory();
     const ideaFactory = new IdeaFactory();
-    const pageLayoutFactory = new PageLayoutFactory();
+    const pageFactory = new PageFactory();
     // Le haché est un choix d'infrastructure : le domaine ne connaît que le port.
     const secretHasher = new BcryptSecretHasher();
     const agentToolFactory = new AgentToolFactory(secretHasher);
@@ -399,6 +409,9 @@ export function bootstrap(
 
     // User
     commandBus.register(PurgeOrphanUploadsCommand.commandName, new PurgeOrphanUploadsHandler(uploads));
+    commandBus.register(StoreUploadCommand.commandName, new StoreUploadHandler(files));
+    commandBus.register(RewriteMindmapCommand.commandName, new RewriteMindmapHandler(files));
+    queryBus.register(GetMindmapQuery.queryName, new GetMindmapHandler(files));
     commandBus.register(CreateUserCommand.commandName, new CreateUserHandler(repos.user, userFactory));
     commandBus.register(
         DeleteUserCommand.commandName,
@@ -434,7 +447,7 @@ export function bootstrap(
     commandBus.register(AddProjectDocumentCommand.commandName, new AddProjectDocumentHandler(repos.project));
     commandBus.register(
         CreateProjectMindmapCommand.commandName,
-        new CreateProjectMindmapHandler(repos.project, mindmaps, uploads),
+        new CreateProjectMindmapHandler(repos.project, files, uploads),
     );
     commandBus.register(
         RemoveProjectDocumentCommand.commandName,
@@ -506,10 +519,7 @@ export function bootstrap(
         new DeleteIdeaHandler(repos.idea, ideaFeaturesGateway, uploads, transactions),
     );
     commandBus.register(AddIdeaDocumentCommand.commandName, new AddIdeaDocumentHandler(repos.idea));
-    commandBus.register(
-        CreateIdeaMindmapCommand.commandName,
-        new CreateIdeaMindmapHandler(repos.idea, mindmaps, uploads),
-    );
+    commandBus.register(CreateIdeaMindmapCommand.commandName, new CreateIdeaMindmapHandler(repos.idea, files, uploads));
     commandBus.register(RemoveIdeaDocumentCommand.commandName, new RemoveIdeaDocumentHandler(repos.idea, uploads));
     commandBus.register(AddIdeaLinkCommand.commandName, new AddIdeaLinkHandler(repos.idea));
     commandBus.register(RemoveIdeaLinkCommand.commandName, new RemoveIdeaLinkHandler(repos.idea));
@@ -529,22 +539,29 @@ export function bootstrap(
     queryBus.register(GetReferenceTreeQuery.queryName, new GetReferenceTreeHandler(referenceDirectory));
 
     // ContentEditor
-    commandBus.register(
-        EnsurePageLayoutCommand.commandName,
-        new EnsurePageLayoutHandler(repos.pageLayout, pageLayoutFactory),
-    );
-    commandBus.register(AddSectionCommand.commandName, new AddSectionHandler(repos.pageLayout));
-    commandBus.register(RemoveSectionCommand.commandName, new RemoveSectionHandler(repos.pageLayout, uploads));
-    commandBus.register(MoveSectionCommand.commandName, new MoveSectionHandler(repos.pageLayout));
-    commandBus.register(UpdateSectionContentCommand.commandName, new UpdateSectionContentHandler(repos.pageLayout));
-    queryBus.register(GetPageLayoutByIdQuery.queryName, new GetPageLayoutByIdHandler(repos.pageLayout));
-    // Le layout n'est public que si la page qu'il habille l'est : l'éditeur ne sait pas
-    // lire un projet, il demande.
     const pageVisibility = new PageVisibility(repos.project, repos.portfolio);
-    queryBus.register(
-        GetPageLayoutByRefQuery.queryName,
-        new GetPageLayoutByRefHandler(repos.pageLayout, pageVisibility),
+    const pages = new PageMutator(repos.page, uploads);
+    commandBus.register(EnsurePageCommand.commandName, new EnsurePageHandler(repos.page, pageFactory));
+    commandBus.register(AddElementCommand.commandName, new AddElementHandler(pages));
+    commandBus.register(MoveElementCommand.commandName, new MoveElementHandler(pages));
+    commandBus.register(ReorderElementCommand.commandName, new ReorderElementHandler(pages));
+    commandBus.register(HideElementCommand.commandName, new HideElementHandler(pages));
+    commandBus.register(RegenerateLayoutCommand.commandName, new RegenerateLayoutHandler(pages));
+    commandBus.register(DuplicateElementCommand.commandName, new DuplicateElementHandler(pages));
+    commandBus.register(
+        SetComponentCommand.commandName,
+        new SetComponentHandler(pages, new SiteOrigins([env.FRONTEND_PUBLIC_URL, env.FRONTEND_PRIVATE_URL])),
     );
+    commandBus.register(RemoveComponentCommand.commandName, new RemoveComponentHandler(pages));
+    commandBus.register(DeleteElementCommand.commandName, new DeleteElementHandler(pages));
+    const pageReaders = {
+        projects: new ProjectReferences(repos.project, repos.page),
+        presence: uploads,
+        bindings: new BindingTargets(repos.project, repos.feature, repos.ticket),
+    };
+    queryBus.register(GetPageByIdQuery.queryName, new GetPageByIdHandler(repos.page, pageReaders));
+    queryBus.register(GetPageByRefQuery.queryName, new GetPageByRefHandler(repos.page, pageVisibility, pageReaders));
+    queryBus.register(ListPageRefsWithContentQuery.queryName, new ListPageRefsWithContentHandler(repos.page));
     // Seul point de contact entre l'éditeur de contenu et les contextes qui détiennent
     // les médias : il pose la question, eux répondent — aucun agrégat étranger ne remonte.
     const mediaLibrary = new MediaLibrary(repos.project, repos.feature, repos.ticket);

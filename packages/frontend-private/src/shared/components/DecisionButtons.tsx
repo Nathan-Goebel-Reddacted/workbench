@@ -8,7 +8,7 @@ export function DecisionButtons({ onDecide }: { onDecide: (decision: Decision) =
 
   return (
     <>
-      <Button variant="primary" onClick={() => onDecide('approve')} disabled={!canEdit} title={title}>
+      <Button variant="solid" onClick={() => onDecide('approve')} disabled={!canEdit} title={title}>
         Approve
       </Button>{' '}
       <Button variant="ghost" onClick={() => onDecide('reject')} disabled={!canEdit} title={title}>

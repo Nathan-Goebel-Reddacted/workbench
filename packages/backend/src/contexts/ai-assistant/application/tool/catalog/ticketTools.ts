@@ -152,8 +152,8 @@ export function createTicketTools(commandBus: CommandBus, queryBus: QueryBus): A
         defineTool({
             name: 'add_ticket_document',
             description:
-                'Attach a document (pdf, image or video) to a ticket. The document must already be hosted ' +
-                'somewhere: this tool records its URL, it does not upload a file.',
+                'Attach a document (pdf, image or video) to a ticket. This tool records a URL: to attach a local ' +
+                'file, store it first with upload_file.',
             scope: ScopeValue.TICKET,
             access: 'write',
             inputSchema: documentSchema.extend({

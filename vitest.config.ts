@@ -25,7 +25,7 @@ export default defineConfig({
       GITHUB_CLIENT_ID: 'test-client-id',
       GITHUB_CLIENT_SECRET: 'test-client-secret',
     },
-    include: ['packages/*/src/**/*.test.ts'],
+    include: ['packages/*/src/**/*.test.{ts,tsx}'],
     passWithNoTests: false,
   },
 });

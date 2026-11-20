@@ -1,3 +1,3 @@
 export interface IProjectPageGateway {
-    hasSections(projectId: string): Promise<boolean>;
+    projectsWithPage(projectIds: readonly string[]): Promise<ReadonlySet<string>>;
 }

@@ -61,9 +61,11 @@ Ces variables sont injectées sur `:root` par `ThemeProvider` (shared-ui) et peu
 | `ThemeProvider` | Wrapper racine — injecte les CSS vars |
 | `AuthProvider` + `useAuth` | Authentification |
 | `ProtectedRoute` | Route gardée par auth |
-| `NavBar` | Barre de navigation |
-| `Button` | Bouton générique (variants : `primary`, `secondary`, `ghost`) |
+| `NavBar` | Barre de navigation (enfants libres, `NavBar.Spacer`, liens en `NavLink`) |
+| `Button` | Bouton générique (variants : `solid`, `outline`, `ghost`) |
+| `PageStatus` | État de page : chargement, erreur, vide (`role="status"` / `role="alert"`) |
 | `ColorPicker` | Picker couleur simple (hex + swatch) |
+| `PageRenderer` (`@content`) | Rendu d'une Page (Elements, Components, disposition par taille d'écran), partagé par l'éditeur et le site public |
 
 ### Couches d'un contexte (frontend-private)
 

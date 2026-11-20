@@ -12,7 +12,7 @@ import { UserRole } from '@shared/domain/valueObject/userRole';
 type Opts = { commandBus: CommandBus; queryBus: QueryBus };
 
 export const cvRoutes: FastifyPluginAsync<Opts> = async (app, { commandBus, queryBus }) => {
-    app.get('/cvs', async (req, reply) => {
+    app.get('/cvs', { config: { anonymousRead: true } }, async (req, reply) => {
         const result = await queryBus.dispatch(new ListCvsQuery(hasPrivateRead(req)));
         return reply.send(result);
     });

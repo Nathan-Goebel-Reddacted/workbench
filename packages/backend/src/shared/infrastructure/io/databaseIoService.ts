@@ -1,5 +1,5 @@
 import { MikroORM } from '@mikro-orm/postgresql';
-import { collectIoTables, IoTable } from './tableRegistry.js';
+import { collectIoTables, IoTable, RETIRED_TABLES } from './tableRegistry.js';
 import { pgDumpData, psqlScript, readPgCredentials } from './pgClient.js';
 
 const STAGING_SCHEMA = 'io_staging';
@@ -8,6 +8,7 @@ export type ImportReportRow = {
     table_name: string;
     inserted: number;
     updated: number;
+    ignored: boolean;
 };
 
 export type ExportResult = {
@@ -67,11 +68,14 @@ export async function importDatabase(
 export function buildImportScript(tables: IoTable[], dump: string, dryRun = false): string {
     const byName = new Map(tables.map(table => [table.tableName, table]));
     const staged = redirectToStaging(dump, byName);
+    const ignored = retiredTablesIn(dump).map(
+        name => `INSERT INTO ${quote(STAGING_SCHEMA)}._report VALUES ('${name}', 0, 0, true);`,
+    );
 
     const createStaging = [
         `DROP SCHEMA IF EXISTS ${quote(STAGING_SCHEMA)} CASCADE;`,
         `CREATE SCHEMA ${quote(STAGING_SCHEMA)};`,
-        `CREATE TABLE ${quote(STAGING_SCHEMA)}._report (table_name text, inserted bigint, updated bigint);`,
+        `CREATE TABLE ${quote(STAGING_SCHEMA)}._report (table_name text, inserted bigint, updated bigint, ignored boolean NOT NULL DEFAULT false);`,
         ...tables.map(
             table =>
                 `CREATE TABLE ${quote(STAGING_SCHEMA)}.${quote(table.tableName)} ` +
@@ -90,6 +94,7 @@ export function buildImportScript(tables: IoTable[], dump: string, dryRun = fals
         '-- === end of dump payload ===',
         '',
         upserts,
+        ...ignored,
         '',
         `SELECT COALESCE(json_agg(row_to_json(r))::text, '[]') FROM ${quote(STAGING_SCHEMA)}._report r;`,
         // psql tourne en --single-transaction : le rapport est déjà lu à ce point, donc annuler
@@ -132,16 +137,21 @@ const INSERT_HEADER = /^INSERT INTO\s+(?:public|"public")\.("?)([^"\s(]+)\1\s*[\
 // Le corps d'un COPY est du TSV brut : une ligne de données peut parfaitement commencer par le
 // mot COPY. On ne peut donc pas remplacer à l'aveugle dans tout le fichier — il faut savoir si
 // on se trouve dans un bloc de données ou dans du SQL, d'où ce passage ligne à ligne.
-export function redirectToStaging(dump: string, tables: Map<string, IoTable>): string {
+export function redirectToStaging(
+    dump: string,
+    tables: Map<string, IoTable>,
+    retired: ReadonlySet<string> = RETIRED_TABLES,
+): string {
     const lines = dump.split('\n');
     const output: string[] = [];
     let inCopyBlock = false;
+    let skipping = false;
 
     for (const line of lines) {
         if (inCopyBlock) {
             // Le terminateur de COPY est une ligne contenant exactement `\.`
             if (line.trimEnd() === '\\.') inCopyBlock = false;
-            output.push(line);
+            if (!skipping) output.push(line);
             continue;
         }
 
@@ -152,6 +162,11 @@ export function redirectToStaging(dump: string, tables: Map<string, IoTable>): s
         }
 
         const tableName = match[2];
+        skipping = retired.has(tableName);
+        if (skipping) {
+            inCopyBlock = isCopyFromStdin(line);
+            continue;
+        }
         if (!tables.has(tableName)) {
             // Laisser passer la ligne la ferait écrire directement dans public, sans le
             // ON CONFLICT : ce serait un import brut déguisé en upsert.
@@ -159,10 +174,23 @@ export function redirectToStaging(dump: string, tables: Map<string, IoTable>): s
         }
 
         output.push(line.replace(/^(COPY|INSERT INTO)\s+(?:public|"public")\./, `$1 ${quote(STAGING_SCHEMA)}.`));
-        if (COPY_HEADER.test(line) && /FROM stdin;\s*$/.test(line)) inCopyBlock = true;
+        if (isCopyFromStdin(line)) inCopyBlock = true;
     }
 
     return output.join('\n');
+}
+
+function isCopyFromStdin(line: string): boolean {
+    return COPY_HEADER.test(line) && /FROM stdin;\s*$/.test(line);
+}
+
+export function retiredTablesIn(dump: string, retired: ReadonlySet<string> = RETIRED_TABLES): string[] {
+    const found = new Set<string>();
+    for (const line of dump.split('\n')) {
+        const match = COPY_HEADER.exec(line) ?? INSERT_HEADER.exec(line);
+        if (match && retired.has(match[2])) found.add(match[2]);
+    }
+    return [...found];
 }
 
 export function parseReport(output: string): ImportReportRow[] {

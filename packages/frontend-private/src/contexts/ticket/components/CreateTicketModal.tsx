@@ -60,7 +60,7 @@ export function CreateTicketModal({
           <Button variant="ghost" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={!canEdit || submitting || !title.trim()}>
+          <Button variant="solid" onClick={handleSubmit} disabled={!canEdit || submitting || !title.trim()}>
             {submitting ? 'Creating…' : 'Create'}
           </Button>
         </div>

@@ -150,6 +150,7 @@ export const ioRoutes: FastifyPluginAsync<IoRoutesOptions> = async (app, { orm }
                     table: row.table_name,
                     inserted: Number(row.inserted),
                     updated: Number(row.updated),
+                    ignored: row.ignored === true,
                 })),
             });
         },

@@ -322,10 +322,10 @@ function Canvas({ initial, onChange, readOnly = false }: Props) {
         <aside style={panelStyle}>
           <p style={panelTitleStyle}>Add</p>
           <div style={buttonRowStyle}>
-            <Button variant="secondary" onClick={() => addNode('mind')}>
+            <Button variant="outline" onClick={() => addNode('mind')}>
               Node
             </Button>
-            <Button variant="secondary" onClick={() => addNode('free')}>
+            <Button variant="outline" onClick={() => addNode('free')}>
               Note
             </Button>
           </div>

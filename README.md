@@ -1,8 +1,8 @@
 # Atelier Portfolio
 
 Portfolio et atelier de travail personnels : un site public qui présente projets et CV, et un
-espace privé qui sert à les composer — catalogue de projets, atelier d'idées, éditeur de pages en
-grille, et un serveur MCP par lequel un agent vient lire et écrire dans l'atelier.
+espace privé qui sert à les composer — catalogue de projets, atelier d'idées, éditeur de pages libre
+(Elements placés au pixel, une disposition par taille d'écran), et un serveur MCP par lequel un agent vient lire et écrire dans l'atelier.
 
 ## Sommaire
 
@@ -15,6 +15,7 @@ grille, et un serveur MCP par lequel un agent vient lire et écrire dans l'ateli
 - [Export, import et restauration](#export-import-et-restauration)
 - [Déploiement](#déploiement)
 - [Qualité](#qualité)
+- [Glossaire](#glossaire)
 
 ## Prérequis
 
@@ -92,7 +93,7 @@ packages/
 ├── frontend-public/   React — site public               (port 5173)
 ├── frontend-private/  React — espace privé              (port 5174)
 └── shared-ui/         thème, authentification, composants partagés,
-                       et content/ : rendu des grilles partagé par
+                       et content/ : rendu des Pages partagé par
                        l'éditeur et le site public
 
 docker/web/            image nginx qui sert les deux fronts en production
@@ -315,5 +316,85 @@ npm run format:check && npm run lint && npm run typecheck && npm test && npm run
 ```
 
 Les tests ne couvrent pour l'instant que du domaine et des fonctions pures — pas de base, pas de
-serveur HTTP simulé : la géométrie des grilles, le garde de rôles, les références de tickets, et la
+serveur HTTP simulé : les Pages (Components, dispositions par taille d'écran), le garde de rôles, les références de tickets, et la
 génération du script d'import.
+
+## Glossaire
+
+### Éditeur de pages
+
+**Page** :
+Surface éditable publiée sur le site public : l'accueil du portfolio ou la page d'un projet. Elle
+contient un ensemble d'Elements.
+_Avoid_ : layout, mise en page (pour désigner la page elle-même)
+
+**Element** :
+Ce qu'on pose sur une Page. Il n'a pas de type propre : ce qu'il est découle des Components qu'il
+porte.
+_Avoid_ : entity, widget, section, bloc
+
+**Component** :
+Une facette d'un Element (sa position, son habillage, son contenu…). Un Element porte au plus un
+Component de chaque sorte.
+_Avoid_ : propriété, réglage, widget
+
+**Taille d'écran** :
+Une des trois largeurs minimales pour lesquelles une Page est disposée : desktop (1280 px),
+tablette (768 px), mobile (360 px). Le site public prend la plus large qui tient dans la fenêtre
+et la rend au pixel, centrée ; seul le mobile se réduit sous 360 px.
+_Avoid_ : breakpoint, viewport, résolution
+
+**Disposition** :
+Ce qui situe un Element dans chaque taille d'écran : un Transform par taille, et s'il y est
+masqué. Tout Element en porte une, complète. Tablette et mobile se calculent depuis le desktop,
+puis se retouchent à la main.
+_Avoid_ : layout (pour l'utilisateur), responsive
+
+**Transform** :
+La position et la taille d'un Element dans une taille d'écran, en pixels sur sa largeur.
+_Avoid_ : position, grid position, cellule
+
+**Surface** :
+Le Component qui habille la boîte d'un Element : couleur de fond, bordure, arrondi. Il ne change
+rien à ce qui est posé dessus.
+_Avoid_ : background, fond (pour le Component)
+
+**Link** :
+Le Component qui rend un Element cliquable vers une URL externe ou la page d'un projet.
+_Avoid_ : link area, zone de lien
+
+**Contenu** :
+Le Component qui donne à un Element ce qu'il montre. Un Element porte au plus un contenu ; un
+Element sans contenu est un fond ou une zone cliquable. Une carte, une pastille ou une liste de
+liens ne sont pas des contenus : elles se composent de plusieurs Elements.
+_Avoid_ : widget, type de section
+
+### Contenus
+
+**Text** :
+Un texte riche, avec sa police (titre ou corps), sa taille par taille d'écran, ses capitales, son
+espacement et sa couleur, qui peut insérer des champs vivants issus d'un projet.
+_Avoid_ : paragraphe, bloc texte
+
+**Insertion liée** :
+Un champ d'un projet, d'une feature ou d'un ticket inséré dans un Text, qui suit la valeur
+d'origine au lieu d'en être une copie.
+_Avoid_ : variable, data binding (pour l'utilisateur)
+
+**Media** :
+Un ou plusieurs fichiers (image, vidéo, PDF, mindmap) affichés sur la Page avec un cadrage
+commun ; s'ils sont plusieurs, ils défilent. Une légende n'en fait pas partie : c'est un Text
+placé à côté.
+_Avoid_ : document, image (pour le Component)
+
+**Code** :
+Un extrait de code source affiché avec son langage.
+_Avoid_ : snippet
+
+**Embed** :
+Une page externe intégrée telle quelle dans la Page (vidéo hébergée, démo en ligne…).
+_Avoid_ : iframe
+
+**ContactForm** :
+Le formulaire par lequel un visiteur envoie un message au propriétaire du portfolio.
+_Avoid_ : formulaire, contact

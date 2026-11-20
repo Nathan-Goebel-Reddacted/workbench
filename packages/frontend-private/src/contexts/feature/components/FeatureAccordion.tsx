@@ -76,7 +76,7 @@ export function FeatureAccordion({ feature, onDelete }: { feature: Feature; onDe
               >
                 {deleting ? 'Deleting…' : 'Delete'}
               </Button>
-              <Button variant="secondary" onClick={handleSaveFeature} disabled={!canEdit || saving || !name.trim()}>
+              <Button variant="outline" onClick={handleSaveFeature} disabled={!canEdit || saving || !name.trim()}>
                 {saving ? 'Saving…' : 'Save'}
               </Button>
             </div>

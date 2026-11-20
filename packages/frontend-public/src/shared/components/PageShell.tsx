@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react'
 
 // Le gabarit de toute page du site : borné et centré plutôt qu'étalé sur toute la largeur,
-// comme les pages privées. La hauteur de ligne de la grille suit la largeur du conteneur
-// (gridGeometry), donc un bloc garde son rapport quelle que soit la largeur de rendu.
+// comme les pages privées. `canvas` : une Page composée, qui se centre elle-même à la largeur
+// de sa taille d'écran.
 //
 // flex plutôt que 100vh : la NavBar occupe déjà le haut de #root (flex column), sinon la page
 // dépasserait la fenêtre de la hauteur de la barre.
@@ -10,8 +10,16 @@ import type { CSSProperties, ReactNode } from 'react'
 // `fill` : pour une page dont le contenu se dimensionne sur la hauteur restante plutôt que sur
 // son propre flux — le visionneur de CV en déduit sa largeur de sa hauteur. Le contenu s'y
 // centre lui-même, la largeur n'est donc pas bornée.
-export function PageShell({ children, fill = false }: { children: ReactNode; fill?: boolean }) {
-  return <main style={fill ? fillStyle : shellStyle}>{children}</main>
+type Props = { children: ReactNode; fill?: boolean; canvas?: boolean }
+
+export function PageShell({ children, fill = false, canvas = false }: Props) {
+  return <main style={canvas ? canvasStyle : fill ? fillStyle : shellStyle}>{children}</main>
+}
+
+const canvasStyle: CSSProperties = {
+  flex: 1,
+  width: '100%',
+  backgroundColor: 'var(--color-bg)',
 }
 
 const shellStyle: CSSProperties = {

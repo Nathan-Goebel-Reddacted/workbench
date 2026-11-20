@@ -3,7 +3,7 @@ import { CreateIdeaMindmapHandler } from './createIdeaMindmapHandler.js';
 import { CreateIdeaMindmapCommand } from './createIdeaMindmapCommand.js';
 import { NotFoundError } from '@shared/application/errors/notFoundError.js';
 import type { IIdeaRepository } from '../../../domain/repository/iIdeaRepository.js';
-import type { IMindmapStorage } from '@shared/application/port/iMindmapStorage.js';
+import type { IFileStorage } from '@shared/application/port/iFileStorage.js';
 import type { IUploadStorage } from '@shared/application/port/iUploadStorage.js';
 import type { Idea } from '../../../domain/ideaAggregate.js';
 import type { Document } from '@shared/domain/entity/document.js';
@@ -30,10 +30,12 @@ function repository(trace: Trace, found: Idea | null, failOnSave = false): IIdea
     };
 }
 
-function mindmaps(trace: Trace): IMindmapStorage {
+function mindmaps(trace: Trace): IFileStorage {
     return {
-        store: async content => {
-            trace.push(`store:${JSON.stringify(content)}`);
+        rewrite: async () => true,
+        read: async () => null,
+        save: async (_extension, content) => {
+            trace.push(`store:${content.toString()}`);
             return '/uploads/m.mindmap.json';
         },
     };

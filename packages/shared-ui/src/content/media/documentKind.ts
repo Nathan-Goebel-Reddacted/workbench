@@ -1,7 +1,6 @@
-// Résolution du type de rendu d'un document à partir de sa seule URL. Le widget
-// `document` unifie image, vidéo, PDF et mindmap : c'est ici que se décide laquelle
-// des quatre formes de rendu s'applique. Source de vérité unique, partagée par le
-// rendu (SectionPreview) et par l'édition (aperçus du frontend privé).
+// Résolution du type de rendu d'un document à partir de sa seule URL. Un Media unifie
+// image, vidéo, PDF et mindmap : c'est ici que se décide laquelle des quatre formes de
+// rendu s'applique. Source de vérité unique, partagée par le rendu et par l'édition.
 import { IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, resolveVideoSource, isEmbeddedVideo } from './videoSource'
 
 export type DocumentKind = 'image' | 'video' | 'pdf' | 'mindmap' | 'empty' | 'unknown'
